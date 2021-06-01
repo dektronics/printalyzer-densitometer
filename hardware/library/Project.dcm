@@ -1,0 +1,129 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP AP2502
+D LED Driver 4-channel linear constant current sink with matching
+K LED constant current driver
+F https://www.diodes.com/assets/Datasheets/AP2502.pdf
+$ENDCMP
+#
+$CMP AS7341
+D 11-Channel Multi-Spectral Digital Sensor, I2C interface, 1.7-2.0V, OLGA8
+K opto color light spectral sensor
+F https://ams.com/documents/20143/36005/AS7341_DS000504_3-00.pdf
+$ENDCMP
+#
+$CMP Conn_CUI_MD-60SM
+D 6-pin Shielded Mini-DIN connector
+K Mini-DIN
+F https://www.cuidevices.com/product/resource/digikeypdf/md-sm-series.pdf
+$ENDCMP
+#
+$CMP Conn_PX0580-PC
+D Bulgin IEC320-C14 flange rear mount inlet
+K wall plug 110VAC 220VAC
+F https://www.bulgin.com/products/pub/media/bulgin/data/IEC_connectors.pdf
+$ENDCMP
+#
+$CMP Conn_PX0675-PC
+D Bulgin IEC320-C14 flange rear mount inlet
+K wall plug 110VAC 220VAC
+F https://www.bulgin.com/products/pub/media/bulgin/data/IEC_connectors.pdf
+$ENDCMP
+#
+$CMP Conn_ST_STDC14
+D ST Debug Connector, standard ARM Cortex-M SWD and JTAG interface plus UART
+K ST STM32 Cortex Debug Connector ARM SWD JTAG
+F https://www.st.com/content/ccc/resource/technical/document/user_manual/group1/99/49/91/b6/b2/3a/46/e5/DM00526767/files/DM00526767.pdf/jcr:content/translations/en.DM00526767.pdf
+$ENDCMP
+#
+$CMP DT2636-04S
+D Low Capacitance TVS Diode Array, 5.5V Standoff, 4 Channels, SOT-363
+K usb esd protection suppression transient
+F https://www.diodes.com/assets/Datasheets/DT2636-04S.pdf
+$ENDCMP
+#
+$CMP ESDALC6V1-1U2
+D Single-line low capacitance TVS diode for ESD protection, 0201
+K ESD protection suppression transient
+F https://www.st.com/content/ccc/resource/technical/document/datasheet/90/b1/aa/a3/9f/73/4d/1e/CD00212838.pdf/files/CD00212838.pdf/jcr:content/translations/en.CD00212838.pdf
+$ENDCMP
+#
+$CMP ESDALC6V1W5
+D Quad transil array for data protection, SOT323-5L
+K ESD protection suppression transient
+F https://www.st.com/content/ccc/resource/technical/document/datasheet/32/30/02/e6/ac/0f/46/c2/CD00002946.pdf/files/CD00002946.pdf/jcr:content/translations/en.CD00002946.pdf
+$ENDCMP
+#
+$CMP G2RL-1A4-DC12
+D Omron G2RL low profile power relay, SPST-NO
+K Single Pole Relay SPST
+F https://omronfs.omron.com/en_US/ecb/products/pdf/en-g2rl.pdf
+$ENDCMP
+#
+$CMP M24M01-RMN
+D 1Mbit (128K x 8) I2C Serial EEPROM, 1.8-5.5V, SO-8
+K Nonvolatile Non-Volatile Memory ROM ST
+F https://www.st.com/content/ccc/resource/technical/document/datasheet/group0/cb/91/ba/7d/0b/c1/4d/f6/CD00147128/files/CD00147128.pdf/jcr:content/translations/en.CD00147128.pdf
+$ENDCMP
+#
+$CMP NHD-3.12-25664UC
+D NHD 3.12" Graphic OLED Display Module, Serial Interface
+K oled display module
+F https://www.newhavendisplay.com/specs/NHD-3.12-25664UCY2.pdf
+$ENDCMP
+#
+$CMP NUD3112DMT1G
+D 2-Channel Parallel Integrated Relay, Inductive Load Driver, SC-74-6
+K Relay Driver
+F http://www.onsemi.com/pub/Collateral/NUD3112-D.PDF
+$ENDCMP
+#
+$CMP PAM8904EJP
+D 18Vpp Output Piezo Sounder Driver
+K audio piezo driver
+F https://www.diodes.com/assets/Datasheets/PAM8904E.pdf
+$ENDCMP
+#
+$CMP PSK-6B-S12
+D 12V, 0.5A, 6W, Isolated, AC-DC, Power Supply
+K Miniature Module-type Power Supply CUI
+F https://www.cui.com/product/resource/psk-6b.pdf
+$ENDCMP
+#
+$CMP RT9193
+D 300mA Ultra-Low Noise, Ultra-Fast CMOS LDO Regulator, Fixed Output 3.3V, SOT-23-5
+K 300mA LDO Regulator Fixed Positive
+F https://www.richtek.com/assets/product_file/RT9193/DS9193-17.pdf
+$ENDCMP
+#
+$CMP STMPS2141
+D Enhanced single channel power switch, 0.5A, SOT-23-5L
+K power switch current
+F https://www.st.com/resource/en/datasheet/stmps2141.pdf
+$ENDCMP
+#
+$CMP STP16CPC26
+D 16-bit constant current LED sink driver
+K Shift Register LED driver 16 bit
+F https://www.st.com/resource/en/datasheet/stp16cpc26.pdf
+$ENDCMP
+#
+$CMP TC1301A
+D Dual LDO with Microcontroller RESET Function in 8-Pin DFN/MSOP package
+K LDO regulator voltage
+F https://ww1.microchip.com/downloads/en/DeviceDoc/21798c.pdf
+$ENDCMP
+#
+$CMP TCA8418
+D I2C Controlled Keypad Scan IC
+K Keypad I2C
+F http://www.ti.com/lit/ds/symlink/tca8418.pdf
+$ENDCMP
+#
+$CMP TCS3472
+D Color Light-to-Digital Converter with IR Filter, I2C interface, 2.7-3.6V, FN
+K opto color light sensor
+F https://ams.com/documents/20143/36005/TCS3472_DS000390_3-00.pdf
+$ENDCMP
+#
+#End Doc Library
