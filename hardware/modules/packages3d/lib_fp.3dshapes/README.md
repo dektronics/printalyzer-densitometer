@@ -44,6 +44,10 @@ this directory's `.gitignore` file.
 * Status: Included (Same license as project)
 * Source: Created for project using Autodesk Fusion 360
 
+### AMS_TSL2591
+* Status: Included (Same license as project)
+* Source: Created for project using FreeCAD
+
 ### FTSH-107-01-L-DV-K-A
 * Status: Included ([Terms](https://www.cadenas.de/terms-of-use-3d-cad-models)
   somewhat unclear, but may be okay for project use.)
