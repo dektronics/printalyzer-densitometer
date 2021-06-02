@@ -72,3 +72,11 @@ this directory's `.gitignore` file.
 ### WL-SWTP-3022
 * Status: Included
 * Source: Digi-Key product page
+
+### CONN_OLED_128x64
+* Status: Included (CERN OHL V1.1)
+* Source: Tinkerforge KiCad Libraries <https://github.com/Tinkerforge/kicad-libraries>
+
+### OLED_128x64
+* Status: Included (CERN OHL V1.1)
+* Source: Tinkerforge KiCad Libraries <https://github.com/Tinkerforge/kicad-libraries>
