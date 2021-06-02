@@ -1,12 +1,12 @@
-(module ER-CON30HT-1 (layer F.Cu) (tedit 59EDE8E5)
+(module ER-CON30HT-1 (layer F.Cu) (tedit 60B7B12B)
   (fp_text reference U3 (at 0 0.5) (layer F.Fab)
     (effects (font (size 0.3 0.3) (thickness 0.075)))
   )
   (fp_text value OLED013 (at 0 -0.5) (layer F.Fab)
     (effects (font (size 0.3 0.3) (thickness 0.075)))
   )
-  (fp_line (start -9.7 0.8) (end 9.7 0.8) (layer F.Fab) (width 0.15))
   (fp_line (start -10.3 5.3) (end 10.3 5.3) (layer F.Fab) (width 0.15))
+  (fp_line (start -9.7 0.8) (end 9.7 0.8) (layer F.Fab) (width 0.15))
   (pad 1 smd rect (at 7.25 -0.2) (size 0.3 1.6) (layers F.Cu F.Paste F.Mask))
   (pad 2 smd rect (at 6.75 -0.2) (size 0.3 1.6) (layers F.Cu F.Paste F.Mask))
   (pad 3 smd rect (at 6.25 -0.2) (size 0.3 1.6) (layers F.Cu F.Paste F.Mask))
@@ -39,13 +39,13 @@
   (pad 30 smd rect (at -7.25 -0.2) (size 0.3 1.6) (layers F.Cu F.Paste F.Mask))
   (pad "" smd rect (at -8.79 2.325) (size 2 3) (layers F.Cu F.Paste F.Mask))
   (pad "" smd rect (at 8.79 2.325) (size 2 3) (layers F.Cu F.Paste F.Mask))
-  (model unsorted/OLED_128x64.wrl
-    (at (xyz 0 0.17 -0.08))
+  (model ${KIPRJMOD}/../modules/packages3d/lib_fp.3dshapes/OLED_128x64.wrl
+    (offset (xyz 0 4.317999935150147 -2.031999969482422))
     (scale (xyz 1 1 1))
     (rotate (xyz 180 0 180))
   )
-  (model Connectors/CONN_OLED_128x64.wrl
-    (at (xyz 0 -0.12 0))
+  (model ${KIPRJMOD}/../modules/packages3d/lib_fp.3dshapes/CONN_OLED_128x64.wrl
+    (offset (xyz 0 -3.047999954223633 0))
     (scale (xyz 1 1 1))
     (rotate (xyz 0 0 180))
   )
