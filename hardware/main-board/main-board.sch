@@ -131,13 +131,13 @@ U 1 1 6056FFDA
 P 8700 1075
 F 0 "SW1" H 8700 1250 50  0000 C CNN
 F 1 "SW_Push" H 8700 1000 50  0000 C CNN
-F 2 "Button_Switch_THT:SW_PUSH_6mm_H5mm" H 8700 1275 50  0001 C CNN
-F 3 "https://omronfs.omron.com/en_US/ecb/products/pdf/en-b3f.pdf" H 8700 1275 50  0001 C CNN
-F 4 "SWITCH TACTILE SPST-NO 0.05A 24V" H 8700 1075 50  0001 C CNN "Description"
-F 5 "Omron Electronics Inc" H 8700 1075 50  0001 C CNN "Manufacturer"
-F 6 "B3F-1020" H 8700 1075 50  0001 C CNN "Manufacturer PN"
+F 2 "lib_fp:ESwitch_TL1105_6mm_H7.5mm" H 8700 1275 50  0001 C CNN
+F 3 "https://www.e-switch.com/system/asset/product_line/data_sheet/144/TL1105.pdf" H 8700 1275 50  0001 C CNN
+F 4 "SWITCH TACTILE SPST-NO 0.05A 12V" H 8700 1075 50  0001 C CNN "Description"
+F 5 "E-Switch" H 8700 1075 50  0001 C CNN "Manufacturer"
+F 6 "TL1105SPF160Q" H 8700 1075 50  0001 C CNN "Manufacturer PN"
 F 7 "Digi-Key" H 8700 1075 50  0001 C CNN "Supplier"
-F 8 "SW402-ND" H 8700 1075 50  0001 C CNN "Supplier PN"
+F 8 "EG1861-ND" H 8700 1075 50  0001 C CNN "Supplier PN"
 	1    8700 1075
 	1    0    0    -1  
 $EndComp
@@ -147,13 +147,13 @@ U 1 1 60570781
 P 8700 1775
 F 0 "SW2" H 8700 1950 50  0000 C CNN
 F 1 "SW_Push" H 8700 1700 50  0000 C CNN
-F 2 "Button_Switch_THT:SW_PUSH_6mm_H5mm" H 8700 1975 50  0001 C CNN
-F 3 "https://omronfs.omron.com/en_US/ecb/products/pdf/en-b3f.pdf" H 8700 1975 50  0001 C CNN
-F 4 "SWITCH TACTILE SPST-NO 0.05A 24V" H 8700 1775 50  0001 C CNN "Description"
-F 5 "Omron Electronics Inc" H 8700 1775 50  0001 C CNN "Manufacturer"
-F 6 "B3F-1020" H 8700 1775 50  0001 C CNN "Manufacturer PN"
+F 2 "lib_fp:ESwitch_TL1105_6mm_H7.5mm" H 8700 1975 50  0001 C CNN
+F 3 "https://www.e-switch.com/system/asset/product_line/data_sheet/144/TL1105.pdf" H 8700 1975 50  0001 C CNN
+F 4 "SWITCH TACTILE SPST-NO 0.05A 12V" H 8700 1775 50  0001 C CNN "Description"
+F 5 "E-Switch" H 8700 1775 50  0001 C CNN "Manufacturer"
+F 6 "TL1105SPF160Q" H 8700 1775 50  0001 C CNN "Manufacturer PN"
 F 7 "Digi-Key" H 8700 1775 50  0001 C CNN "Supplier"
-F 8 "SW402-ND" H 8700 1775 50  0001 C CNN "Supplier PN"
+F 8 "EG1861-ND" H 8700 1775 50  0001 C CNN "Supplier PN"
 	1    8700 1775
 	1    0    0    -1  
 $EndComp
@@ -1624,13 +1624,13 @@ U 1 1 60C5021A
 P 8700 2475
 F 0 "SW3" H 8700 2650 50  0000 C CNN
 F 1 "SW_Push" H 8700 2400 50  0000 C CNN
-F 2 "Button_Switch_THT:SW_PUSH_6mm_H5mm" H 8700 2675 50  0001 C CNN
-F 3 "https://omronfs.omron.com/en_US/ecb/products/pdf/en-b3f.pdf" H 8700 2675 50  0001 C CNN
-F 4 "SWITCH TACTILE SPST-NO 0.05A 24V" H 8700 2475 50  0001 C CNN "Description"
-F 5 "Omron Electronics Inc" H 8700 2475 50  0001 C CNN "Manufacturer"
-F 6 "B3F-1020" H 8700 2475 50  0001 C CNN "Manufacturer PN"
+F 2 "lib_fp:ESwitch_TL1105_6mm_H7.5mm" H 8700 2675 50  0001 C CNN
+F 3 "https://www.e-switch.com/system/asset/product_line/data_sheet/144/TL1105.pdf" H 8700 2675 50  0001 C CNN
+F 4 "SWITCH TACTILE SPST-NO 0.05A 12V" H 8700 2475 50  0001 C CNN "Description"
+F 5 "E-Switch" H 8700 2475 50  0001 C CNN "Manufacturer"
+F 6 "TL1105SPF160Q" H 8700 2475 50  0001 C CNN "Manufacturer PN"
 F 7 "Digi-Key" H 8700 2475 50  0001 C CNN "Supplier"
-F 8 "SW402-ND" H 8700 2475 50  0001 C CNN "Supplier PN"
+F 8 "EG1861-ND" H 8700 2475 50  0001 C CNN "Supplier PN"
 	1    8700 2475
 	1    0    0    -1  
 $EndComp
@@ -1758,13 +1758,13 @@ U 1 1 60C6EB5A
 P 8700 3175
 F 0 "SW4" H 8700 3350 50  0000 C CNN
 F 1 "SW_Push" H 8700 3100 50  0000 C CNN
-F 2 "Button_Switch_THT:SW_PUSH_6mm_H5mm" H 8700 3375 50  0001 C CNN
-F 3 "https://omronfs.omron.com/en_US/ecb/products/pdf/en-b3f.pdf" H 8700 3375 50  0001 C CNN
-F 4 "SWITCH TACTILE SPST-NO 0.05A 24V" H 8700 3175 50  0001 C CNN "Description"
-F 5 "Omron Electronics Inc" H 8700 3175 50  0001 C CNN "Manufacturer"
-F 6 "B3F-1020" H 8700 3175 50  0001 C CNN "Manufacturer PN"
+F 2 "lib_fp:ESwitch_TL1105_6mm_H7.5mm" H 8700 3375 50  0001 C CNN
+F 3 "https://www.e-switch.com/system/asset/product_line/data_sheet/144/TL1105.pdf" H 8700 3375 50  0001 C CNN
+F 4 "SWITCH TACTILE SPST-NO 0.05A 12V" H 8700 3175 50  0001 C CNN "Description"
+F 5 "E-Switch" H 8700 3175 50  0001 C CNN "Manufacturer"
+F 6 "TL1105SPF160Q" H 8700 3175 50  0001 C CNN "Manufacturer PN"
 F 7 "Digi-Key" H 8700 3175 50  0001 C CNN "Supplier"
-F 8 "SW402-ND" H 8700 3175 50  0001 C CNN "Supplier PN"
+F 8 "EG1861-ND" H 8700 3175 50  0001 C CNN "Supplier PN"
 	1    8700 3175
 	1    0    0    -1  
 $EndComp
@@ -1895,14 +1895,14 @@ L Switch:SW_Push SW5
 U 1 1 60CA5C6C
 P 8700 4400
 F 0 "SW5" H 8700 4575 50  0000 C CNN
-F 1 "SW_Push" H 8700 4325 50  0000 C CNN
-F 2 "Button_Switch_THT:SW_PUSH_6mm_H5mm" H 8700 4600 50  0001 C CNN
-F 3 "https://omronfs.omron.com/en_US/ecb/products/pdf/en-b3f.pdf" H 8700 4600 50  0001 C CNN
-F 4 "SWITCH TACTILE SPST-NO 0.05A 24V" H 8700 4400 50  0001 C CNN "Description"
-F 5 "Omron Electronics Inc" H 8700 4400 50  0001 C CNN "Manufacturer"
-F 6 "B3F-1020" H 8700 4400 50  0001 C CNN "Manufacturer PN"
+F 1 "SW_Detect" H 8700 4325 50  0000 C CNN
+F 2 "lib_fp:CK_KSU213WLFG" H 8700 4600 50  0001 C CNN
+F 3 "https://www.ckswitches.com/media/1312/ksu.pdf" H 8700 4600 50  0001 C CNN
+F 4 "SWITCH DETECTOR SPST-NO 10MA 50V" H 8700 4400 50  0001 C CNN "Description"
+F 5 "C&K" H 8700 4400 50  0001 C CNN "Manufacturer"
+F 6 "KSU213WLFG" H 8700 4400 50  0001 C CNN "Manufacturer PN"
 F 7 "Digi-Key" H 8700 4400 50  0001 C CNN "Supplier"
-F 8 "SW402-ND" H 8700 4400 50  0001 C CNN "Supplier PN"
+F 8 "401-1598-1-ND" H 8700 4400 50  0001 C CNN "Supplier PN"
 	1    8700 4400
 	1    0    0    -1  
 $EndComp
@@ -2030,11 +2030,11 @@ Hinge Button
 Wire Notes Line
 	8275 3900 10450 3900
 Wire Notes Line
-	10450 3900 10450 5025
+	10450 3900 10450 5200
 Wire Notes Line
-	10450 5025 8275 5025
+	10450 5200 8275 5200
 Wire Notes Line
-	8275 5025 8275 3900
+	8275 5200 8275 3900
 $Comp
 L Device:C_Small C14
 U 1 1 60DB9B4D
@@ -2419,4 +2419,6 @@ Wire Wire Line
 	5475 2400 5025 2400
 Wire Wire Line
 	3525 2400 3925 2400
+Text Notes 8300 5175 0    50   Italic 0
+Switch choice subject to change\nduring mechanical design
 $EndSCHEMATC
