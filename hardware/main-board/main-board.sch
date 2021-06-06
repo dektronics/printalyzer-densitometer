@@ -1310,13 +1310,9 @@ U 1 1 60670A35
 P 4925 7250
 F 0 "TP2" H 4983 7322 50  0000 L CNN
 F 1 "3.3V" H 4983 7277 50  0001 L CNN
-F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 5125 7250 50  0001 C CNN
-F 3 "http://www.keyelco.com/product-pdf.cfm?p=1314" H 5125 7250 50  0001 C CNN
-F 4 "PC TEST POINT COMPACT BLACK" H 4925 7250 50  0001 C CNN "Description"
-F 5 "Keystone Electronics" H 4925 7250 50  0001 C CNN "Manufacturer"
-F 6 "5006" H 4925 7250 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 4925 7250 50  0001 C CNN "Supplier"
-F 8 "36-5006-ND" H 4925 7250 50  0001 C CNN "Supplier PN"
+F 2 "TestPoint:TestPoint_Pad_D2.0mm" H 5125 7250 50  0001 C CNN
+F 3 "~" H 5125 7250 50  0001 C CNN
+F 4 "3.3V" H 4925 7250 50  0001 C CNN "User Label"
 	1    4925 7250
 	1    0    0    -1  
 $EndComp
@@ -1522,6 +1518,11 @@ F 0 "U1" H 925 1625 50  0000 R CNN
 F 1 "TSL2591" H 925 1525 50  0000 R CNN
 F 2 "lib_fp:AMS_TSL2591" H 1250 1125 50  0001 C CNN
 F 3 "http://ams.com/documents/20143/36005/TSL2591_DS000338_5-00.pdf" H 2000 1925 50  0001 C CNN
+F 4 "SENSOR OPT AMBIENT 6DFN" H 1250 1625 50  0001 C CNN "Description"
+F 5 "ams" H 1250 1625 50  0001 C CNN "Manufacturer"
+F 6 "TSL25911FN" H 1250 1625 50  0001 C CNN "Manufacturer PN"
+F 7 "Mouser" H 1250 1625 50  0001 C CNN "Supplier"
+F 8 "985-TSL25911FN" H 1250 1625 50  0001 C CNN "Supplier PN"
 	1    1250 1625
 	1    0    0    -1  
 $EndComp
@@ -1546,9 +1547,15 @@ L Connector_Generic:Conn_01x02 J4
 U 1 1 60BB2239
 P 2175 4200
 F 0 "J4" H 2255 4192 50  0000 L CNN
-F 1 "Conn_01x02" H 1950 4000 50  0000 L CNN
-F 2 "" H 2175 4200 50  0001 C CNN
-F 3 "~" H 2175 4200 50  0001 C CNN
+F 1 "Conn_01x02" H 1950 4000 50  0001 L CNN
+F 2 "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical" H 2175 4200 50  0001 C CNN
+F 3 "http://www.jst-mfg.com/product/pdf/eng/ePH.pdf" H 2175 4200 50  0001 C CNN
+F 4 "Trans LED" H 2175 4000 50  0000 C CNN "User Label"
+F 5 "CONN HEADER VERT 2POS 2MM" H 2175 4200 50  0001 C CNN "Description"
+F 6 "JST Sales America Inc." H 2175 4200 50  0001 C CNN "Manufacturer"
+F 7 "B2B-PH-K-S(LF)(SN)" H 2175 4200 50  0001 C CNN "Manufacturer PN"
+F 8 "Digi-Key" H 2175 4200 50  0001 C CNN "Supplier"
+F 9 "455-1704-ND" H 2175 4200 50  0001 C CNN "Supplier PN"
 	1    2175 4200
 	1    0    0    -1  
 $EndComp
@@ -2041,8 +2048,13 @@ U 1 1 60DB9B4D
 P 6050 1075
 F 0 "C14" H 6142 1121 50  0000 L CNN
 F 1 "1uF" H 6142 1030 50  0000 L CNN
-F 2 "" H 6050 1075 50  0001 C CNN
-F 3 "~" H 6050 1075 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 6050 1075 50  0001 C CNN
+F 3 "https://media.digikey.com/pdf/Data%20Sheets/Samsung%20PDFs/CL10B105KA8NNNC_char.pdf" H 6050 1075 50  0001 C CNN
+F 4 "CAP CER 1UF 25V X7R 0603" H 6050 1075 50  0001 C CNN "Description"
+F 5 "Samsung Electro-Mechanics" H 6050 1075 50  0001 C CNN "Manufacturer"
+F 6 "CL10B105KA8NNNC" H 6050 1075 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 6050 1075 50  0001 C CNN "Supplier"
+F 8 "1276-1184-1-ND" H 6050 1075 50  0001 C CNN "Supplier PN"
 	1    6050 1075
 	1    0    0    -1  
 $EndComp
@@ -2052,8 +2064,13 @@ U 1 1 60DBA65D
 P 6050 1475
 F 0 "C15" H 6142 1521 50  0000 L CNN
 F 1 "1uF" H 6142 1430 50  0000 L CNN
-F 2 "" H 6050 1475 50  0001 C CNN
-F 3 "~" H 6050 1475 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 6050 1475 50  0001 C CNN
+F 3 "https://media.digikey.com/pdf/Data%20Sheets/Samsung%20PDFs/CL10B105KA8NNNC_char.pdf" H 6050 1475 50  0001 C CNN
+F 4 "CAP CER 1UF 25V X7R 0603" H 6050 1475 50  0001 C CNN "Description"
+F 5 "Samsung Electro-Mechanics" H 6050 1475 50  0001 C CNN "Manufacturer"
+F 6 "CL10B105KA8NNNC" H 6050 1475 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 6050 1475 50  0001 C CNN "Supplier"
+F 8 "1276-1184-1-ND" H 6050 1475 50  0001 C CNN "Supplier PN"
 	1    6050 1475
 	1    0    0    -1  
 $EndComp
@@ -2064,7 +2081,11 @@ P 6800 2025
 F 0 "J3" H 6750 3250 60  0000 L CNN
 F 1 "Display Connector" H 6400 800 60  0000 L CNN
 F 2 "lib_fp:ER-CON30HT-1" H 6978 1919 60  0001 L CNN
-F 3 "" H 7250 3725 60  0000 C CNN
+F 3 "https://www.buydisplay.com/download/connector/ER-CON30HT-1.pdf" H 7250 3725 60  0001 C CNN
+F 4 "CONN FFC TOP 30POS 0.50MM R/A" H 6800 2025 50  0001 C CNN "Description"
+F 5 "EastRising" H 6800 2025 50  0001 C CNN "Manufacturer"
+F 6 "ER-CON30HT-1" H 6800 2025 50  0001 C CNN "Manufacturer PN"
+F 7 "BuyDisplay" H 6800 2025 50  0001 C CNN "Supplier"
 	1    6800 2025
 	1    0    0    -1  
 $EndComp
@@ -2074,8 +2095,13 @@ U 1 1 60E2BE66
 P 5875 1875
 F 0 "C16" H 5967 1921 50  0000 L CNN
 F 1 "1uF" H 5967 1830 50  0000 L CNN
-F 2 "" H 5875 1875 50  0001 C CNN
-F 3 "~" H 5875 1875 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 5875 1875 50  0001 C CNN
+F 3 "https://media.digikey.com/pdf/Data%20Sheets/Samsung%20PDFs/CL10B105KA8NNNC_char.pdf" H 5875 1875 50  0001 C CNN
+F 4 "CAP CER 1UF 25V X7R 0603" H 5875 1875 50  0001 C CNN "Description"
+F 5 "Samsung Electro-Mechanics" H 5875 1875 50  0001 C CNN "Manufacturer"
+F 6 "CL10B105KA8NNNC" H 5875 1875 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 5875 1875 50  0001 C CNN "Supplier"
+F 8 "1276-1184-1-ND" H 5875 1875 50  0001 C CNN "Supplier PN"
 	1    5875 1875
 	1    0    0    -1  
 $EndComp
@@ -2085,8 +2111,13 @@ U 1 1 60E2CCE8
 P 5800 2500
 F 0 "C17" H 5892 2546 50  0000 L CNN
 F 1 "1uF" H 5892 2455 50  0000 L CNN
-F 2 "" H 5800 2500 50  0001 C CNN
-F 3 "~" H 5800 2500 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 5800 2500 50  0001 C CNN
+F 3 "https://media.digikey.com/pdf/Data%20Sheets/Samsung%20PDFs/CL10B105KA8NNNC_char.pdf" H 5800 2500 50  0001 C CNN
+F 4 "CAP CER 1UF 25V X7R 0603" H 5800 2500 50  0001 C CNN "Description"
+F 5 "Samsung Electro-Mechanics" H 5800 2500 50  0001 C CNN "Manufacturer"
+F 6 "CL10B105KA8NNNC" H 5800 2500 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 5800 2500 50  0001 C CNN "Supplier"
+F 8 "1276-1184-1-ND" H 5800 2500 50  0001 C CNN "Supplier PN"
 	1    5800 2500
 	1    0    0    -1  
 $EndComp
@@ -2164,8 +2195,13 @@ U 1 1 61055858
 P 7875 2575
 F 0 "R10" H 7934 2621 50  0000 L CNN
 F 1 "390K" H 7934 2530 50  0000 L CNN
-F 2 "" H 7875 2575 50  0001 C CNN
-F 3 "~" H 7875 2575 50  0001 C CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 7875 2575 50  0001 C CNN
+F 3 "https://www.vishay.com/docs/28773/crcwce3.pdf" H 7875 2575 50  0001 C CNN
+F 4 "RES SMD 390K OHM 1% 1/10W 0603" H 7875 2575 50  0001 C CNN "Description"
+F 5 "Vishay Dale" H 7875 2575 50  0001 C CNN "Manufacturer"
+F 6 "CRCW0603390KFKEAC" H 7875 2575 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 7875 2575 50  0001 C CNN "Supplier"
+F 8 "541-5379-1-ND" H 7875 2575 50  0001 C CNN "Supplier PN"
 	1    7875 2575
 	1    0    0    -1  
 $EndComp
@@ -2175,8 +2211,13 @@ U 1 1 610812B9
 P 7700 2975
 F 0 "C20" H 7792 3021 50  0000 L CNN
 F 1 "4.7uF" H 7792 2930 50  0000 L CNN
-F 2 "" H 7700 2975 50  0001 C CNN
-F 3 "~" H 7700 2975 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 7700 2975 50  0001 C CNN
+F 3 "https://product.tdk.com/info/en/catalog/datasheets/mlcc_commercial_general_en.pdf" H 7700 2975 50  0001 C CNN
+F 4 "CAP CER 4.7UF 16V X5R 0603" H 7700 2975 50  0001 C CNN "Description"
+F 5 "TDK Corporation" H 7700 2975 50  0001 C CNN "Manufacturer"
+F 6 "C1608X5R1C475K080AC" H 7700 2975 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 7700 2975 50  0001 C CNN "Supplier"
+F 8 "445-7478-1-ND" H 7700 2975 50  0001 C CNN "Supplier PN"
 	1    7700 2975
 	1    0    0    -1  
 $EndComp
@@ -2186,8 +2227,13 @@ U 1 1 610822AF
 P 7300 2975
 F 0 "C19" H 7392 3021 50  0000 L CNN
 F 1 "2.2uF" H 7392 2930 50  0000 L CNN
-F 2 "" H 7300 2975 50  0001 C CNN
-F 3 "~" H 7300 2975 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 7300 2975 50  0001 C CNN
+F 3 "http://www.samsungsem.com/kr/support/product-search/mlcc/CL10B225KP8NNNC.jsp" H 7300 2975 50  0001 C CNN
+F 4 "CAP CER 2.2UF 10V X7R 0603" H 7300 2975 50  0001 C CNN "Description"
+F 5 "Samsung Electro-Mechanics" H 7300 2975 50  0001 C CNN "Manufacturer"
+F 6 "CL10B225KP8NNNC" H 7300 2975 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 7300 2975 50  0001 C CNN "Supplier"
+F 8 "1276-1134-1-ND" H 7300 2975 50  0001 C CNN "Supplier PN"
 	1    7300 2975
 	1    0    0    -1  
 $EndComp
@@ -2283,19 +2329,11 @@ Wire Wire Line
 	7250 2875 7300 2875
 Wire Wire Line
 	7250 3075 7300 3075
-Connection ~ 7300 2875
 Wire Wire Line
 	7700 2675 7250 2675
-Connection ~ 7700 2875
-Connection ~ 7700 3075
-Connection ~ 7300 3075
 Wire Wire Line
 	6350 1775 5875 1775
 Connection ~ 5875 1775
-Wire Wire Line
-	7300 2875 7700 2875
-Wire Wire Line
-	7300 3075 7700 3075
 Wire Wire Line
 	7700 3075 7700 3150
 Wire Wire Line
@@ -2329,7 +2367,7 @@ U 1 1 60BA0BEB
 P 1825 4350
 F 0 "NT1" H 1825 4300 50  0000 C CNN
 F 1 "Net-Tie_2" H 1825 4440 50  0001 C CNN
-F 2 "" H 1825 4350 50  0001 C CNN
+F 2 "NetTie:NetTie-2_SMD_Pad0.5mm" H 1825 4350 50  0001 C CNN
 F 3 "~" H 1825 4350 50  0001 C CNN
 	1    1825 4350
 	1    0    0    -1  
@@ -2347,7 +2385,7 @@ U 1 1 60C06AD9
 P 7500 2275
 F 0 "NT2" H 7500 2325 50  0000 C CNN
 F 1 "Net-Tie_2" H 7500 2365 50  0001 C CNN
-F 2 "" H 7500 2275 50  0001 C CNN
+F 2 "NetTie:NetTie-2_SMD_Pad0.5mm" H 7500 2275 50  0001 C CNN
 F 3 "~" H 7500 2275 50  0001 C CNN
 	1    7500 2275
 	1    0    0    -1  
@@ -2421,4 +2459,30 @@ Wire Wire Line
 	3525 2400 3925 2400
 Text Notes 8300 5175 0    50   Italic 0
 Switch choice subject to change\nduring mechanical design
+$Comp
+L power:GND #PWR0119
+U 1 1 60BE6FE8
+P 7300 3150
+F 0 "#PWR0119" H 7300 2900 50  0001 C CNN
+F 1 "GND" H 7305 2977 50  0000 C CNN
+F 2 "" H 7300 3150 50  0001 C CNN
+F 3 "" H 7300 3150 50  0001 C CNN
+	1    7300 3150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7300 3075 7300 3150
+Connection ~ 7300 3075
+$Comp
+L power:PWR_FLAG #FLG0103
+U 1 1 60BF6E7F
+P 7300 2875
+F 0 "#FLG0103" H 7300 2950 50  0001 C CNN
+F 1 "PWR_FLAG" H 7300 3048 50  0001 C CNN
+F 2 "" H 7300 2875 50  0001 C CNN
+F 3 "~" H 7300 2875 50  0001 C CNN
+	1    7300 2875
+	1    0    0    -1  
+$EndComp
+Connection ~ 7300 2875
 $EndSCHEMATC
