@@ -80,3 +80,12 @@ this directory's `.gitignore` file.
 ### OLED_128x64
 * Status: Included (CERN OHL V1.1)
 * Source: Tinkerforge KiCad Libraries <https://github.com/Tinkerforge/kicad-libraries>
+
+### TL1105SPFxxxx
+* Status: Included (Terms unspecified, linked from Digi-Key product page)
+* Source: Manufacturer <http://stp-3d-models.e-switch.com/stp3dmodels/TL1105SPFxxxx.stp>
+
+### KSU213WLFG
+* Status: Included ([Terms](https://www.cadenas.de/terms-of-use-3d-cad-models)
+  somewhat unclear, but may be okay for project use.)
+* Source: Digi-Key Distributor OEM Embedded PARTcommunity Portal
