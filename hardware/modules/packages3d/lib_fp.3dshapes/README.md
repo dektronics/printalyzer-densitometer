@@ -89,3 +89,7 @@ this directory's `.gitignore` file.
 * Status: Included ([Terms](https://www.cadenas.de/terms-of-use-3d-cad-models)
   somewhat unclear, but may be okay for project use.)
 * Source: Digi-Key Distributor OEM Embedded PARTcommunity Portal
+
+### 0ZCJ0025FF2E
+* Status: Included
+* Source: SnapEDA <https://www.snapeda.com/parts/0ZCJ0025FF2E/Bel%20Fuse/view-part/>
