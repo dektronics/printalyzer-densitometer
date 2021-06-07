@@ -80,6 +80,7 @@ this directory's `.gitignore` file.
 ### OLED_128x64
 * Status: Included (CERN OHL V1.1)
 * Source: Tinkerforge KiCad Libraries <https://github.com/Tinkerforge/kicad-libraries>
+* Notes: Modified using Autodesk Fusion 360 to meet project needs
 
 ### TL1105SPFxxxx
 * Status: Included (Terms unspecified, linked from Digi-Key product page)
