@@ -1008,18 +1008,18 @@ Connection ~ 9325 2175
 $Comp
 L Connector:TestPoint TP1
 U 1 1 6066F1AB
-P 1350 6975
-F 0 "TP1" H 1275 7200 50  0000 L CNN
-F 1 "5V" H 1408 7002 50  0001 L CNN
-F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 1550 6975 50  0001 C CNN
-F 3 "http://www.keyelco.com/product-pdf.cfm?p=1314" H 1550 6975 50  0001 C CNN
-F 4 "PC TEST POINT COMPACT BLACK" H 1350 6975 50  0001 C CNN "Description"
-F 5 "Keystone Electronics" H 1350 6975 50  0001 C CNN "Manufacturer"
-F 6 "5006" H 1350 6975 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 1350 6975 50  0001 C CNN "Supplier"
-F 8 "36-5006-ND" H 1350 6975 50  0001 C CNN "Supplier PN"
-	1    1350 6975
-	1    0    0    -1  
+P 3875 6625
+F 0 "TP1" H 3800 6850 50  0000 L CNN
+F 1 "5V" H 3933 6652 50  0001 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 4075 6625 50  0001 C CNN
+F 3 "http://www.keyelco.com/product-pdf.cfm?p=1314" H 4075 6625 50  0001 C CNN
+F 4 "PC TEST POINT COMPACT BLACK" H 3875 6625 50  0001 C CNN "Description"
+F 5 "Keystone Electronics" H 3875 6625 50  0001 C CNN "Manufacturer"
+F 6 "5006" H 3875 6625 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 3875 6625 50  0001 C CNN "Supplier"
+F 8 "36-5006-ND" H 3875 6625 50  0001 C CNN "Supplier PN"
+	1    3875 6625
+	-1   0    0    1   
 $EndComp
 NoConn ~ 725  7575
 NoConn ~ 1750 1525
@@ -1031,9 +1031,6 @@ NoConn ~ 3925 2600
 NoConn ~ 5025 1700
 NoConn ~ 5025 1800
 NoConn ~ 1125 7375
-Connection ~ 1350 6975
-Wire Wire Line
-	1350 6975 1525 6975
 Wire Wire Line
 	1525 6975 1525 6625
 Wire Wire Line
@@ -1043,8 +1040,6 @@ Wire Wire Line
 Wire Wire Line
 	2675 7175 2625 7175
 Connection ~ 2675 6625
-Wire Wire Line
-	1125 6975 1350 6975
 $Comp
 L Device:C_Small C4
 U 1 1 6060A6DB
@@ -2536,4 +2531,6 @@ F 3 "~" H 3875 6625 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 Connection ~ 3875 6625
+Wire Wire Line
+	1125 6975 1525 6975
 $EndSCHEMATC
