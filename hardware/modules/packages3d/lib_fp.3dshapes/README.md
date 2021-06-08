@@ -94,3 +94,7 @@ this directory's `.gitignore` file.
 ### 0ZCJ0025FF2E
 * Status: Included
 * Source: SnapEDA <https://www.snapeda.com/parts/0ZCJ0025FF2E/Bel%20Fuse/view-part/>
+
+### BM02B-SRSS-TB
+* Status: Not included (Not redistributable)
+* Source: https://www.jst-mfg.com/product/detail_e.php?series=231
