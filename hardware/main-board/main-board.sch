@@ -1207,14 +1207,14 @@ U 1 1 60BB2239
 P 2175 4200
 F 0 "J4" H 2255 4192 50  0000 L CNN
 F 1 "Conn_01x02" H 1950 4000 50  0001 L CNN
-F 2 "Connector_JST:JST_PH_B2B-PH-K_1x02_P2.00mm_Vertical" H 2175 4200 50  0001 C CNN
+F 2 "Connector_JST:JST_SH_BM02B-SRSS-TB_1x02-1MP_P1.00mm_Vertical" H 2175 4200 50  0001 C CNN
 F 3 "http://www.jst-mfg.com/product/pdf/eng/ePH.pdf" H 2175 4200 50  0001 C CNN
 F 4 "Trans LED" H 2175 4000 50  0000 C CNN "User Label"
-F 5 "CONN HEADER VERT 2POS 2MM" H 2175 4200 50  0001 C CNN "Description"
+F 5 "CONN HEADER SMD 2POS 1MM" H 2175 4200 50  0001 C CNN "Description"
 F 6 "JST Sales America Inc." H 2175 4200 50  0001 C CNN "Manufacturer"
-F 7 "B2B-PH-K-S(LF)(SN)" H 2175 4200 50  0001 C CNN "Manufacturer PN"
+F 7 "BM02B-SRSS-TB(LF)(SN)" H 2175 4200 50  0001 C CNN "Manufacturer PN"
 F 8 "Digi-Key" H 2175 4200 50  0001 C CNN "Supplier"
-F 9 "455-1704-ND" H 2175 4200 50  0001 C CNN "Supplier PN"
+F 9 "455-1788-1-ND" H 2175 4200 50  0001 C CNN "Supplier PN"
 	1    2175 4200
 	1    0    0    -1  
 $EndComp
