@@ -2400,15 +2400,7 @@ $EndComp
 Wire Wire Line
 	6025 5050 6650 5050
 Wire Wire Line
-	6650 4550 6725 4550
-Wire Wire Line
-	6650 5050 6650 4550
-Wire Wire Line
 	6025 4950 6600 4950
-Wire Wire Line
-	6600 4450 6725 4450
-Wire Wire Line
-	6600 4950 6600 4450
 Wire Wire Line
 	6025 4350 6725 4350
 Wire Wire Line
@@ -2444,14 +2436,12 @@ L Project:Conn_ST_STDC14 J2
 U 1 1 60586F63
 P 5525 4550
 F 0 "J2" H 5082 4596 50  0000 R CNN
-F 1 "STDC14" H 5082 4505 50  0000 R CNN
-F 2 "lib_fp:Samtec_FTSH-107-01-L-DV-K-A_2x07_P1.27mm" H 5525 3450 50  0001 C CNN
-F 3 "https://www.mouser.com/datasheet/2/527/ftsh_smt-1316912.pdf" V 5175 3300 50  0001 C CNN
-F 4 "CONN HEADER SMD 14POS 1.27MM" H 5525 4550 50  0001 C CNN "Description"
-F 5 "Samtec Inc." H 5525 4550 50  0001 C CNN "Manufacturer"
-F 6 "FTSH-107-01-L-DV-K-A" H 5525 4550 50  0001 C CNN "Manufacturer PN"
-F 7 "Mouser" H 5525 4550 50  0001 C CNN "Supplier"
-F 8 "200-FTSH10701LDVKA" H 5525 4550 50  0001 C CNN "Supplier PN"
+F 1 "DNI" H 5075 4400 50  0000 R CNN
+F 2 "Connector:Tag-Connect_TC2070-IDC-FP_2x07_P1.27mm_Vertical" H 5525 3450 50  0001 C CNN
+F 3 "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/TC2070-IDC_Datasheet_11.pdf" V 5175 3300 50  0001 C CNN
+F 4 "Tag-Connect" H 5525 4550 50  0001 C CNN "Manufacturer"
+F 5 "TC2070-IDC-050" H 5525 4550 50  0001 C CNN "Manufacturer PN"
+F 6 "STDC14" H 4950 4500 50  0000 C CNN "User Label"
 	1    5525 4550
 	1    0    0    -1  
 $EndComp
@@ -2533,4 +2523,12 @@ $EndComp
 Connection ~ 3875 6625
 Wire Wire Line
 	1125 6975 1525 6975
+Wire Wire Line
+	6650 5050 6650 4550
+Wire Wire Line
+	6650 4550 6725 4550
+Wire Wire Line
+	6600 4950 6600 4450
+Wire Wire Line
+	6600 4450 6725 4450
 $EndSCHEMATC
