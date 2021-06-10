@@ -98,3 +98,7 @@ this directory's `.gitignore` file.
 ### BM02B-SRSS-TB
 * Status: Not included (Not redistributable)
 * Source: https://www.jst-mfg.com/product/detail_e.php?series=231
+
+### SM02B-SRSS-TB
+* Status: Not included (Not redistributable)
+* Source: https://www.jst-mfg.com/product/detail_e.php?series=231
