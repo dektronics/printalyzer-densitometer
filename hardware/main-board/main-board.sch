@@ -14,18 +14,18 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L MCU_ST_STM32L0:STM32L052K6Ux U2
+L MCU_ST_STM32L0:STM32L052K8Ux U2
 U 1 1 6056A21B
 P 4525 2400
 F 0 "U2" H 4100 3250 50  0000 C CNN
-F 1 "STM32L052K6U6" H 4900 1450 50  0000 C CNN
+F 1 "STM32L052K8U6" H 4900 1450 50  0000 C CNN
 F 2 "lib_fp:ST_UFQFPN32" H 4025 1500 50  0001 R CNN
 F 3 "http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/DM00108217.pdf" H 4525 2400 50  0001 C CNN
-F 4 "IC MCU 32BIT 32KB FLASH 32UFQFPN" H 4525 2400 50  0001 C CNN "Description"
+F 4 "IC MCU 32BIT 64KB FLASH 32UFQFPN" H 4525 2400 50  0001 C CNN "Description"
 F 5 "STMicroelectronics" H 4525 2400 50  0001 C CNN "Manufacturer"
-F 6 "STM32L052K6U6" H 4525 2400 50  0001 C CNN "Manufacturer PN"
+F 6 "STM32L052K8U6" H 4525 2400 50  0001 C CNN "Manufacturer PN"
 F 7 "Digi-Key" H 4525 2400 50  0001 C CNN "Supplier"
-F 8 "497-17492-ND" H 4525 2400 50  0001 C CNN "Supplier PN"
+F 8 "497-17494-ND" H 4525 2400 50  0001 C CNN "Supplier PN"
 	1    4525 2400
 	1    0    0    -1  
 $EndComp
@@ -2027,8 +2027,6 @@ Wire Wire Line
 	5025 3200 5475 3200
 Wire Wire Line
 	5025 2500 5475 2500
-Text Notes 2975 3575 0    50   Italic 0
-Pin assignments subject to change\nduring PCB layout
 Wire Wire Line
 	7800 1275 7800 1375
 Text Label 7675 975  2    50   Italic 0
