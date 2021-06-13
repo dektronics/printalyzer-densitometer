@@ -160,67 +160,67 @@ $EndComp
 $Comp
 L Mechanical:MountingHole H1
 U 1 1 60572EAB
-P 9700 5400
-F 0 "H1" H 9800 5446 50  0000 L CNN
-F 1 "MountingHole" H 9800 5355 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 9700 5400 50  0001 C CNN
-F 3 "~" H 9700 5400 50  0001 C CNN
-	1    9700 5400
+P 8850 5400
+F 0 "H1" H 8950 5446 50  0000 L CNN
+F 1 "MountingHole" H 8950 5355 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 8850 5400 50  0001 C CNN
+F 3 "~" H 8850 5400 50  0001 C CNN
+	1    8850 5400
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole H2
 U 1 1 60573343
-P 9700 5625
-F 0 "H2" H 9800 5671 50  0000 L CNN
-F 1 "MountingHole" H 9800 5580 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 9700 5625 50  0001 C CNN
-F 3 "~" H 9700 5625 50  0001 C CNN
-	1    9700 5625
+P 8850 5625
+F 0 "H2" H 8950 5671 50  0000 L CNN
+F 1 "MountingHole" H 8950 5580 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 8850 5625 50  0001 C CNN
+F 3 "~" H 8850 5625 50  0001 C CNN
+	1    8850 5625
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole H3
 U 1 1 605736BA
-P 9700 5850
-F 0 "H3" H 9800 5896 50  0000 L CNN
-F 1 "MountingHole" H 9800 5805 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 9700 5850 50  0001 C CNN
-F 3 "~" H 9700 5850 50  0001 C CNN
-	1    9700 5850
+P 8850 5850
+F 0 "H3" H 8950 5896 50  0000 L CNN
+F 1 "MountingHole" H 8950 5805 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 8850 5850 50  0001 C CNN
+F 3 "~" H 8850 5850 50  0001 C CNN
+	1    8850 5850
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole H4
 U 1 1 605739B5
-P 9700 6075
-F 0 "H4" H 9800 6121 50  0000 L CNN
-F 1 "MountingHole" H 9800 6030 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 9700 6075 50  0001 C CNN
-F 3 "~" H 9700 6075 50  0001 C CNN
-	1    9700 6075
+P 8850 6075
+F 0 "H4" H 8950 6121 50  0000 L CNN
+F 1 "MountingHole" H 8950 6030 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 8850 6075 50  0001 C CNN
+F 3 "~" H 8850 6075 50  0001 C CNN
+	1    8850 6075
 	1    0    0    -1  
 $EndComp
 $Comp
-L Mechanical:MountingHole H5
+L Mechanical:MountingHole_Pad H5
 U 1 1 60573BE2
-P 9700 6300
-F 0 "H5" H 9800 6346 50  0000 L CNN
-F 1 "MountingHole" H 9800 6255 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 9700 6300 50  0001 C CNN
-F 3 "~" H 9700 6300 50  0001 C CNN
-	1    9700 6300
+P 9650 5450
+F 0 "H5" H 9750 5550 50  0000 L CNN
+F 1 "MountingHole" H 9750 5450 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 9650 5450 50  0001 C CNN
+F 3 "~" H 9650 5450 50  0001 C CNN
+	1    9650 5450
 	1    0    0    -1  
 $EndComp
 $Comp
-L Mechanical:MountingHole H6
+L Mechanical:MountingHole_Pad H6
 U 1 1 60573EB9
-P 9700 6525
-F 0 "H6" H 9800 6571 50  0000 L CNN
-F 1 "MountingHole" H 9800 6480 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 9700 6525 50  0001 C CNN
-F 3 "~" H 9700 6525 50  0001 C CNN
-	1    9700 6525
+P 9650 5900
+F 0 "H6" H 9750 6000 50  0000 L CNN
+F 1 "MountingHole" H 9750 5900 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 9650 5900 50  0001 C CNN
+F 3 "~" H 9650 5900 50  0001 C CNN
+	1    9650 5900
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1005,22 +1005,6 @@ Wire Wire Line
 Wire Wire Line
 	10125 2175 10125 2075
 Connection ~ 9325 2175
-$Comp
-L Connector:TestPoint TP1
-U 1 1 6066F1AB
-P 3875 6625
-F 0 "TP1" H 3800 6850 50  0000 L CNN
-F 1 "5V" H 3933 6652 50  0001 L CNN
-F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 4075 6625 50  0001 C CNN
-F 3 "http://www.keyelco.com/product-pdf.cfm?p=1314" H 4075 6625 50  0001 C CNN
-F 4 "PC TEST POINT COMPACT BLACK" H 3875 6625 50  0001 C CNN "Description"
-F 5 "Keystone Electronics" H 3875 6625 50  0001 C CNN "Manufacturer"
-F 6 "5006" H 3875 6625 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 3875 6625 50  0001 C CNN "Supplier"
-F 8 "36-5006-ND" H 3875 6625 50  0001 C CNN "Supplier PN"
-	1    3875 6625
-	-1   0    0    1   
-$EndComp
 NoConn ~ 725  7575
 NoConn ~ 1750 1525
 NoConn ~ 3925 2100
@@ -1130,25 +1114,6 @@ Wire Notes Line
 	5575 550  2950 550 
 Wire Notes Line
 	2950 3625 5575 3625
-Wire Wire Line
-	825  7575 1100 7575
-Connection ~ 825  7575
-$Comp
-L Connector:TestPoint TP3
-U 1 1 605B26C3
-P 1100 7575
-F 0 "TP3" H 1025 7800 50  0000 L CNN
-F 1 "GND" H 1158 7602 50  0001 L CNN
-F 2 "TestPoint:TestPoint_Keystone_5005-5009_Compact" H 1300 7575 50  0001 C CNN
-F 3 "http://www.keyelco.com/product-pdf.cfm?p=1314" H 1300 7575 50  0001 C CNN
-F 4 "PC TEST POINT COMPACT BLACK" H 1100 7575 50  0001 C CNN "Description"
-F 5 "Keystone Electronics" H 1100 7575 50  0001 C CNN "Manufacturer"
-F 6 "5006" H 1100 7575 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 1100 7575 50  0001 C CNN "Supplier"
-F 8 "36-5006-ND" H 1100 7575 50  0001 C CNN "Supplier PN"
-	1    1100 7575
-	-1   0    0    1   
-$EndComp
 Text Label 1125 7175 0    50   ~ 0
 USB_CONN_D+
 Text Label 1125 7275 0    50   ~ 0
@@ -2171,10 +2136,10 @@ Wire Wire Line
 	2000 5550 2300 5550
 Connection ~ 2000 5550
 $Comp
-L Connector:TestPoint TP2
+L Connector:TestPoint TP1
 U 1 1 60670A35
 P 2000 5550
-F 0 "TP2" H 2058 5622 50  0000 L CNN
+F 0 "TP1" H 2058 5622 50  0000 L CNN
 F 1 "3.3V" H 2058 5577 50  0001 L CNN
 F 2 "TestPoint:TestPoint_Pad_D2.0mm" H 2200 5550 50  0001 C CNN
 F 3 "~" H 2200 5550 50  0001 C CNN
@@ -2531,4 +2496,26 @@ Wire Wire Line
 	6600 4950 6600 4450
 Wire Wire Line
 	6600 4450 6725 4450
+$Comp
+L power:GND #PWR0124
+U 1 1 60CBE3DA
+P 9650 5550
+F 0 "#PWR0124" H 9650 5300 50  0001 C CNN
+F 1 "GND" H 9650 5400 50  0000 C CNN
+F 2 "" H 9650 5550 50  0001 C CNN
+F 3 "" H 9650 5550 50  0001 C CNN
+	1    9650 5550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0132
+U 1 1 60CBE6B6
+P 9650 6000
+F 0 "#PWR0132" H 9650 5750 50  0001 C CNN
+F 1 "GND" H 9650 5850 50  0000 C CNN
+F 2 "" H 9650 6000 50  0001 C CNN
+F 3 "" H 9650 6000 50  0001 C CNN
+	1    9650 6000
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
