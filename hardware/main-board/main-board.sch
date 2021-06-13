@@ -160,67 +160,67 @@ $EndComp
 $Comp
 L Mechanical:MountingHole H1
 U 1 1 60572EAB
-P 8850 5400
-F 0 "H1" H 8950 5446 50  0000 L CNN
-F 1 "MountingHole" H 8950 5355 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 8850 5400 50  0001 C CNN
-F 3 "~" H 8850 5400 50  0001 C CNN
-	1    8850 5400
+P 8450 5400
+F 0 "H1" H 8550 5446 50  0000 L CNN
+F 1 "MountingHole" H 8550 5355 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 8450 5400 50  0001 C CNN
+F 3 "~" H 8450 5400 50  0001 C CNN
+	1    8450 5400
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole H2
 U 1 1 60573343
-P 8850 5625
-F 0 "H2" H 8950 5671 50  0000 L CNN
-F 1 "MountingHole" H 8950 5580 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 8850 5625 50  0001 C CNN
-F 3 "~" H 8850 5625 50  0001 C CNN
-	1    8850 5625
+P 8450 5625
+F 0 "H2" H 8550 5671 50  0000 L CNN
+F 1 "MountingHole" H 8550 5580 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 8450 5625 50  0001 C CNN
+F 3 "~" H 8450 5625 50  0001 C CNN
+	1    8450 5625
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole H3
 U 1 1 605736BA
-P 8850 5850
-F 0 "H3" H 8950 5896 50  0000 L CNN
-F 1 "MountingHole" H 8950 5805 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 8850 5850 50  0001 C CNN
-F 3 "~" H 8850 5850 50  0001 C CNN
-	1    8850 5850
+P 8450 5850
+F 0 "H3" H 8550 5896 50  0000 L CNN
+F 1 "MountingHole" H 8550 5805 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 8450 5850 50  0001 C CNN
+F 3 "~" H 8450 5850 50  0001 C CNN
+	1    8450 5850
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole H4
 U 1 1 605739B5
-P 8850 6075
-F 0 "H4" H 8950 6121 50  0000 L CNN
-F 1 "MountingHole" H 8950 6030 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 8850 6075 50  0001 C CNN
-F 3 "~" H 8850 6075 50  0001 C CNN
-	1    8850 6075
+P 8450 6075
+F 0 "H4" H 8550 6121 50  0000 L CNN
+F 1 "MountingHole" H 8550 6030 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 8450 6075 50  0001 C CNN
+F 3 "~" H 8450 6075 50  0001 C CNN
+	1    8450 6075
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole_Pad H5
 U 1 1 60573BE2
-P 9650 5450
-F 0 "H5" H 9750 5550 50  0000 L CNN
-F 1 "MountingHole" H 9750 5450 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 9650 5450 50  0001 C CNN
-F 3 "~" H 9650 5450 50  0001 C CNN
-	1    9650 5450
+P 9450 5450
+F 0 "H5" H 9550 5550 50  0000 L CNN
+F 1 "MountingHole" H 9550 5450 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 9450 5450 50  0001 C CNN
+F 3 "~" H 9450 5450 50  0001 C CNN
+	1    9450 5450
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole_Pad H6
 U 1 1 60573EB9
-P 9650 5900
-F 0 "H6" H 9750 6000 50  0000 L CNN
-F 1 "MountingHole" H 9750 5900 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 9650 5900 50  0001 C CNN
-F 3 "~" H 9650 5900 50  0001 C CNN
-	1    9650 5900
+P 9450 5900
+F 0 "H6" H 9550 6000 50  0000 L CNN
+F 1 "MountingHole" H 9550 5900 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 9450 5900 50  0001 C CNN
+F 3 "~" H 9450 5900 50  0001 C CNN
+	1    9450 5900
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1656,11 +1656,11 @@ Hinge Button
 Wire Notes Line
 	8275 3900 10450 3900
 Wire Notes Line
-	10450 3900 10450 5200
+	10450 3900 10450 5050
 Wire Notes Line
-	10450 5200 8275 5200
+	10450 5050 8275 5050
 Wire Notes Line
-	8275 5200 8275 3900
+	8275 5050 8275 3900
 $Comp
 L Device:C_Small C14
 U 1 1 60DB9B4D
@@ -2074,8 +2074,6 @@ Wire Wire Line
 	5475 2400 5025 2400
 Wire Wire Line
 	3525 2400 3925 2400
-Text Notes 8300 5175 0    50   Italic 0
-Switch choice subject to change\nduring mechanical design
 $Comp
 L power:GND #PWR0119
 U 1 1 60BE6FE8
@@ -2292,120 +2290,119 @@ Debug Connector
 Wire Notes Line
 	4725 3725 8200 3725
 Wire Notes Line
-	4725 5525 4725 3725
+	4725 5750 4725 3725
 Wire Notes Line
-	8200 5525 4725 5525
+	8200 5750 4725 5750
 Wire Notes Line
-	8200 3725 8200 5525
+	8200 3725 8200 5750
 $Comp
 L power:GND #PWR0127
 U 1 1 605CA9D5
-P 7450 4450
-F 0 "#PWR0127" H 7450 4200 50  0001 C CNN
-F 1 "GND" H 7455 4277 50  0000 C CNN
-F 2 "" H 7450 4450 50  0001 C CNN
-F 3 "" H 7450 4450 50  0001 C CNN
-	1    7450 4450
+P 7450 4675
+F 0 "#PWR0127" H 7450 4425 50  0001 C CNN
+F 1 "GND" H 7455 4502 50  0000 C CNN
+F 2 "" H 7450 4675 50  0001 C CNN
+F 3 "" H 7450 4675 50  0001 C CNN
+	1    7450 4675
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6025 4050 7450 4050
+	6025 4275 7450 4275
 $Comp
 L Project:ESDALC6V1-1U2 D7
 U 1 1 605C5670
-P 7450 4250
-F 0 "D7" V 7404 4328 50  0000 L CNN
-F 1 "ESDALC6V1-1U2" V 7495 4328 50  0000 L CNN
-F 2 "lib_fp:ST0201" H 7450 4050 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/90/b1/aa/a3/9f/73/4d/1e/CD00212838.pdf/files/CD00212838.pdf/jcr:content/translations/en.CD00212838.pdf" H 7450 4300 50  0001 C CNN
-F 4 "TVS DIODE 3V ST0201" H 7450 4250 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 7450 4250 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1-1U2" H 7450 4250 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 7450 4250 50  0001 C CNN "Supplier"
-F 8 "497-8752-1-ND" H 7450 4250 50  0001 C CNN "Supplier PN"
-	1    7450 4250
+P 7450 4475
+F 0 "D7" V 7404 4553 50  0000 L CNN
+F 1 "ESDALC6V1-1U2" V 7495 4553 50  0000 L CNN
+F 2 "lib_fp:ST0201" H 7450 4275 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/90/b1/aa/a3/9f/73/4d/1e/CD00212838.pdf/files/CD00212838.pdf/jcr:content/translations/en.CD00212838.pdf" H 7450 4525 50  0001 C CNN
+F 4 "TVS DIODE 3V ST0201" H 7450 4475 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 7450 4475 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1U2" H 7450 4475 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 7450 4475 50  0001 C CNN "Supplier"
+F 8 "497-8752-1-ND" H 7450 4475 50  0001 C CNN "Supplier PN"
+	1    7450 4475
 	0    1    1    0   
 $EndComp
-Text Label 6175 4050 0    50   ~ 0
+Text Label 6175 4275 0    50   ~ 0
 RESET
-NoConn ~ 6025 4750
-NoConn ~ 6025 4550
-NoConn ~ 6025 4450
-Connection ~ 5425 5250
+NoConn ~ 6025 4975
+NoConn ~ 6025 4775
+NoConn ~ 6025 4675
+Connection ~ 5425 5475
 Wire Wire Line
-	5525 5250 5425 5250
+	5525 5475 5425 5475
 Wire Wire Line
-	7175 4400 7175 4450
+	7175 4625 7175 4675
 Wire Wire Line
-	7125 4400 7175 4400
+	7125 4625 7175 4625
 $Comp
 L power:GND #PWR0122
 U 1 1 605BDA4D
-P 7175 4450
-F 0 "#PWR0122" H 7175 4200 50  0001 C CNN
-F 1 "GND" H 7180 4277 50  0000 C CNN
-F 2 "" H 7175 4450 50  0001 C CNN
-F 3 "" H 7175 4450 50  0001 C CNN
-	1    7175 4450
+P 7175 4675
+F 0 "#PWR0122" H 7175 4425 50  0001 C CNN
+F 1 "GND" H 7180 4502 50  0000 C CNN
+F 2 "" H 7175 4675 50  0001 C CNN
+F 3 "" H 7175 4675 50  0001 C CNN
+	1    7175 4675
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0121
 U 1 1 605BCFA5
-P 5425 5250
-F 0 "#PWR0121" H 5425 5000 50  0001 C CNN
-F 1 "GND" H 5430 5077 50  0000 C CNN
-F 2 "" H 5425 5250 50  0001 C CNN
-F 3 "" H 5425 5250 50  0001 C CNN
-	1    5425 5250
+P 5425 5475
+F 0 "#PWR0121" H 5425 5225 50  0001 C CNN
+F 1 "GND" H 5430 5302 50  0000 C CNN
+F 2 "" H 5425 5475 50  0001 C CNN
+F 3 "" H 5425 5475 50  0001 C CNN
+	1    5425 5475
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6025 5050 6650 5050
+	6025 5275 6650 5275
 Wire Wire Line
-	6025 4950 6600 4950
+	6025 5175 6600 5175
 Wire Wire Line
-	6025 4350 6725 4350
+	6025 4575 6725 4575
 Wire Wire Line
-	6025 4250 6725 4250
-Text Label 6150 4950 0    50   ~ 0
+	6025 4475 6725 4475
+Text Label 6150 5175 0    50   ~ 0
 USART1_RX
-Text Label 6150 5050 0    50   ~ 0
+Text Label 6150 5275 0    50   ~ 0
 USART1_TX
-Text Label 6150 4250 0    50   ~ 0
+Text Label 6150 4475 0    50   ~ 0
 SWCLK
-Text Label 6150 4350 0    50   ~ 0
+Text Label 6150 4575 0    50   ~ 0
 SWDIO
-NoConn ~ 5525 3850
-NoConn ~ 5275 5250
+NoConn ~ 5275 5475
 $Comp
 L Project:ESDALC6V1W5 D8
 U 1 1 605AC89E
-P 6925 4400
-F 0 "D8" H 6925 4675 50  0000 C CNN
-F 1 "ESDALC6V1W5" H 6925 4100 50  0000 C CNN
-F 2 "lib_fp:SOT323-5L" H 6925 4025 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/32/30/02/e6/ac/0f/46/c2/CD00002946.pdf/files/CD00002946.pdf/jcr:content/translations/en.CD00002946.pdf" H 6925 4450 50  0001 C CNN
-F 4 "TVS DIODE 3V SOT323-5" H 6925 4400 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 6925 4400 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1W5" H 6925 4400 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 6925 4400 50  0001 C CNN "Supplier"
-F 8 "497-7231-1-ND" H 6925 4400 50  0001 C CNN "Supplier PN"
-	1    6925 4400
+P 6925 4625
+F 0 "D8" H 6925 4900 50  0000 C CNN
+F 1 "ESDALC6V1W5" H 6925 4325 50  0000 C CNN
+F 2 "lib_fp:SOT323-5L" H 6925 4250 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/32/30/02/e6/ac/0f/46/c2/CD00002946.pdf/files/CD00002946.pdf/jcr:content/translations/en.CD00002946.pdf" H 6925 4675 50  0001 C CNN
+F 4 "TVS DIODE 3V SOT323-5" H 6925 4625 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 6925 4625 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1W5" H 6925 4625 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 6925 4625 50  0001 C CNN "Supplier"
+F 8 "497-7231-1-ND" H 6925 4625 50  0001 C CNN "Supplier PN"
+	1    6925 4625
 	1    0    0    -1  
 $EndComp
 $Comp
 L Project:Conn_ST_STDC14 J2
 U 1 1 60586F63
-P 5525 4550
-F 0 "J2" H 5082 4596 50  0000 R CNN
-F 1 "DNI" H 5075 4400 50  0000 R CNN
-F 2 "Connector:Tag-Connect_TC2070-IDC-FP_2x07_P1.27mm_Vertical" H 5525 3450 50  0001 C CNN
-F 3 "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/TC2070-IDC_Datasheet_11.pdf" V 5175 3300 50  0001 C CNN
-F 4 "Tag-Connect" H 5525 4550 50  0001 C CNN "Manufacturer"
-F 5 "TC2070-IDC-050" H 5525 4550 50  0001 C CNN "Manufacturer PN"
-F 6 "STDC14" H 4950 4500 50  0000 C CNN "User Label"
-	1    5525 4550
+P 5525 4775
+F 0 "J2" H 5082 4821 50  0000 R CNN
+F 1 "DNI" H 5075 4625 50  0000 R CNN
+F 2 "Connector:Tag-Connect_TC2070-IDC-FP_2x07_P1.27mm_Vertical" H 5525 3675 50  0001 C CNN
+F 3 "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/TC2070-IDC_Datasheet_11.pdf" V 5175 3525 50  0001 C CNN
+F 4 "Tag-Connect" H 5525 4775 50  0001 C CNN "Manufacturer"
+F 5 "TC2070-IDC-050" H 5525 4775 50  0001 C CNN "Manufacturer PN"
+F 6 "STDC14" H 4950 4725 50  0000 C CNN "User Label"
+	1    5525 4775
 	1    0    0    -1  
 $EndComp
 Wire Notes Line
@@ -2487,33 +2484,56 @@ Connection ~ 3875 6625
 Wire Wire Line
 	1125 6975 1525 6975
 Wire Wire Line
-	6650 5050 6650 4550
+	6650 5275 6650 4775
 Wire Wire Line
-	6650 4550 6725 4550
+	6650 4775 6725 4775
 Wire Wire Line
-	6600 4950 6600 4450
+	6600 5175 6600 4675
 Wire Wire Line
-	6600 4450 6725 4450
+	6600 4675 6725 4675
 $Comp
 L power:GND #PWR0124
 U 1 1 60CBE3DA
-P 9650 5550
-F 0 "#PWR0124" H 9650 5300 50  0001 C CNN
-F 1 "GND" H 9650 5400 50  0000 C CNN
-F 2 "" H 9650 5550 50  0001 C CNN
-F 3 "" H 9650 5550 50  0001 C CNN
-	1    9650 5550
+P 9450 5550
+F 0 "#PWR0124" H 9450 5300 50  0001 C CNN
+F 1 "GND" H 9450 5400 50  0000 C CNN
+F 2 "" H 9450 5550 50  0001 C CNN
+F 3 "" H 9450 5550 50  0001 C CNN
+	1    9450 5550
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0132
 U 1 1 60CBE6B6
-P 9650 6000
-F 0 "#PWR0132" H 9650 5750 50  0001 C CNN
-F 1 "GND" H 9650 5850 50  0000 C CNN
-F 2 "" H 9650 6000 50  0001 C CNN
-F 3 "" H 9650 6000 50  0001 C CNN
-	1    9650 6000
+P 9450 6000
+F 0 "#PWR0132" H 9450 5750 50  0001 C CNN
+F 1 "GND" H 9450 5850 50  0000 C CNN
+F 2 "" H 9450 6000 50  0001 C CNN
+F 3 "" H 9450 6000 50  0001 C CNN
+	1    9450 6000
 	1    0    0    -1  
 $EndComp
+$Comp
+L power:+3.3V #PWR?
+U 1 1 60C839C0
+P 5525 4075
+F 0 "#PWR?" H 5525 3925 50  0001 C CNN
+F 1 "+3.3V" H 5540 4248 50  0000 C CNN
+F 2 "" H 5525 4075 50  0001 C CNN
+F 3 "" H 5525 4075 50  0001 C CNN
+	1    5525 4075
+	1    0    0    -1  
+$EndComp
+Text Notes 5675 5700 0    50   ~ 0
+Tag-Connect 14-pin footprint is used for the debug connection
+Text Notes 8325 5250 0    50   ~ 0
+Board Mounting
+Wire Notes Line
+	8275 5125 10450 5125
+Wire Notes Line
+	10450 5125 10450 6250
+Wire Notes Line
+	10450 6250 8275 6250
+Wire Notes Line
+	8275 6250 8275 5125
 $EndSCHEMATC
