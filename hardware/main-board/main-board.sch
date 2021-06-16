@@ -5,7 +5,7 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 1
 Title "Printalyzer Densitometer - Main Board"
-Date "2021-06-??"
+Date "2021-06-15"
 Rev "A"
 Comp "LogicProbe.org"
 Comment1 "Derek Konigsberg"
