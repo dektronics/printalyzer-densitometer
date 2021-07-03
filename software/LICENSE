@@ -75,3 +75,13 @@
  and certain files have been modified for project integration purposes.
 
 ******************************************************************************
+
+ TinyUSB
+
+ Path:     firmware/external/tinyusb
+ Upstream: https://github.com/hathach/tinyusb
+ License:  MIT
+
+ Library has been modified as necessary for project integration purposes.
+
+******************************************************************************
