@@ -18,8 +18,7 @@
 
 #include "stm32l0xx_hal.h"
 #include "stm32l0xx_it.h"
-
-//extern PCD_HandleTypeDef hpcd_USB_FS;
+#include <tusb.h>
 
 /******************************************************************************/
 /*           Cortex-M0+ Processor Interruption and Exception Handlers          */
@@ -96,5 +95,5 @@ void EXTI4_15_IRQHandler(void)
  */
 void USB_IRQHandler(void)
 {
-    //HAL_PCD_IRQHandler(&hpcd_USB_FS);
+    tud_int_handler(0);
 }

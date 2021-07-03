@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <elog.h>
+#include <tusb.h>
 
 #include "board_config.h"
 #include "display.h"
@@ -21,6 +22,7 @@ static void gpio_init(void);
 static void i2c1_init(void);
 static void tim2_init(void);
 static void spi1_init(void);
+static void usb_stack_init(void);
 static void startup_log_messages(void);
 
 void error_handler(void);
@@ -263,6 +265,21 @@ void spi1_init(void)
     }
 }
 
+void usb_stack_init(void)
+{
+    /* Peripheral clock enable */
+    __HAL_RCC_USB_CLK_ENABLE();
+
+    /* Peripheral interrupt init */
+    HAL_NVIC_SetPriority(USB_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USB_IRQn);
+
+    /* Initialize the TinyUSB stack */
+    if (!tusb_init()) {
+        error_handler();
+    }
+}
+
 void startup_log_messages(void)
 {
     uint32_t hal_ver = HAL_GetHalVersion();
@@ -315,7 +332,8 @@ int main(void)
     tim2_init();
     spi1_init();
 
-    //TODO Initialize the USB port
+    /* Initialize the USB stack */
+    usb_stack_init();
 
     /* Initialize the display */
     display_init(&hspi1);
@@ -333,6 +351,7 @@ int main(void)
 
     while (1) {
         //TODO
+        tud_task();
     }
 }
 
