@@ -7,8 +7,6 @@
 #include <stdio.h>
 #include <elog.h>
 
-//#include "i2c_util.h"
-
 /* I2C device address */
 static const uint8_t TSL2591_ADDRESS = 0x29 << 1; // Use 8-bit address
 
@@ -51,67 +49,79 @@ HAL_StatusTypeDef tsl2591_init(I2C_HandleTypeDef *hi2c)
     HAL_StatusTypeDef ret;
     uint8_t data;
 
-    printf("Initializing TSL2591\r\n");
+    log_i("Initializing TSL2591");
 
-    ret = i2c_read_register(hi2c, TSL2591_ADDRESS, TSL2591_CMD_NORMAL | TSL2591_PID, &data);
+    ret = HAL_I2C_Mem_Read(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_PID, I2C_MEMADD_SIZE_8BIT,
+        &data, 1, HAL_MAX_DELAY);
     if (ret != HAL_OK) {
         return ret;
     }
 
-    printf("Package: %02X\r\n", data);
+    log_i("Package: %02X", data);
 
-    ret = i2c_read_register(hi2c, TSL2591_ADDRESS, TSL2591_CMD_NORMAL | TSL2591_ID, &data);
+    ret = HAL_I2C_Mem_Read(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_ID, I2C_MEMADD_SIZE_8BIT,
+        &data, 1, HAL_MAX_DELAY);
     if (ret != HAL_OK) {
         return ret;
     }
 
-    printf("Device ID: %02X\r\n", data);
+    log_i("Device ID: %02X", data);
 
     if (data != 0x50) {
-        printf("Invalid Device ID\r\n");
+        log_e("Invalid Device ID");
         return HAL_ERROR;
     }
 
-    ret = i2c_read_register(hi2c, TSL2591_ADDRESS, TSL2591_CMD_NORMAL | TSL2591_STATUS, &data);
+    ret = HAL_I2C_Mem_Read(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_STATUS, I2C_MEMADD_SIZE_8BIT,
+        &data, 1, HAL_MAX_DELAY);
     if (ret != HAL_OK) {
         return ret;
     }
 
-    printf("Status: %02X\r\n", data);
+    log_i("Status: %02X", data);
 
-    // Power on the sensor
+    /* Power on the sensor */
     ret = tsl2591_enable(hi2c);
     if (ret != HAL_OK) {
         return ret;
     }
 
-    // Set default integration and gain
+    /* Set default integration and gain */
     ret = tsl2591_set_config(hi2c, TSL2591_GAIN_HIGH, TSL2591_TIME_300MS);
     if (ret != HAL_OK) {
         return ret;
     }
 
-    // Power off the sensor
+    /* Power off the sensor */
     ret = tsl2591_disable(hi2c);
     if (ret != HAL_OK) {
         return ret;
     }
 
-    printf("TSL2591 Initialized\r\n");
+    log_i("TSL2591 Initialized");
 
     return HAL_OK;
 }
 
 HAL_StatusTypeDef tsl2591_enable(I2C_HandleTypeDef *hi2c)
 {
-    return i2c_write_register(hi2c, TSL2591_ADDRESS, TSL2591_CMD_NORMAL | TSL2591_ENABLE,
-            TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN);
+    uint8_t data = TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN;
+    HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_ENABLE, I2C_MEMADD_SIZE_8BIT,
+        &data, 1, HAL_MAX_DELAY);
+    return ret;
 }
 
 HAL_StatusTypeDef tsl2591_disable(I2C_HandleTypeDef *hi2c)
 {
-    return i2c_write_register(hi2c, TSL2591_ADDRESS, TSL2591_CMD_NORMAL | TSL2591_ENABLE,
-            0x00);
+    uint8_t data = 0x00;
+    HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_ENABLE, I2C_MEMADD_SIZE_8BIT,
+        &data, 1, HAL_MAX_DELAY);
+    return ret;
 }
 
 HAL_StatusTypeDef tsl2591_set_config(I2C_HandleTypeDef *hi2c, tsl2591_gain_t gain, tsl2591_time_t time)
@@ -123,8 +133,11 @@ HAL_StatusTypeDef tsl2591_set_config(I2C_HandleTypeDef *hi2c, tsl2591_gain_t gai
         return HAL_ERROR;
     }
 
-    return i2c_write_register(hi2c, TSL2591_ADDRESS, TSL2591_CMD_NORMAL | TSL2591_CONFIG,
-            ((uint8_t)(gain & 0x03) << 4) | ((uint8_t)(time & 0x07)));
+    uint8_t data = ((uint8_t)(gain & 0x03) << 4) | ((uint8_t)(time & 0x07));
+    HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_CONFIG, I2C_MEMADD_SIZE_8BIT,
+        &data, 1, HAL_MAX_DELAY);
+    return ret;
 }
 
 HAL_StatusTypeDef tsl2591_get_config(I2C_HandleTypeDef *hi2c, tsl2591_gain_t *gain, tsl2591_time_t *time)
@@ -132,9 +145,11 @@ HAL_StatusTypeDef tsl2591_get_config(I2C_HandleTypeDef *hi2c, tsl2591_gain_t *ga
     HAL_StatusTypeDef ret = HAL_OK;
     uint8_t data;
 
-    ret = i2c_read_register(hi2c, TSL2591_ADDRESS, TSL2591_CMD_NORMAL | TSL2591_CONFIG, &data);
+    ret = HAL_I2C_Mem_Read(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_CONFIG, I2C_MEMADD_SIZE_8BIT,
+        &data, 1, HAL_MAX_DELAY);
     if (ret != HAL_OK) {
-        printf("i2c_read_register error: %d\r\n", ret);
+        log_e("i2c_read_register error: %d", ret);
         return ret;
     }
 
@@ -157,9 +172,11 @@ HAL_StatusTypeDef tsl2591_get_status_valid(I2C_HandleTypeDef *hi2c, bool *valid)
     HAL_StatusTypeDef ret = HAL_OK;
     uint8_t data;
 
-    ret = i2c_read_register(hi2c, TSL2591_ADDRESS, TSL2591_CMD_NORMAL | TSL2591_STATUS, &data);
+    ret = HAL_I2C_Mem_Read(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_STATUS, I2C_MEMADD_SIZE_8BIT,
+        &data, 1, HAL_MAX_DELAY);
     if (ret != HAL_OK) {
-        printf("i2c_read_register error: %d\r\n", ret);
+        log_e("i2c_read_register error: %d", ret);
         return ret;
     }
 
@@ -173,22 +190,19 @@ HAL_StatusTypeDef tsl2591_get_full_channel_data(I2C_HandleTypeDef *hi2c, uint16_
     HAL_StatusTypeDef ret;
     uint8_t data[4];
 
-    ret = i2c_write_byte(hi2c, TSL2591_ADDRESS, TSL2591_CMD_NORMAL | TSL2591_C0DATAL);
+    ret = HAL_I2C_Mem_Read(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_C0DATAL, I2C_MEMADD_SIZE_8BIT,
+        data, sizeof(data), HAL_MAX_DELAY);
     if (ret != HAL_OK) {
         return ret;
     }
 
-    ret = i2c_read_buffer(hi2c, TSL2591_ADDRESS, data, sizeof(data));
-    if (ret != HAL_OK) {
-        return ret;
-    }
-
-    // Channel 0 - visible + infrared
+    /* Channel 0 - visible + infrared */
     if (ch0_val) {
         *ch0_val = data[0] | data[1] << 8;
     }
 
-    // Channel 1 - infrared only
+    /* Channel 1 - infrared only */
     if (ch1_val) {
         *ch1_val = data[2] | data[3] << 8;
     }

@@ -7,6 +7,7 @@
 
 #include "board_config.h"
 #include "display.h"
+#include "tsl2591.h"
 
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
@@ -288,6 +289,8 @@ void startup_log_messages(void)
 
 int main(void)
 {
+    bool sensor_init = false;
+
     /*
      * Initialize the HAL, which will reset of all peripherals, initialize
      * the Flash interface and the Systick.
@@ -318,7 +321,11 @@ int main(void)
     display_init(&hspi1);
     display_clear();
 
-    //TODO Initialize the sensor
+    /* Initialize the light sensor */
+    if (tsl2591_init(&hi2c1) == HAL_OK) {
+        sensor_init = true;
+        UNUSED(sensor_init);
+    }
 
     log_i("Startup complete");
 

@@ -11,10 +11,10 @@
 
 /* Gain values from TSL2591 EVM software */
 typedef enum {
-    TSL2591_GAIN_LOW = 0,    /* 1x */
-    TSL2591_GAIN_MEDIUM = 1, /* 24x */
-    TSL2591_GAIN_HIGH = 2,   /* 384x */
-    TSL2591_GAIN_MAXIMUM = 3 /* 9216x */
+    TSL2591_GAIN_LOW = 0,    /*!< 1x */
+    TSL2591_GAIN_MEDIUM = 1, /*!< 24x */
+    TSL2591_GAIN_HIGH = 2,   /*!< 384x */
+    TSL2591_GAIN_MAXIMUM = 3 /*!< 9216x */
 } tsl2591_gain_t;
 
 typedef enum {
