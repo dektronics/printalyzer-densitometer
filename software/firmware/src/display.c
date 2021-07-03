@@ -108,6 +108,10 @@ void display_draw_test_pattern(bool mode)
 
 static void display_prepare_menu_font()
 {
+    /*
+     * This font can show 15 characters per line,
+     * and 6 lines (including the title) in a list.
+     */
     u8g2_SetFont(&u8g2, u8g2_font_pxplusibmcga_8f);
     u8g2_SetFontMode(&u8g2, 0);
     u8g2_SetDrawColor(&u8g2, 1);
@@ -121,7 +125,7 @@ void display_static_list(const char *title, const char *list)
      */
 
     display_prepare_menu_font();
-    display_clear();
+    u8g2_ClearBuffer(&u8g2);
 
     u8sl_t u8sl;
     u8g2_uint_t yy;

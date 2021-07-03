@@ -7,6 +7,7 @@
 #include <tusb.h>
 
 #include "board_config.h"
+#include "keypad.h"
 #include "display.h"
 #include "tsl2591.h"
 
@@ -101,7 +102,7 @@ void logger_init(void)
     elog_set_fmt(ELOG_LVL_ERROR, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
     elog_set_fmt(ELOG_LVL_WARN, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
     elog_set_fmt(ELOG_LVL_INFO, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
-    elog_set_fmt(ELOG_LVL_DEBUG, ELOG_FMT_ALL & ~(ELOG_FMT_FUNC | ELOG_FMT_T_INFO | ELOG_FMT_P_INFO));
+    elog_set_fmt(ELOG_LVL_DEBUG, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
     elog_set_fmt(ELOG_LVL_VERBOSE, ELOG_FMT_ALL & ~(ELOG_FMT_FUNC | ELOG_FMT_T_INFO | ELOG_FMT_P_INFO));
     elog_set_text_color_enabled(true);
 
@@ -307,6 +308,7 @@ void startup_log_messages(void)
 int main(void)
 {
     bool sensor_init = false;
+    bool display_dirty = true;
 
     /*
      * Initialize the HAL, which will reset of all peripherals, initialize
@@ -350,9 +352,35 @@ int main(void)
     //display_draw_test_pattern(true);
 
     while (1) {
+        uint8_t key_state = keypad_get_state();
+
         //TODO
+
+        if (key_state != 0xFF) {
+            display_dirty = true;
+        }
+
+        if (display_dirty) {
+            char buf[128];
+            if (key_state == 0xFF) { key_state = 0; }
+            sprintf(buf, "\n\n\n\n"
+                "[%c][%c][%c][%c][%c]",
+                ((key_state & KEYPAD_BUTTON_1) ? '*' : ' '),
+                ((key_state & KEYPAD_BUTTON_2) ? '*' : ' '),
+                ((key_state & KEYPAD_BUTTON_3) ? '*' : ' '),
+                ((key_state & KEYPAD_BUTTON_4) ? '*' : ' '),
+                ((key_state & KEYPAD_BUTTON_5) ? '*' : ' '));
+            display_static_list("Densitometer", buf);
+            display_dirty = false;
+        }
+
         tud_task();
     }
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    keypad_int_handler(GPIO_Pin);
 }
 
 void error_handler(void)
