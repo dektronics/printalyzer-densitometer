@@ -1,6 +1,9 @@
 #include "stm32l0xx_hal.h"
 
+#define LOG_TAG "main"
+
 #include <stdio.h>
+#include <elog.h>
 
 #include "board_config.h"
 
@@ -11,10 +14,12 @@ UART_HandleTypeDef huart1;
 
 static void system_clock_config(void);
 static void usart1_uart_init(void);
+static void logger_init(void);
 static void gpio_init(void);
 static void i2c1_init(void);
 static void tim2_init(void);
 static void spi1_init(void);
+static void startup_log_messages(void);
 
 void error_handler(void);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
@@ -80,6 +85,24 @@ void usart1_uart_init(void)
     if (HAL_UART_Init(&huart1) != HAL_OK) {
         error_handler();
     }
+}
+
+void logger_init(void)
+{
+    /* Initialize EasyLogger */
+    elog_init();
+
+    /* Set log format */
+    elog_set_fmt(ELOG_LVL_ASSERT, ELOG_FMT_ALL);
+    elog_set_fmt(ELOG_LVL_ERROR, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_WARN, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_INFO, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_DEBUG, ELOG_FMT_ALL & ~(ELOG_FMT_FUNC | ELOG_FMT_T_INFO | ELOG_FMT_P_INFO));
+    elog_set_fmt(ELOG_LVL_VERBOSE, ELOG_FMT_ALL & ~(ELOG_FMT_FUNC | ELOG_FMT_T_INFO | ELOG_FMT_P_INFO));
+    elog_set_text_color_enabled(true);
+
+    /* Start EasyLogger */
+    elog_start();
 }
 
 void gpio_init(void)
@@ -238,6 +261,30 @@ void spi1_init(void)
     }
 }
 
+void startup_log_messages(void)
+{
+    uint32_t hal_ver = HAL_GetHalVersion();
+    uint8_t hal_ver_code = ((uint8_t)(hal_ver)) & 0x0F;
+    uint8_t *uniqueId = (uint8_t*)UID_BASE;
+
+    printf("\033[0m");
+    printf("---- Printalyzer Densitometer Startup ----\r\n");
+    printf("HAL Version: %d.%d.%d%c\r\n",
+        ((uint8_t)(hal_ver >> 24)) & 0x0F,
+        ((uint8_t)(hal_ver >> 16)) & 0x0F,
+        ((uint8_t)(hal_ver >> 8)) & 0x0F,
+        hal_ver_code > 0 ? (char)hal_ver_code : ' ');
+    printf("Revision ID: %ld\r\n", HAL_GetREVID());
+    printf("Device ID: 0x%lX\r\n", HAL_GetDEVID());
+    printf("SysClock: %ldMHz\r\n", HAL_RCC_GetSysClockFreq() / 1000000);
+    printf("Unique ID: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\r\n",
+        uniqueId[0], uniqueId[1], uniqueId[2], uniqueId[3], uniqueId[4],
+        uniqueId[5], uniqueId[6], uniqueId[7], uniqueId[8], uniqueId[9],
+        uniqueId[10], uniqueId[11]);
+    printf("-----------------------\r\n");
+    fflush(stdout);
+}
+
 int main(void)
 {
     /*
@@ -249,8 +296,16 @@ int main(void)
     /* Configure the system clock */
     system_clock_config();
 
-    /* Initialize all configured peripherals */
+    /* Initialize the debug UART */
     usart1_uart_init();
+
+    /* Print the initial startup messages */
+    startup_log_messages();
+
+    /* Initialize the logger */
+    logger_init();
+
+    /* Initialize the rest of the configured peripherals */
     gpio_init();
     i2c1_init();
     tim2_init();
@@ -259,6 +314,8 @@ int main(void)
     //TODO Initialize the USB port
     //TODO Initialize the display
     //TODO Initialize the sensor
+
+    log_i("Startup complete");
 
     while (1) {
         //TODO

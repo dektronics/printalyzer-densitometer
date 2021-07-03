@@ -64,3 +64,14 @@
  Library has been modified as necessary for project integration purposes.
 
 ******************************************************************************
+
+ EasyLogger
+
+ Path:     firmware/external/easylogger
+ Upstream: https://github.com/armink/EasyLogger
+ License:  MIT
+
+ Library files have been reorganized into a standalone directory structure
+ and certain files have been modified for project integration purposes.
+
+******************************************************************************
