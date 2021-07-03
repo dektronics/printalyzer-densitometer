@@ -31,15 +31,19 @@
 #include <sys/time.h>
 #include <sys/times.h>
 
+#include "stm32l0xx_hal.h"
+
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
 
 /* Variables */
 extern int __io_putchar(int ch) __attribute__((weak));
 extern int __io_getchar(void) __attribute__((weak));
 
-
 char *__env[1] = { 0 };
 char **environ = __env;
 
+extern UART_HandleTypeDef huart1;
 
 /* Functions */
 void initialise_monitor_handles()
@@ -48,109 +52,119 @@ void initialise_monitor_handles()
 
 int _getpid(void)
 {
-	return 1;
+    return 1;
 }
 
 int _kill(int pid, int sig)
 {
-	errno = EINVAL;
-	return -1;
+    errno = EINVAL;
+    return -1;
 }
 
 void _exit (int status)
 {
-	_kill(status, -1);
-	while (1) {}		/* Make sure we hang here */
+    _kill(status, -1);
+    while (1) {}		/* Make sure we hang here */
 }
 
 __attribute__((weak)) int _read(int file, char *ptr, int len)
 {
-	int DataIdx;
+    int DataIdx;
 
-	for (DataIdx = 0; DataIdx < len; DataIdx++)
-	{
-		*ptr++ = __io_getchar();
-	}
+    for (DataIdx = 0; DataIdx < len; DataIdx++)
+    {
+        *ptr++ = __io_getchar();
+    }
 
-return len;
+    return len;
 }
 
 __attribute__((weak)) int _write(int file, char *ptr, int len)
 {
-	int DataIdx;
-
-	for (DataIdx = 0; DataIdx < len; DataIdx++)
-	{
-		__io_putchar(*ptr++);
-	}
-	return len;
+    if (file == STDOUT_FILENO || file == STDERR_FILENO) {
+        HAL_StatusTypeDef status = HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, 0xFFFF);
+        if (status == HAL_OK) {
+            return len;
+        } else {
+            errno = EIO;
+            return -1;
+        }
+    } else {
+        errno = EBADF;
+        return -1;
+    }
 }
 
 int _close(int file)
 {
-	return -1;
+    return -1;
 }
-
 
 int _fstat(int file, struct stat *st)
 {
-	st->st_mode = S_IFCHR;
-	return 0;
+    st->st_mode = S_IFCHR;
+    return 0;
 }
 
 int _isatty(int file)
 {
-	return 1;
+    return 1;
 }
 
 int _lseek(int file, int ptr, int dir)
 {
-	return 0;
+    return 0;
 }
 
 int _open(char *path, int flags, ...)
 {
-	/* Pretend like we always fail */
-	return -1;
+    /* Pretend like we always fail */
+    return -1;
 }
 
 int _wait(int *status)
 {
-	errno = ECHILD;
-	return -1;
+    errno = ECHILD;
+    return -1;
 }
 
 int _unlink(char *name)
 {
-	errno = ENOENT;
-	return -1;
+    errno = ENOENT;
+    return -1;
 }
 
 int _times(struct tms *buf)
 {
-	return -1;
+    return -1;
 }
 
 int _stat(char *file, struct stat *st)
 {
-	st->st_mode = S_IFCHR;
-	return 0;
+    st->st_mode = S_IFCHR;
+    return 0;
 }
 
 int _link(char *old, char *new)
 {
-	errno = EMLINK;
-	return -1;
+    errno = EMLINK;
+    return -1;
 }
 
 int _fork(void)
 {
-	errno = EAGAIN;
-	return -1;
+    errno = EAGAIN;
+    return -1;
 }
 
 int _execve(char *name, char **argv, char **env)
 {
-	errno = ENOMEM;
-	return -1;
+    errno = ENOMEM;
+    return -1;
+}
+
+__attribute__((weak)) int __io_putchar(int ch)
+{
+    HAL_StatusTypeDef status = HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+    return (status == HAL_OK ? ch : 0);
 }
