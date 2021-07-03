@@ -6,6 +6,7 @@
 #include <elog.h>
 
 #include "board_config.h"
+#include "display.h"
 
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
@@ -312,10 +313,16 @@ int main(void)
     spi1_init();
 
     //TODO Initialize the USB port
-    //TODO Initialize the display
+
+    /* Initialize the display */
+    display_init(&hspi1);
+    display_clear();
+
     //TODO Initialize the sensor
 
     log_i("Startup complete");
+
+    //display_draw_test_pattern(true);
 
     while (1) {
         //TODO
