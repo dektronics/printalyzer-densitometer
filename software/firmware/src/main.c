@@ -7,9 +7,11 @@
 #include <tusb.h>
 
 #include "board_config.h"
+#include "cdc_handler.h"
 #include "keypad.h"
 #include "display.h"
 #include "tsl2591.h"
+#include "light.h"
 
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
@@ -346,6 +348,9 @@ int main(void)
         sensor_init = true;
         UNUSED(sensor_init);
     }
+
+    /* Initialize the light source */
+    light_init(&htim2, TIM_CHANNEL_3, TIM_CHANNEL_4);
 
     log_i("Startup complete");
 
