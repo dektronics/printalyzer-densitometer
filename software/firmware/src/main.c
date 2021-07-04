@@ -375,6 +375,7 @@ int main(void)
         }
 
         tud_task();
+        cdc_task();
     }
 }
 
