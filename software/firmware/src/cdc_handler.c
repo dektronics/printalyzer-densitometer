@@ -8,10 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include <elog.h>
 #include <tusb.h>
 
+#include "settings.h"
 #include "light.h"
+#include "sensor.h"
 #include "tsl2591.h"
 
 #define CMD_DATA_SIZE 64
@@ -76,6 +79,7 @@ void cdc_task()
 }
 
 static void cdc_command_version(const char *cmd, size_t len);
+static void cdc_command_cal_gain(const char *cmd, size_t len);
 static void cdc_command_diag_system(const char *cmd, size_t len);
 static void cdc_command_diag_light(const char *cmd, size_t len);
 static void cdc_command_diag_sensor(const char *cmd, size_t len);
@@ -93,6 +97,11 @@ void cdc_process_command(const char *cmd, size_t len)
     if (cmd_prefix == 'V' && len == 1) {
         /* Version string command */
         cdc_command_version(cmd, len);
+    } else if (cmd_prefix == 'C' && len > 1) {
+        char cal_prefix = toupper(cmd[1]);
+        if (cal_prefix == 'G') {
+            cdc_command_cal_gain(cmd, len);
+        }
     } else if (cmd_prefix == 'D' && len > 1) {
         /* Diagnostic command */
         char diag_prefix = toupper(cmd[1]);
@@ -111,8 +120,56 @@ void cdc_command_version(const char *cmd, size_t len)
     UNUSED(cmd);
     UNUSED(len);
     char buf[64];
-    sprintf(buf, "Printalyzer Densitometer\n");
+    sprintf(buf, "Printalyzer Densitometer\r\n");
     cdc_send_response(buf);
+}
+
+void cdc_command_cal_gain(const char *cmd, size_t len)
+{
+    /*
+     * "CG" : Calibration Gain
+     * "CGM" -> Measure actual sensor gain and save as calibration values
+     * "CGP" -> Return currently saved gain calibration values
+     */
+
+    if (len < 3) {
+        return;
+    }
+
+    char prefix = toupper(cmd[2]);
+
+    if (prefix == 'M') {
+        sensor_gain_calibration();
+    } if (prefix == 'P') {
+        char buf[128];
+        float ch0_gain, ch1_gain;
+        float ival0, fval0;
+        float ival1, fval1;
+
+        settings_get_calibration_gain(TSL2591_GAIN_MEDIUM, &ch0_gain, &ch1_gain);
+        fval0 = modff(ch0_gain, &ival0);
+        fval1 = modff(ch1_gain, &ival1);
+        sprintf(buf, "TSL2591,MEDIUM,%d.%d,%d.%d\r\n",
+            (int)lroundf(ival0), (int)lroundf(fval0 * 100),
+            (int)lroundf(ival1), (int)lroundf(fval1 * 100));
+        cdc_send_response(buf);
+
+        settings_get_calibration_gain(TSL2591_GAIN_HIGH, &ch0_gain, &ch1_gain);
+        fval0 = modff(ch0_gain, &ival0);
+        fval1 = modff(ch1_gain, &ival1);
+        sprintf(buf, "TSL2591,HIGH,%d.%d,%d.%d\r\n",
+            (int)lroundf(ival0), (int)lroundf(fval0 * 100),
+            (int)lroundf(ival1), (int)lroundf(fval1 * 100));
+        cdc_send_response(buf);
+
+        settings_get_calibration_gain(TSL2591_GAIN_MAXIMUM, &ch0_gain, &ch1_gain);
+        fval0 = modff(ch0_gain, &ival0);
+        fval1 = modff(ch1_gain, &ival1);
+        sprintf(buf, "TSL2591,MAXIMUM,%d.%d,%d.%d\r\n",
+            (int)lroundf(ival0), (int)lroundf(fval0 * 100),
+            (int)lroundf(ival1), (int)lroundf(fval1 * 100));
+        cdc_send_response(buf);
+    }
 }
 
 void cdc_command_diag_system(const char *cmd, size_t len)
@@ -287,4 +344,5 @@ void cdc_send_response(const char *str)
     size_t len = strlen(str);
     tud_cdc_write(str, len);
     tud_cdc_write_flush();
+    tud_task();
 }

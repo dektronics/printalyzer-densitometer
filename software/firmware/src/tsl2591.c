@@ -37,13 +37,6 @@ static const uint8_t TSL2591_ADDRESS = 0x29 << 1; // Use 8-bit address
 #define TSL2591_CMD_INT_CLEAR_ALS_NO_PERSIST 0xE7 /*!< Clears ALS and no persist ALS interrupt */
 #define TSL2591_CMD_INT_CLEAR_NO_PERSIST     0xEA /*!< Clears no persist ALS interrupt */
 
-/* Enable Register Values */
-#define TSL2591_ENABLE_NPIEN 0x80 /*!< No persist interrupt enable */
-#define TSL2591_ENABLE_SAI   0x40 /*!< Sleep after interrupt */
-#define TSL2591_ENABLE_AIEN  0x10 /*!< ALS interrupt enable */
-#define TSL2591_ENABLE_AEN   0x02 /*!< ALS enable */
-#define TSL2591_ENABLE_PON   0x01 /*!< Power ON */
-
 HAL_StatusTypeDef tsl2591_init(I2C_HandleTypeDef *hi2c)
 {
     HAL_StatusTypeDef ret;
@@ -106,21 +99,29 @@ HAL_StatusTypeDef tsl2591_init(I2C_HandleTypeDef *hi2c)
     return HAL_OK;
 }
 
-HAL_StatusTypeDef tsl2591_enable(I2C_HandleTypeDef *hi2c)
+HAL_StatusTypeDef tsl2591_set_enable(I2C_HandleTypeDef *hi2c, uint8_t value)
 {
-    uint8_t data = TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN;
+    uint8_t data = value & 0xD3; /* Mask bits 5,3:2 */
     HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(hi2c, TSL2591_ADDRESS,
         TSL2591_CMD_NORMAL | TSL2591_ENABLE, I2C_MEMADD_SIZE_8BIT,
         &data, 1, HAL_MAX_DELAY);
     return ret;
 }
 
+HAL_StatusTypeDef tsl2591_enable(I2C_HandleTypeDef *hi2c)
+{
+    return tsl2591_set_enable(hi2c, TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN);
+}
+
 HAL_StatusTypeDef tsl2591_disable(I2C_HandleTypeDef *hi2c)
 {
-    uint8_t data = 0x00;
-    HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(hi2c, TSL2591_ADDRESS,
-        TSL2591_CMD_NORMAL | TSL2591_ENABLE, I2C_MEMADD_SIZE_8BIT,
-        &data, 1, HAL_MAX_DELAY);
+    return tsl2591_set_enable(hi2c, 0x00);
+}
+
+HAL_StatusTypeDef tsl2591_clear_als_int(I2C_HandleTypeDef *hi2c)
+{
+    uint8_t data = TSL2591_CMD_INT_CLEAR_ALS;
+    HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(hi2c, TSL2591_ADDRESS, &data, 1, HAL_MAX_DELAY);
     return ret;
 }
 
@@ -163,24 +164,73 @@ HAL_StatusTypeDef tsl2591_get_config(I2C_HandleTypeDef *hi2c, tsl2591_gain_t *ga
     return ret;
 }
 
+HAL_StatusTypeDef tsl2591_set_als_low_int_threshold(I2C_HandleTypeDef *hi2c, uint16_t value)
+{
+    uint8_t data[2];
+    data[0] = value & 0x00FF;
+    data[1] = (value & 0xFF00) >> 8;
+
+    HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_AILTL, I2C_MEMADD_SIZE_8BIT,
+        data, sizeof(data), HAL_MAX_DELAY);
+
+    return ret;
+}
+
+HAL_StatusTypeDef tsl2591_set_als_high_int_threshold(I2C_HandleTypeDef *hi2c, uint16_t value)
+{
+    uint8_t data[2];
+    data[0] = value & 0x00FF;
+    data[1] = (value & 0xFF00) >> 8;
+
+    HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_AIHTL, I2C_MEMADD_SIZE_8BIT,
+        data, sizeof(data), HAL_MAX_DELAY);
+
+    return ret;
+}
+
+HAL_StatusTypeDef tsl2591_set_persist(I2C_HandleTypeDef *hi2c, tsl2591_persist_t value)
+{
+    uint8_t data = value & 0x0F;
+    HAL_StatusTypeDef ret = HAL_I2C_Mem_Write(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_PERSIST, I2C_MEMADD_SIZE_8BIT,
+        &data, 1, HAL_MAX_DELAY);
+    return ret;
+}
+
+HAL_StatusTypeDef tsl2591_get_status(I2C_HandleTypeDef *hi2c, uint8_t *value)
+{
+    if (!value) {
+        return HAL_ERROR;
+    }
+
+    HAL_StatusTypeDef ret = HAL_OK;
+
+    ret = HAL_I2C_Mem_Read(hi2c, TSL2591_ADDRESS,
+        TSL2591_CMD_NORMAL | TSL2591_STATUS, I2C_MEMADD_SIZE_8BIT,
+        value, 1, HAL_MAX_DELAY);
+
+    if (ret != HAL_OK) {
+        log_e("i2c_read_register error: %d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
 HAL_StatusTypeDef tsl2591_get_status_valid(I2C_HandleTypeDef *hi2c, bool *valid)
 {
     if (!valid) {
         return HAL_ERROR;
     }
 
-    HAL_StatusTypeDef ret = HAL_OK;
     uint8_t data;
+    HAL_StatusTypeDef ret = tsl2591_get_status(hi2c, &data);
 
-    ret = HAL_I2C_Mem_Read(hi2c, TSL2591_ADDRESS,
-        TSL2591_CMD_NORMAL | TSL2591_STATUS, I2C_MEMADD_SIZE_8BIT,
-        &data, 1, HAL_MAX_DELAY);
-    if (ret != HAL_OK) {
-        log_e("i2c_read_register error: %d", ret);
-        return ret;
+    if (ret == HAL_OK) {
+        *valid = (data & 0x01) ? true : false;
     }
-
-    *valid = (data & 0x01) ? true : false;
 
     return ret;
 }

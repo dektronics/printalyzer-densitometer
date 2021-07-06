@@ -8,10 +8,12 @@
 
 #include "board_config.h"
 #include "cdc_handler.h"
+#include "settings.h"
 #include "keypad.h"
 #include "display.h"
 #include "tsl2591.h"
 #include "light.h"
+#include "sensor.h"
 
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
@@ -309,7 +311,6 @@ void startup_log_messages(void)
 
 int main(void)
 {
-    bool sensor_init = false;
     bool display_dirty = true;
 
     /*
@@ -344,13 +345,13 @@ int main(void)
     display_clear();
 
     /* Initialize the light sensor */
-    if (tsl2591_init(&hi2c1) == HAL_OK) {
-        sensor_init = true;
-        UNUSED(sensor_init);
-    }
+    sensor_init(&hi2c1);
 
     /* Initialize the light source */
     light_init(&htim2, TIM_CHANNEL_3, TIM_CHANNEL_4);
+
+    /* Load system settings */
+    settings_init();
 
     log_i("Startup complete");
 
