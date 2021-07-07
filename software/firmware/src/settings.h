@@ -9,7 +9,13 @@
 
 HAL_StatusTypeDef settings_init();
 
-void settings_set_calibration_gain(tsl2591_gain_t gain, float ch0_gain, float ch1_gain);
-void settings_get_calibration_gain(tsl2591_gain_t gain, float *ch0_gain, float *ch1_gain);
+void settings_set_cal_gain(tsl2591_gain_t gain, float ch0_gain, float ch1_gain);
+void settings_get_cal_gain(tsl2591_gain_t gain, float *ch0_gain, float *ch1_gain);
+
+void settings_set_cal_reflection_lo(float d, float meas_ll);
+void settings_get_cal_reflection_lo(float *d, float *meas_ll);
+
+void settings_set_cal_reflection_hi(float d, float meas_ll);
+void settings_get_cal_reflection_hi(float *d, float *meas_ll);
 
 #endif /* SETTINGS_H */

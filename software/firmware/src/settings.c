@@ -9,7 +9,12 @@
 
 static HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len);
 static HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, size_t data_len);
+static float settings_read_float(uint32_t address);
 static HAL_StatusTypeDef settings_write_float(uint32_t address, float val);
+static void copy_from_u32(uint8_t *buf, uint32_t val);
+static uint32_t copy_to_u32(const uint8_t *buf);
+static void copy_from_f32(uint8_t *buf, float val);
+static float copy_to_f32(const uint8_t *buf);
 
 #define CONFIG_HEADER (DATA_EEPROM_BASE + 0U)
 
@@ -20,6 +25,10 @@ static HAL_StatusTypeDef settings_write_float(uint32_t address, float val);
 #define CONFIG_CAL_GAIN_HIGH_CH1    (CONFIG_CAL_BASE + 12U)
 #define CONFIG_CAL_GAIN_MAXIMUM_CH0 (CONFIG_CAL_BASE + 16U)
 #define CONFIG_CAL_GAIN_MAXIMUM_CH1 (CONFIG_CAL_BASE + 20U)
+#define CONFIG_CAL_REFLECTION_LO_D  (CONFIG_CAL_BASE + 24U)
+#define CONFIG_CAL_REFLECTION_LO_LL (CONFIG_CAL_BASE + 28U)
+#define CONFIG_CAL_REFLECTION_HI_D  (CONFIG_CAL_BASE + 32U)
+#define CONFIG_CAL_REFLECTION_HI_LL (CONFIG_CAL_BASE + 36U)
 
 static float setting_cal_gain_medium_ch0 = 0;
 static float setting_cal_gain_medium_ch1 = 0;
@@ -27,6 +36,10 @@ static float setting_cal_gain_high_ch0 = 0;
 static float setting_cal_gain_high_ch1 = 0;
 static float setting_cal_gain_maximum_ch0 = 0;
 static float setting_cal_gain_maximum_ch1 = 0;
+static float setting_cal_reflection_lo_d = 0;
+static float setting_cal_reflection_lo_ll = 0;
+static float setting_cal_reflection_hi_d = 0;
+static float setting_cal_reflection_hi_ll = 0;
 
 HAL_StatusTypeDef settings_init()
 {
@@ -51,21 +64,29 @@ HAL_StatusTypeDef settings_init()
             settings_write_float(CONFIG_CAL_GAIN_HIGH_CH1, NAN);
             settings_write_float(CONFIG_CAL_GAIN_MAXIMUM_CH0, NAN);
             settings_write_float(CONFIG_CAL_GAIN_MAXIMUM_CH1, NAN);
+            settings_write_float(CONFIG_CAL_REFLECTION_LO_D, NAN);
+            settings_write_float(CONFIG_CAL_REFLECTION_LO_LL, NAN);
+            settings_write_float(CONFIG_CAL_REFLECTION_HI_D, NAN);
+            settings_write_float(CONFIG_CAL_REFLECTION_HI_LL, NAN);
         } else {
             /* Load Calibration Page */
-            setting_cal_gain_medium_ch0 = (float)(*(__IO uint32_t *)(CONFIG_CAL_GAIN_MEDIUM_CH0));
-            setting_cal_gain_medium_ch1 = (float)(*(__IO uint32_t *)(CONFIG_CAL_GAIN_MEDIUM_CH1));
-            setting_cal_gain_high_ch0 = (float)(*(__IO uint32_t *)(CONFIG_CAL_GAIN_HIGH_CH0));
-            setting_cal_gain_high_ch1 = (float)(*(__IO uint32_t *)(CONFIG_CAL_GAIN_HIGH_CH1));
-            setting_cal_gain_maximum_ch0 = (float)(*(__IO uint32_t *)(CONFIG_CAL_GAIN_MAXIMUM_CH0));
-            setting_cal_gain_maximum_ch1 = (float)(*(__IO uint32_t *)(CONFIG_CAL_GAIN_MAXIMUM_CH1));
+            setting_cal_gain_medium_ch0 = settings_read_float(CONFIG_CAL_GAIN_MEDIUM_CH0);
+            setting_cal_gain_medium_ch1 = settings_read_float(CONFIG_CAL_GAIN_MEDIUM_CH1);
+            setting_cal_gain_high_ch0 = settings_read_float(CONFIG_CAL_GAIN_HIGH_CH0);
+            setting_cal_gain_high_ch1 = settings_read_float(CONFIG_CAL_GAIN_HIGH_CH1);
+            setting_cal_gain_maximum_ch0 = settings_read_float(CONFIG_CAL_GAIN_MAXIMUM_CH0);
+            setting_cal_gain_maximum_ch1 = settings_read_float(CONFIG_CAL_GAIN_MAXIMUM_CH1);
+            setting_cal_reflection_lo_d = settings_read_float(CONFIG_CAL_REFLECTION_LO_D);
+            setting_cal_reflection_lo_ll = settings_read_float(CONFIG_CAL_REFLECTION_LO_LL);
+            setting_cal_reflection_hi_d = settings_read_float(CONFIG_CAL_REFLECTION_HI_D);
+            setting_cal_reflection_hi_ll = settings_read_float(CONFIG_CAL_REFLECTION_HI_LL);
         }
     } while (0);
 
     return ret;
 }
 
-void settings_set_calibration_gain(tsl2591_gain_t gain, float ch0_gain, float ch1_gain)
+void settings_set_cal_gain(tsl2591_gain_t gain, float ch0_gain, float ch1_gain)
 {
     switch (gain) {
     case TSL2591_GAIN_MEDIUM:
@@ -91,12 +112,15 @@ void settings_set_calibration_gain(tsl2591_gain_t gain, float ch0_gain, float ch
     }
 }
 
-void settings_get_calibration_gain(tsl2591_gain_t gain, float *ch0_gain, float *ch1_gain)
+void settings_get_cal_gain(tsl2591_gain_t gain, float *ch0_gain, float *ch1_gain)
 {
     float ch0_value = 1.0F;
     float ch1_value = 1.0F;
 
-    if (gain == TSL2591_GAIN_MEDIUM) {
+    if (gain == TSL2591_GAIN_LOW) {
+        ch0_value = 1.0F;
+        ch1_value = 1.0F;
+    } else if (gain == TSL2591_GAIN_MEDIUM) {
         ch0_value = setting_cal_gain_medium_ch0;
         ch1_value = setting_cal_gain_medium_ch1;
 
@@ -133,6 +157,46 @@ void settings_get_calibration_gain(tsl2591_gain_t gain, float *ch0_gain, float *
     }
     if (ch1_gain) {
         *ch1_gain = ch1_value;
+    }
+}
+
+void settings_set_cal_reflection_lo(float d, float meas_ll)
+{
+    if (settings_write_float(CONFIG_CAL_REFLECTION_LO_D, d) == HAL_OK) {
+        setting_cal_reflection_lo_d = d;
+    }
+    if (settings_write_float(CONFIG_CAL_REFLECTION_LO_LL, meas_ll) == HAL_OK) {
+        setting_cal_reflection_lo_ll = meas_ll;
+    }
+}
+
+void settings_get_cal_reflection_lo(float *d, float *meas_ll)
+{
+    if (d) {
+        *d = setting_cal_reflection_lo_d;
+    }
+    if (meas_ll) {
+        *meas_ll = setting_cal_reflection_lo_ll;
+    }
+}
+
+void settings_set_cal_reflection_hi(float d, float meas_ll)
+{
+    if (settings_write_float(CONFIG_CAL_REFLECTION_HI_D, d) == HAL_OK) {
+        setting_cal_reflection_hi_d = d;
+    }
+    if (settings_write_float(CONFIG_CAL_REFLECTION_HI_LL, meas_ll) == HAL_OK) {
+        setting_cal_reflection_hi_ll = meas_ll;
+    }
+}
+
+void settings_get_cal_reflection_hi(float *d, float *meas_ll)
+{
+    if (d) {
+        *d = setting_cal_reflection_hi_d;
+    }
+    if (meas_ll) {
+        *meas_ll = setting_cal_reflection_hi_ll;
     }
 }
 
@@ -191,8 +255,46 @@ HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, s
     return ret;
 }
 
-static HAL_StatusTypeDef settings_write_float(uint32_t address, float val)
+float settings_read_float(uint32_t address)
 {
-    uint32_t data = (uint32_t)val;
-    return settings_write_buffer(address, (uint8_t *)&data, sizeof(data));
+    __IO uint32_t *data = (__IO uint32_t *)(address);
+    return copy_to_f32((uint8_t *)data);
+}
+
+HAL_StatusTypeDef settings_write_float(uint32_t address, float val)
+{
+    uint8_t data[4];
+    copy_from_f32(data, val);
+    return settings_write_buffer(address, data, sizeof(data));
+}
+
+void copy_from_u32(uint8_t *buf, uint32_t val)
+{
+    buf[0] = (val >> 24) & 0xFF;
+    buf[1] = (val >> 16) & 0xFF;
+    buf[2] = (val >> 8) & 0xFF;
+    buf[3] = val & 0xFF;
+}
+
+uint32_t copy_to_u32(const uint8_t *buf)
+{
+    return (uint32_t)buf[0] << 24
+        | (uint32_t)buf[1] << 16
+        | (uint32_t)buf[2] << 8
+        | (uint32_t)buf[3];
+}
+
+void copy_from_f32(uint8_t *buf, float val)
+{
+    uint32_t int_val;
+    memcpy(&int_val, &val, sizeof(float));
+    copy_from_u32(buf, int_val);
+}
+
+float copy_to_f32(const uint8_t *buf)
+{
+    float val;
+    uint32_t int_val = copy_to_u32(buf);
+    memcpy(&val, &int_val, sizeof(float));
+    return val;
 }

@@ -16,6 +16,7 @@
 #include "light.h"
 #include "sensor.h"
 #include "tsl2591.h"
+#include "util.h"
 
 #define CMD_DATA_SIZE 64
 
@@ -23,6 +24,15 @@ static uint8_t cmd_buffer[CMD_DATA_SIZE];
 static size_t cmd_buffer_len = 0;
 
 static void cdc_process_command(const char *cmd, size_t len);
+static void cdc_command_version(const char *cmd, size_t len);
+static void cdc_command_measure_reflection(const char *cmd, size_t len);
+static void cdc_command_measure_transmission(const char *cmd, size_t len);
+static void cdc_command_cal_gain(const char *cmd, size_t len);
+static void cdc_command_cal_reflection(const char *cmd, size_t len);
+static void cdc_command_cal_transmission(const char *cmd, size_t len);
+static void cdc_command_diag_system(const char *cmd, size_t len);
+static void cdc_command_diag_light(const char *cmd, size_t len);
+static void cdc_command_diag_sensor(const char *cmd, size_t len);
 static void cdc_send_response(const char *str);
 
 extern I2C_HandleTypeDef hi2c1;
@@ -78,12 +88,6 @@ void cdc_task()
     }
 }
 
-static void cdc_command_version(const char *cmd, size_t len);
-static void cdc_command_cal_gain(const char *cmd, size_t len);
-static void cdc_command_diag_system(const char *cmd, size_t len);
-static void cdc_command_diag_light(const char *cmd, size_t len);
-static void cdc_command_diag_sensor(const char *cmd, size_t len);
-
 void cdc_process_command(const char *cmd, size_t len)
 {
     if (len == 0 || cmd[0] == '\0') {
@@ -97,10 +101,23 @@ void cdc_process_command(const char *cmd, size_t len)
     if (cmd_prefix == 'V' && len == 1) {
         /* Version string command */
         cdc_command_version(cmd, len);
+    } else if (cmd_prefix == 'M' && len > 1) {
+        /* Measurement command */
+        char meas_prefix = toupper(cmd[1]);
+        if (meas_prefix == 'R') {
+            cdc_command_measure_reflection(cmd, len);
+        } else if (meas_prefix == 'T') {
+            cdc_command_measure_transmission(cmd, len);
+        }
     } else if (cmd_prefix == 'C' && len > 1) {
+        /* Calibration command */
         char cal_prefix = toupper(cmd[1]);
         if (cal_prefix == 'G') {
             cdc_command_cal_gain(cmd, len);
+        } else if (cal_prefix == 'R') {
+            cdc_command_cal_reflection(cmd, len);
+        } else if (cal_prefix == 'T') {
+            cdc_command_cal_transmission(cmd, len);
         }
     } else if (cmd_prefix == 'D' && len > 1) {
         /* Diagnostic command */
@@ -124,6 +141,90 @@ void cdc_command_version(const char *cmd, size_t len)
     cdc_send_response(buf);
 }
 
+void cdc_command_measure_reflection(const char *cmd, size_t len)
+{
+    /*
+     * "MR" : Measurement Reflection
+     */
+
+    UNUSED(cmd);
+    UNUSED(len);
+
+    char buf[128];
+    char numbuf[16];
+
+    float cal_lo_d;
+    float cal_lo_ll;
+    float cal_hi_d;
+    float cal_hi_ll;
+    settings_get_cal_reflection_lo(&cal_lo_d, &cal_lo_ll);
+    settings_get_cal_reflection_hi(&cal_hi_d, &cal_hi_ll);
+    if (cal_lo_d < 0.0F || cal_hi_d <= cal_lo_d
+        || cal_lo_ll < 0.0F || cal_hi_ll >= cal_lo_ll) {
+        char numbuf1[16];
+        char numbuf2[16];
+
+        log_w("Invalid calibration values");
+
+        float_to_str(cal_lo_d, numbuf1, 2);
+        float_to_str(cal_lo_ll, numbuf2, 6);
+        log_w("CAL-LO: D=%s, LL=%s", numbuf1, numbuf2);
+
+        float_to_str(cal_hi_d, numbuf1, 2);
+        float_to_str(cal_hi_ll, numbuf2, 6);
+        log_w("CAL-HI: D=%s, LL=%s", numbuf1, numbuf2);
+
+        cdc_send_response("ERR\r\n");
+        return;
+    }
+
+    light_set_reflection(128);
+    light_set_transmission(0);
+
+    float ch0_basic;
+    float ch1_basic;
+    if (sensor_read(2, &ch0_basic, &ch1_basic) != HAL_OK) {
+        log_w("Sensor read error");
+        cdc_send_response("ERR\r\n");
+        light_set_reflection(0);
+        return;
+    }
+
+    if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
+
+    float meas_ll = log10f(ch0_basic - ch1_basic);
+
+    /* Calculate the slope of the line */
+    float m = (cal_hi_d - cal_lo_d) / (cal_hi_ll - cal_lo_ll);
+
+    /* Calculate the measured density */
+    float meas_d = (m * (meas_ll - cal_lo_ll)) + cal_lo_d;
+
+    float_to_str(meas_d, numbuf, 2);
+
+    log_i("D=%s", numbuf);
+
+    sprintf(buf, "MR,D=%s\r\n", numbuf);
+
+    light_set_reflection(0);
+
+    cdc_send_response(buf);
+}
+
+void cdc_command_measure_transmission(const char *cmd, size_t len)
+{
+    /*
+     * "MT" : Measurement Transmission
+     */
+
+    UNUSED(cmd);
+    UNUSED(len);
+
+    /* Not yet implemented */
+
+    cdc_send_response("ERR\r\n");
+}
+
 void cdc_command_cal_gain(const char *cmd, size_t len)
 {
     /*
@@ -142,34 +243,115 @@ void cdc_command_cal_gain(const char *cmd, size_t len)
         sensor_gain_calibration();
     } if (prefix == 'P') {
         char buf[128];
+        char numbuf1[16];
+        char numbuf2[16];
         float ch0_gain, ch1_gain;
-        float ival0, fval0;
-        float ival1, fval1;
 
-        settings_get_calibration_gain(TSL2591_GAIN_MEDIUM, &ch0_gain, &ch1_gain);
-        fval0 = modff(ch0_gain, &ival0);
-        fval1 = modff(ch1_gain, &ival1);
-        sprintf(buf, "TSL2591,MEDIUM,%d.%d,%d.%d\r\n",
-            (int)lroundf(ival0), (int)lroundf(fval0 * 100),
-            (int)lroundf(ival1), (int)lroundf(fval1 * 100));
+        settings_get_cal_gain(TSL2591_GAIN_MEDIUM, &ch0_gain, &ch1_gain);
+        float_to_str(ch0_gain, numbuf1, 2);
+        float_to_str(ch1_gain, numbuf2, 2);
+        sprintf(buf, "TSL2591,MEDIUM,%s,%s\r\n", numbuf1, numbuf2);
         cdc_send_response(buf);
 
-        settings_get_calibration_gain(TSL2591_GAIN_HIGH, &ch0_gain, &ch1_gain);
-        fval0 = modff(ch0_gain, &ival0);
-        fval1 = modff(ch1_gain, &ival1);
-        sprintf(buf, "TSL2591,HIGH,%d.%d,%d.%d\r\n",
-            (int)lroundf(ival0), (int)lroundf(fval0 * 100),
-            (int)lroundf(ival1), (int)lroundf(fval1 * 100));
+        settings_get_cal_gain(TSL2591_GAIN_HIGH, &ch0_gain, &ch1_gain);
+        float_to_str(ch0_gain, numbuf1, 2);
+        float_to_str(ch1_gain, numbuf2, 2);
+        sprintf(buf, "TSL2591,HIGH,%s,%s\r\n", numbuf1, numbuf2);
         cdc_send_response(buf);
 
-        settings_get_calibration_gain(TSL2591_GAIN_MAXIMUM, &ch0_gain, &ch1_gain);
-        fval0 = modff(ch0_gain, &ival0);
-        fval1 = modff(ch1_gain, &ival1);
-        sprintf(buf, "TSL2591,MAXIMUM,%d.%d,%d.%d\r\n",
-            (int)lroundf(ival0), (int)lroundf(fval0 * 100),
-            (int)lroundf(ival1), (int)lroundf(fval1 * 100));
+        settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &ch0_gain, &ch1_gain);
+        float_to_str(ch0_gain, numbuf1, 2);
+        float_to_str(ch1_gain, numbuf2, 2);
+        sprintf(buf, "TSL2591,MAXIMUM,%s,%s\r\n", numbuf1, numbuf2);
         cdc_send_response(buf);
     }
+}
+
+void cdc_command_cal_reflection(const char *cmd, size_t len)
+{
+    /*
+     * "CRL" : Reflection Calibration CAL-LO
+     * "CRLMnnn" -> Calibrate using low target with a known density of n.nn (e.g. 123 = 1.23)
+     * "CLP"    -> Return currently saved low target calibration values
+     *
+     * "CRH" : Reflection Calibration CAL-HI
+     * "CRHMnnn" -> Calibrate using high target with a known density of n.nn (e.g. 123 = 1.23)
+     * "CRHP"    -> Return currently saved high target calibration values
+     */
+
+    if (len < 4) {
+        return;
+    }
+
+    char mode = toupper(cmd[2]);
+    char prefix = toupper(cmd[3]);
+
+    if (mode != 'L' && mode != 'H') {
+        return;
+    }
+
+    if (prefix == 'M') {
+        float ch0_basic;
+        float ch1_basic;
+
+        uint8_t val = (len > 3) ? atoi(cmd + 3) : 0;
+        if (val > 250) { val = 250; }
+        float d = val / 100.0F;
+
+        light_set_reflection(128);
+        light_set_transmission(0);
+
+        if (sensor_read(5, &ch0_basic, &ch1_basic) == HAL_OK) {
+            if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
+            float meas_ll = log10f(ch0_basic - ch1_basic);
+
+            if (mode == 'L') {
+                settings_set_cal_reflection_lo(d, meas_ll);
+            } else if (mode == 'H') {
+                settings_set_cal_reflection_hi(d, meas_ll);
+            }
+
+            char numbuf1[16];
+            char numbuf2[16];
+            float_to_str(d, numbuf1, 2);
+            float_to_str(meas_ll, numbuf2, 6);
+            log_i("CAL, %c, D=%s, LL=%s", mode, numbuf1, numbuf2);
+
+            cdc_send_response("OK\r\n");
+        } else {
+            cdc_send_response("ERR\r\n");
+        }
+
+        light_set_reflection(0);
+
+    } else if (prefix == 'P') {
+        char buf[128];
+        char numbuf1[16];
+        char numbuf2[16];
+        float d = 0;
+        float meas_ll = 0;
+
+        if (mode == 'L') {
+            settings_get_cal_reflection_lo(&d, &meas_ll);
+        } else if (mode == 'H') {
+            settings_get_cal_reflection_hi(&d, &meas_ll);
+        }
+
+        float_to_str(d, numbuf1, 2);
+        float_to_str(meas_ll, numbuf2, 6);
+        sprintf(buf, "CAL,%c,%s,%s\r\n", mode, numbuf1, numbuf2);
+        cdc_send_response(buf);
+    }
+}
+
+void cdc_command_cal_transmission(const char *cmd, size_t len)
+{
+    UNUSED(cmd);
+    UNUSED(len);
+
+    /* Not yet implemented */
+
+    cdc_send_response("ERR\r\n");
 }
 
 void cdc_command_diag_system(const char *cmd, size_t len)

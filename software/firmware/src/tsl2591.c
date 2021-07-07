@@ -259,3 +259,23 @@ HAL_StatusTypeDef tsl2591_get_full_channel_data(I2C_HandleTypeDef *hi2c, uint16_
 
     return HAL_OK;
 }
+
+uint16_t tsl2591_get_time_value_ms(tsl2591_time_t time)
+{
+    switch (time) {
+    case TSL2591_TIME_100MS:
+        return 100;
+    case TSL2591_TIME_200MS:
+        return 200;
+    case TSL2591_TIME_300MS:
+        return 300;
+    case TSL2591_TIME_400MS:
+        return 400;
+    case TSL2591_TIME_500MS:
+        return 500;
+    case TSL2591_TIME_600MS:
+        return 600;
+    default:
+        return 0;
+    }
+}

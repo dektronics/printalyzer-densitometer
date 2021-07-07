@@ -23,4 +23,14 @@ bool sensor_is_initialized();
  */
 HAL_StatusTypeDef sensor_gain_calibration();
 
+/**
+ * Perform a reading with the sensor.
+ *
+ * @param iterations Number of read iterations to average across
+ * @param ch0_result Channel 0 result, in basic counts
+ * @param ch1_result Channel 1 result, in basic counts
+ * @return HAL_OK on success
+ */
+HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_result);
+
 #endif /* SENSOR_H */

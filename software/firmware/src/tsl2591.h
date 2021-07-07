@@ -18,7 +18,7 @@ typedef enum {
 
 /* Gain value ranges, as specified by the datasheet */
 #define TSL2591_GAIN_MEDIUM_MIN      22
-#define TSL2591_GAIN_MEDIUM_TYP      24.5F
+#define TSL2591_GAIN_MEDIUM_TYP      (24.5F)
 #define TSL2591_GAIN_MEDIUM_MAX      27
 
 #define TSL2591_GAIN_HIGH_MIN        360
@@ -61,6 +61,30 @@ typedef enum {
     TSL2591_PERSIST_60    = 15
 } tsl2591_persist_t;
 
+/* Sensor saturation limits */
+#define TSL2591_ANALOG_SATURATION  37888 /*!< Value that indicates analog saturation at 100ms */
+#define TSL2591_DIGITAL_SATURATION 65535 /*!< Value that indicates digital saturation at >100ms */
+
+/**
+ * Device Factor
+ * This is used for CPL calculations.
+ * There does not appear to be any official source for this. However, several
+ * 3rd party libraries for the device use this number, so that's what we'll
+ * go with.
+ */
+#define TSL2591_LUX_DF (408.0F)
+
+/**
+ * Glass attenuation factor.
+ * This is used for CPL calculations.
+ * It is based on estimations of the properties of various filter materials
+ * that have been placed in front of the sensor. Absolute accuracy is not
+ * required for the densitometer use case, but consistency is. Therefore, any
+ * changes to this value or the DF value will require redoing density
+ * calibration.
+ */
+#define TSL2591_LUX_GA (1.16F)
+
 /* Enable Register Values */
 #define TSL2591_ENABLE_NPIEN 0x80 /*!< No persist interrupt enable */
 #define TSL2591_ENABLE_SAI   0x40 /*!< Sleep after interrupt */
@@ -93,5 +117,7 @@ HAL_StatusTypeDef tsl2591_get_status(I2C_HandleTypeDef *hi2c, uint8_t *value);
 HAL_StatusTypeDef tsl2591_get_status_valid(I2C_HandleTypeDef *hi2c, bool *valid);
 
 HAL_StatusTypeDef tsl2591_get_full_channel_data(I2C_HandleTypeDef *hi2c, uint16_t *ch0_val, uint16_t *ch1_val);
+
+uint16_t tsl2591_get_time_value_ms(tsl2591_time_t time);
 
 #endif /* TSL2591_H */
