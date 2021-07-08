@@ -294,9 +294,11 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
         float ch0_basic;
         float ch1_basic;
 
-        uint8_t val = (len > 3) ? atoi(cmd + 3) : 0;
-        if (val > 250) { val = 250; }
+        int val = (len > 4) ? atoi(cmd + 4) : 0;
+
         float d = val / 100.0F;
+        if (d < 0) { d = 0.0F; }
+        else if (d > 2.50F) { d = 2.50F; }
 
         light_set_reflection(128);
         light_set_transmission(0);
