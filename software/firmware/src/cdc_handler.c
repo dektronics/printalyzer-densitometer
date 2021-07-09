@@ -154,25 +154,25 @@ void cdc_command_measure_reflection(const char *cmd, size_t len)
     char numbuf[16];
 
     float cal_lo_d;
-    float cal_lo_ll;
+    float cal_lo_value;
     float cal_hi_d;
-    float cal_hi_ll;
-    settings_get_cal_reflection_lo(&cal_lo_d, &cal_lo_ll);
-    settings_get_cal_reflection_hi(&cal_hi_d, &cal_hi_ll);
+    float cal_hi_value;
+    settings_get_cal_reflection_lo(&cal_lo_d, &cal_lo_value);
+    settings_get_cal_reflection_hi(&cal_hi_d, &cal_hi_value);
     if (cal_lo_d < 0.0F || cal_hi_d <= cal_lo_d
-        || cal_lo_ll < 0.0F || cal_hi_ll >= cal_lo_ll) {
+        || cal_lo_value < 0.0F || cal_hi_value >= cal_lo_value) {
         char numbuf1[16];
         char numbuf2[16];
 
         log_w("Invalid calibration values");
 
         float_to_str(cal_lo_d, numbuf1, 2);
-        float_to_str(cal_lo_ll, numbuf2, 6);
-        log_w("CAL-LO: D=%s, LL=%s", numbuf1, numbuf2);
+        float_to_str(cal_lo_value, numbuf2, 6);
+        log_w("CAL-LO: D=%s, VALUE=%s", numbuf1, numbuf2);
 
         float_to_str(cal_hi_d, numbuf1, 2);
-        float_to_str(cal_hi_ll, numbuf2, 6);
-        log_w("CAL-HI: D=%s, LL=%s", numbuf1, numbuf2);
+        float_to_str(cal_hi_value, numbuf2, 6);
+        log_w("CAL-HI: D=%s, VALUE=%s", numbuf1, numbuf2);
 
         cdc_send_response("ERR\r\n");
         return;
@@ -193,6 +193,8 @@ void cdc_command_measure_reflection(const char *cmd, size_t len)
     if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
 
     float meas_ll = log10f(ch0_basic - ch1_basic);
+    float cal_hi_ll = log10f(cal_hi_value);
+    float cal_lo_ll = log10f(cal_lo_value);
 
     /* Calculate the slope of the line */
     float m = (cal_hi_d - cal_lo_d) / (cal_hi_ll - cal_lo_ll);
@@ -364,19 +366,19 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
 
         if (sensor_read(5, &ch0_basic, &ch1_basic) == HAL_OK) {
             if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-            float meas_ll = log10f(ch0_basic - ch1_basic);
+            float meas_value = ch0_basic - ch1_basic;
 
             if (mode == 'L') {
-                settings_set_cal_reflection_lo(d, meas_ll);
+                settings_set_cal_reflection_lo(d, meas_value);
             } else if (mode == 'H') {
-                settings_set_cal_reflection_hi(d, meas_ll);
+                settings_set_cal_reflection_hi(d, meas_value);
             }
 
             char numbuf1[16];
             char numbuf2[16];
             float_to_str(d, numbuf1, 2);
-            float_to_str(meas_ll, numbuf2, 6);
-            log_i("CAL, %c, D=%s, LL=%s", mode, numbuf1, numbuf2);
+            float_to_str(meas_value, numbuf2, 6);
+            log_i("CAL, %c, D=%s, VALUE=%s", mode, numbuf1, numbuf2);
 
             cdc_send_response("OK\r\n");
         } else {
@@ -390,16 +392,16 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
         char numbuf1[16];
         char numbuf2[16];
         float d = 0;
-        float meas_ll = 0;
+        float value = 0;
 
         if (mode == 'L') {
-            settings_get_cal_reflection_lo(&d, &meas_ll);
+            settings_get_cal_reflection_lo(&d, &value);
         } else if (mode == 'H') {
-            settings_get_cal_reflection_hi(&d, &meas_ll);
+            settings_get_cal_reflection_hi(&d, &value);
         }
 
         float_to_str(d, numbuf1, 2);
-        float_to_str(meas_ll, numbuf2, 6);
+        float_to_str(value, numbuf2, 6);
         sprintf(buf, "CAL,%c,%s,%s\r\n", mode, numbuf1, numbuf2);
         cdc_send_response(buf);
     }
