@@ -220,9 +220,68 @@ void cdc_command_measure_transmission(const char *cmd, size_t len)
     UNUSED(cmd);
     UNUSED(len);
 
-    /* Not yet implemented */
+    char buf[128];
+    char numbuf[16];
 
-    cdc_send_response("ERR\r\n");
+    float cal_zero_value;
+    float cal_hi_d;
+    float cal_hi_value;
+    settings_get_cal_transmission_zero(&cal_zero_value);
+    settings_get_cal_transmission_hi(&cal_hi_d, &cal_hi_value);
+    if (cal_zero_value <= 0.0F || cal_hi_d <= 0.0F || cal_hi_value <= 0.0F
+        || cal_hi_value >= cal_zero_value) {
+        char numbuf1[16];
+        char numbuf2[16];
+
+        log_w("Invalid calibration values");
+
+        float_to_str(cal_zero_value, numbuf1, 6);
+        log_w("CAL-ZERO: VALUE=%s", numbuf1);
+
+        float_to_str(cal_hi_d, numbuf1, 2);
+        float_to_str(cal_hi_value, numbuf2, 6);
+        log_w("CAL-HI: D=%s, VALUE=%s", numbuf1, numbuf2);
+
+        cdc_send_response("ERR\r\n");
+        return;
+    }
+
+    light_set_reflection(0);
+    light_set_transmission(128);
+
+    float ch0_basic;
+    float ch1_basic;
+    if (sensor_read(2, &ch0_basic, &ch1_basic) != HAL_OK) {
+        log_w("Sensor read error");
+        cdc_send_response("ERR\r\n");
+        light_set_transmission(0);
+        return;
+    }
+
+    if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
+    float meas_value = ch0_basic - ch1_basic;
+
+    /* Calculate the measured CAL-HI density relative to the zero value */
+    float cal_hi_meas_d = -1.0F * log10f(cal_hi_value / cal_zero_value);
+
+    /* Calculate the measured target density relative to the zero value */
+    float meas_d = -1.0F * log10f(meas_value / cal_zero_value);
+
+    /* Calculate the adjustment factor */
+    float adj_factor = cal_hi_d / cal_hi_meas_d;
+
+    /* Calculate the calibration corrected density */
+    float corr_d = meas_d * adj_factor;
+
+    float_to_str(corr_d, numbuf, 2);
+
+    log_i("D=%s", numbuf);
+
+    sprintf(buf, "MT,D=%s\r\n", numbuf);
+
+    light_set_transmission(0);
+
+    cdc_send_response(buf);
 }
 
 void cdc_command_cal_gain(const char *cmd, size_t len)
@@ -348,12 +407,83 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
 
 void cdc_command_cal_transmission(const char *cmd, size_t len)
 {
-    UNUSED(cmd);
-    UNUSED(len);
+    /*
+     * "CTZ" : Transmission Calibration Zero
+     * "CTZM" -> Calibrate the zero target, which is when no film is in the sensor path
+     * "CTZP" -> Return currently saved zero target calibration value
+     *
+     * "CTH" : Transmission Calibration CAL-HI
+     * "CTHMnnn" -> Calibrate using high target with a known density of n.nn (e.g. 123 = 1.23)
+     * "CTHP"    -> Return currently saved high target calibration values
+     */
 
-    /* Not yet implemented */
+    char mode = toupper(cmd[2]);
+    char prefix = toupper(cmd[3]);
 
-    cdc_send_response("ERR\r\n");
+    if (mode != 'Z' && mode != 'H') {
+        return;
+    }
+
+    if (prefix == 'M') {
+        float ch0_basic;
+        float ch1_basic;
+        float d = NAN;
+
+        if (mode == 'H') {
+            int val = (len > 4) ? atoi(cmd + 4) : 0;
+            d = val / 100.0F;
+            if (d < 0) { d = 0.0F; }
+        }
+
+        light_set_reflection(0);
+        light_set_transmission(128);
+
+        if (sensor_read(5, &ch0_basic, &ch1_basic) == HAL_OK) {
+            if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
+            float value = ch0_basic - ch1_basic;
+
+            if (mode == 'Z') {
+                settings_set_cal_transmission_zero(value);
+            } else if (mode == 'H') {
+                settings_set_cal_transmission_hi(d, value);
+            }
+
+            char numbuf1[16];
+            char numbuf2[16];
+            float_to_str(d, numbuf1, 2);
+            float_to_str(value, numbuf2, 6);
+            log_i("CAL, %c, D=%s, VALUE=%s", mode, numbuf1, numbuf2);
+
+            cdc_send_response("OK\r\n");
+        } else {
+            cdc_send_response("ERR\r\n");
+        }
+
+        light_set_transmission(0);
+
+
+    } else if (prefix == 'P') {
+        char buf[128];
+        char numbuf1[16];
+        char numbuf2[16];
+        float d = 0;
+        float value = 0;
+
+        if (mode == 'Z') {
+            settings_get_cal_transmission_zero(&value);
+            float_to_str(value, numbuf1, 6);
+            sprintf(buf, "CAL,%c,%s\r\n", mode, numbuf1);
+        } else if (mode == 'H') {
+            settings_get_cal_transmission_hi(&d, &value);
+            float_to_str(d, numbuf1, 2);
+            float_to_str(value, numbuf2, 6);
+            sprintf(buf, "CAL,%c,%s,%s\r\n", mode, numbuf1, numbuf2);
+        } else {
+            sprintf(buf, "ERR\r\n");
+        }
+
+        cdc_send_response(buf);
+    }
 }
 
 void cdc_command_diag_system(const char *cmd, size_t len)

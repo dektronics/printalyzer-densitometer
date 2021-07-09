@@ -34,8 +34,13 @@ Calibration
   * `CRHP` - Print the current high target calibration values
 
 ### Transmission Calibration
-* TBD
+* Zero Target Measurement
+  * `CTZM` - Calibrate the zero target, which is when no film is in the sensor path
+  * `CTZP` - Print the current zero target calibration value
 
+* CAL-HI Target Measurement
+  * `CTHMnnn` - Calibrate using high target with a known density of n.nn (e.g. 123 = 1.23)
+  * `CTHP` - Print the current high target calibration values
 
 Diagnostic Commands
 -------------------

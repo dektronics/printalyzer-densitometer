@@ -19,16 +19,22 @@ static float copy_to_f32(const uint8_t *buf);
 #define CONFIG_HEADER (DATA_EEPROM_BASE + 0U)
 
 #define CONFIG_CAL_BASE (DATA_EEPROM_BASE + 128U)
+
 #define CONFIG_CAL_GAIN_MEDIUM_CH0  (CONFIG_CAL_BASE + 0U)
 #define CONFIG_CAL_GAIN_MEDIUM_CH1  (CONFIG_CAL_BASE + 4U)
 #define CONFIG_CAL_GAIN_HIGH_CH0    (CONFIG_CAL_BASE + 8U)
 #define CONFIG_CAL_GAIN_HIGH_CH1    (CONFIG_CAL_BASE + 12U)
 #define CONFIG_CAL_GAIN_MAXIMUM_CH0 (CONFIG_CAL_BASE + 16U)
 #define CONFIG_CAL_GAIN_MAXIMUM_CH1 (CONFIG_CAL_BASE + 20U)
+
 #define CONFIG_CAL_REFLECTION_LO_D  (CONFIG_CAL_BASE + 24U)
 #define CONFIG_CAL_REFLECTION_LO_LL (CONFIG_CAL_BASE + 28U)
 #define CONFIG_CAL_REFLECTION_HI_D  (CONFIG_CAL_BASE + 32U)
 #define CONFIG_CAL_REFLECTION_HI_LL (CONFIG_CAL_BASE + 36U)
+
+#define CONFIG_CAL_TRANSMISSION_ZERO_VALUE (CONFIG_CAL_BASE + 40U)
+#define CONFIG_CAL_TRANSMISSION_HI_D       (CONFIG_CAL_BASE + 44U)
+#define CONFIG_CAL_TRANSMISSION_HI_VALUE   (CONFIG_CAL_BASE + 48U)
 
 static float setting_cal_gain_medium_ch0 = 0;
 static float setting_cal_gain_medium_ch1 = 0;
@@ -36,10 +42,15 @@ static float setting_cal_gain_high_ch0 = 0;
 static float setting_cal_gain_high_ch1 = 0;
 static float setting_cal_gain_maximum_ch0 = 0;
 static float setting_cal_gain_maximum_ch1 = 0;
+
 static float setting_cal_reflection_lo_d = 0;
 static float setting_cal_reflection_lo_ll = 0;
 static float setting_cal_reflection_hi_d = 0;
 static float setting_cal_reflection_hi_ll = 0;
+
+static float setting_cal_transmission_zero_value = 0;
+static float setting_cal_transmission_hi_d = 0;
+static float setting_cal_transmission_hi_value = 0;
 
 HAL_StatusTypeDef settings_init()
 {
@@ -64,10 +75,15 @@ HAL_StatusTypeDef settings_init()
             settings_write_float(CONFIG_CAL_GAIN_HIGH_CH1, NAN);
             settings_write_float(CONFIG_CAL_GAIN_MAXIMUM_CH0, NAN);
             settings_write_float(CONFIG_CAL_GAIN_MAXIMUM_CH1, NAN);
+
             settings_write_float(CONFIG_CAL_REFLECTION_LO_D, NAN);
             settings_write_float(CONFIG_CAL_REFLECTION_LO_LL, NAN);
             settings_write_float(CONFIG_CAL_REFLECTION_HI_D, NAN);
             settings_write_float(CONFIG_CAL_REFLECTION_HI_LL, NAN);
+
+            settings_write_float(CONFIG_CAL_TRANSMISSION_ZERO_VALUE, NAN);
+            settings_write_float(CONFIG_CAL_TRANSMISSION_HI_D, NAN);
+            settings_write_float(CONFIG_CAL_TRANSMISSION_HI_VALUE, NAN);
         } else {
             /* Load Calibration Page */
             setting_cal_gain_medium_ch0 = settings_read_float(CONFIG_CAL_GAIN_MEDIUM_CH0);
@@ -76,10 +92,15 @@ HAL_StatusTypeDef settings_init()
             setting_cal_gain_high_ch1 = settings_read_float(CONFIG_CAL_GAIN_HIGH_CH1);
             setting_cal_gain_maximum_ch0 = settings_read_float(CONFIG_CAL_GAIN_MAXIMUM_CH0);
             setting_cal_gain_maximum_ch1 = settings_read_float(CONFIG_CAL_GAIN_MAXIMUM_CH1);
+
             setting_cal_reflection_lo_d = settings_read_float(CONFIG_CAL_REFLECTION_LO_D);
             setting_cal_reflection_lo_ll = settings_read_float(CONFIG_CAL_REFLECTION_LO_LL);
             setting_cal_reflection_hi_d = settings_read_float(CONFIG_CAL_REFLECTION_HI_D);
             setting_cal_reflection_hi_ll = settings_read_float(CONFIG_CAL_REFLECTION_HI_LL);
+
+            setting_cal_transmission_zero_value = settings_read_float(CONFIG_CAL_TRANSMISSION_ZERO_VALUE);
+            setting_cal_transmission_hi_d = settings_read_float(CONFIG_CAL_TRANSMISSION_HI_D);
+            setting_cal_transmission_hi_value = settings_read_float(CONFIG_CAL_TRANSMISSION_HI_VALUE);
         }
     } while (0);
 
@@ -197,6 +218,40 @@ void settings_get_cal_reflection_hi(float *d, float *meas_ll)
     }
     if (meas_ll) {
         *meas_ll = setting_cal_reflection_hi_ll;
+    }
+}
+
+void settings_set_cal_transmission_zero(float value)
+{
+    if (settings_write_float(CONFIG_CAL_TRANSMISSION_ZERO_VALUE, value) == HAL_OK) {
+        setting_cal_transmission_zero_value = value;
+    }
+}
+
+void settings_get_cal_transmission_zero(float *value)
+{
+    if (value) {
+        *value = setting_cal_transmission_zero_value;
+    }
+}
+
+void settings_set_cal_transmission_hi(float d, float value)
+{
+    if (settings_write_float(CONFIG_CAL_TRANSMISSION_HI_D, d) == HAL_OK) {
+        setting_cal_transmission_hi_d = d;
+    }
+    if (settings_write_float(CONFIG_CAL_TRANSMISSION_HI_VALUE, value) == HAL_OK) {
+        setting_cal_transmission_hi_value = value;
+    }
+}
+
+void settings_get_cal_transmission_hi(float *d, float *value)
+{
+    if (d) {
+        *d = setting_cal_transmission_hi_d;
+    }
+    if (value) {
+        *value = setting_cal_transmission_hi_value;
     }
 }
 

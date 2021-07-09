@@ -18,4 +18,10 @@ void settings_get_cal_reflection_lo(float *d, float *meas_ll);
 void settings_set_cal_reflection_hi(float d, float meas_ll);
 void settings_get_cal_reflection_hi(float *d, float *meas_ll);
 
+void settings_set_cal_transmission_zero(float value);
+void settings_get_cal_transmission_zero(float *value);
+
+void settings_set_cal_transmission_hi(float d, float value);
+void settings_get_cal_transmission_hi(float *d, float *value);
+
 #endif /* SETTINGS_H */
