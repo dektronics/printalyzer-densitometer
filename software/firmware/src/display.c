@@ -2,6 +2,8 @@
 
 #include "u8g2_stm32_hal.h"
 #include "u8g2.h"
+#include "display_segments.h"
+#include "display_assets.h"
 
 static u8g2_t u8g2;
 static uint8_t display_contrast = 0x9F;
@@ -158,6 +160,45 @@ void display_static_list(const char *title, const char *list)
         yy += 3;
     }
     u8g2_DrawSelectionList(&u8g2, &u8sl, yy, list);
+
+    u8g2_SendBuffer(&u8g2);
+}
+
+void display_draw_main_elements(const display_main_elements_t *elements)
+{
+    if (!elements) { return; }
+
+    u8g2_SetDrawColor(&u8g2, 0);
+    u8g2_ClearBuffer(&u8g2);
+    u8g2_SetFont(&u8g2, u8g2_font_pxplusibmvga9_tf);
+    u8g2_SetDrawColor(&u8g2, 1);
+    u8g2_SetBitmapMode(&u8g2, 1);
+
+    u8g2_uint_t x = u8g2_GetDisplayWidth(&u8g2) - 22;
+    u8g2_uint_t y = 18;
+
+    display_draw_mdigit(&u8g2, x, y, elements->density100 % 10);
+    x -= 22;
+
+    display_draw_mdigit(&u8g2, x, y, elements->density100 % 100 / 10);
+    x -= 8;
+
+    u8g2_DrawBox(&u8g2, x, y + 33, 4, 4);
+    x -= 22;
+
+    display_draw_mdigit(&u8g2, x, y, elements->density100 % 1000 / 100);
+
+    if (elements->mode == DISPLAY_MODE_REFLECTION) {
+        asset_info_t asset;
+        display_asset_get(&asset, ASSET_REFLECTION_ICON_40);
+        u8g2_DrawXBM(&u8g2, 4, y - 1, asset.width, asset.height, asset.bits);
+        u8g2_DrawUTF8(&u8g2, 0, u8g2_GetAscent(&u8g2), "Reflection");
+    } else if (elements->mode == DISPLAY_MODE_TRANSMISSION) {
+        asset_info_t asset;
+        display_asset_get(&asset, ASSET_TRANSMISSION_ICON_40);
+        u8g2_DrawXBM(&u8g2, 4, y - 1, asset.width, asset.height, asset.bits);
+        u8g2_DrawUTF8(&u8g2, 0, u8g2_GetAscent(&u8g2), "Transmission");
+    }
 
     u8g2_SendBuffer(&u8g2);
 }
