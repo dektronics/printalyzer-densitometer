@@ -60,7 +60,7 @@ HAL_StatusTypeDef sensor_wait_for_status(uint8_t flags, uint32_t timeout)
     return ret;
 }
 
-HAL_StatusTypeDef sensor_gain_calibration()
+HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data)
 {
     /*
      * The sensor gain calibration process currently uses hand-picked
@@ -80,6 +80,10 @@ HAL_StatusTypeDef sensor_gain_calibration()
 
     log_i("Starting gain calibration");
 
+    if (callback) {
+        callback(SENSOR_GAIN_CALIBRATION_STATUS_INIT, user_data);
+    }
+
     /* Set lights to initial state */
     light_set_reflection(0);
     light_set_transmission(8);
@@ -91,6 +95,9 @@ HAL_StatusTypeDef sensor_gain_calibration()
 
         /* Calibrate the value for medium gain */
         log_i("Medium gain calibration");
+        if (callback) {
+            callback(SENSOR_GAIN_CALIBRATION_STATUS_MEDIUM, user_data);
+        }
         light_set_transmission(128);
         ret = sensor_gain_calibration_loop(TSL2591_GAIN_LOW, TSL2591_GAIN_MEDIUM, TSL2591_TIME_600MS, &gain_med_ch0, &gain_med_ch1);
         if (ret != HAL_OK) { break; }
@@ -108,6 +115,9 @@ HAL_StatusTypeDef sensor_gain_calibration()
 
         /* Calibrate the value for high gain */
         log_i("High gain calibration");
+        if (callback) {
+            callback(SENSOR_GAIN_CALIBRATION_STATUS_HIGH, user_data);
+        }
         light_set_transmission(35);
         ret = sensor_gain_calibration_loop(TSL2591_GAIN_MEDIUM, TSL2591_GAIN_HIGH, TSL2591_TIME_200MS, &gain_high_ch0, &gain_high_ch1);
         if (ret != HAL_OK) { break; }
@@ -128,7 +138,9 @@ HAL_StatusTypeDef sensor_gain_calibration()
 
         /* Calibrate the value for maximum gain */
         log_i("Maximum gain calibration");
-
+        if (callback) {
+            callback(SENSOR_GAIN_CALIBRATION_STATUS_MAXIMUM, user_data);
+        }
         light_set_transmission(5);
         ret = sensor_gain_calibration_loop(TSL2591_GAIN_HIGH, TSL2591_GAIN_MAXIMUM, TSL2591_TIME_200MS, &gain_max_ch0, &gain_max_ch1);
         if (ret != HAL_OK) { break; }
@@ -147,6 +159,14 @@ HAL_StatusTypeDef sensor_gain_calibration()
             gain_max_ch1 = TSL2591_GAIN_MAXIMUM_CH1_TYP;
         }
     } while (0);
+
+    if (callback) {
+        if (ret == HAL_OK) {
+            callback(SENSOR_GAIN_CALIBRATION_STATUS_DONE, user_data);
+        } else {
+            callback(SENSOR_GAIN_CALIBRATION_STATUS_FAILED, user_data);
+        }
+    }
 
     /* Turn off the sensor */
     tsl2591_set_enable(sensor_i2c, 0x00);

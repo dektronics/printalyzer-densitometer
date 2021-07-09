@@ -5,6 +5,17 @@
 
 #include "stm32l0xx_hal.h"
 
+typedef enum {
+    SENSOR_GAIN_CALIBRATION_STATUS_INIT = 0,
+    SENSOR_GAIN_CALIBRATION_STATUS_MEDIUM,
+    SENSOR_GAIN_CALIBRATION_STATUS_HIGH,
+    SENSOR_GAIN_CALIBRATION_STATUS_MAXIMUM,
+    SENSOR_GAIN_CALIBRATION_STATUS_FAILED,
+    SENSOR_GAIN_CALIBRATION_STATUS_DONE
+} sensor_gain_calibration_status_t;
+
+typedef void (*sensor_gain_calibration_callback_t)(sensor_gain_calibration_status_t status, void *user_data);
+
 HAL_StatusTypeDef sensor_init(I2C_HandleTypeDef *hi2c);
 
 bool sensor_is_initialized();
@@ -17,11 +28,10 @@ bool sensor_is_initialized();
  * gain setting on the sensor. The results will be saved for use in future
  * sensor data calculations.
  *
- * TODO Add a mechanism for progress reporting and cancellation when this is hooked up to a UI
- *
+ * @param callback Callback to monitor progress of the calibration
  * @return HAL_OK on success
  */
-HAL_StatusTypeDef sensor_gain_calibration();
+HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data);
 
 /**
  * Perform a reading with the sensor.

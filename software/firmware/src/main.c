@@ -14,6 +14,7 @@
 #include "tsl2591.h"
 #include "light.h"
 #include "sensor.h"
+#include "state_controller.h"
 
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
@@ -311,8 +312,6 @@ void startup_log_messages(void)
 
 int main(void)
 {
-    bool display_dirty = true;
-
     /*
      * Initialize the HAL, which will reset of all peripherals, initialize
      * the Flash interface and the Systick.
@@ -353,36 +352,13 @@ int main(void)
     /* Load system settings */
     settings_init();
 
+    /* Initialize the state controller */
+    state_controller_init();
+
     log_i("Startup complete");
 
-    //display_draw_test_pattern(true);
-
-    while (1) {
-        uint8_t key_state = keypad_get_state();
-
-        //TODO
-
-        if (key_state != 0xFF) {
-            display_dirty = true;
-        }
-
-        if (display_dirty) {
-            char buf[128];
-            if (key_state == 0xFF) { key_state = 0; }
-            sprintf(buf, "\n\n\n\n"
-                "[%c][%c][%c][%c][%c]",
-                ((key_state & KEYPAD_BUTTON_1) ? '*' : ' '),
-                ((key_state & KEYPAD_BUTTON_2) ? '*' : ' '),
-                ((key_state & KEYPAD_BUTTON_3) ? '*' : ' '),
-                ((key_state & KEYPAD_BUTTON_4) ? '*' : ' '),
-                ((key_state & KEYPAD_BUTTON_5) ? '*' : ' '));
-            display_static_list("Densitometer", buf);
-            display_dirty = false;
-        }
-
-        tud_task();
-        cdc_task();
-    }
+    /* Run the infinite main loop */
+    state_controller_loop();
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)

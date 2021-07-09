@@ -1,13 +1,20 @@
 #include "display.h"
 
+#include <stdio.h>
+
 #include "u8g2_stm32_hal.h"
 #include "u8g2.h"
 #include "display_segments.h"
 #include "display_assets.h"
+#include "keypad.h"
 
 static u8g2_t u8g2;
 static uint8_t display_contrast = 0x9F;
 static uint8_t display_brightness = 0x0F;
+static uint32_t menu_last_event_time = 0;
+static bool menu_event_timeout = false;
+
+#define MENU_TIMEOUT_MS 30000
 
 /* Library function declarations */
 void u8g2_DrawSelectionList(u8g2_t *u8g2, u8sl_t *u8sl, u8g2_uint_t y, const char *s);
@@ -111,12 +118,45 @@ void display_draw_test_pattern(bool mode)
 static void display_prepare_menu_font()
 {
     /*
-     * This font can show 15 characters per line,
-     * and 6 lines (including the title) in a list.
+     * This font can show 14 characters per line,
+     * and 4 lines (including the title) in a list.
      */
-    u8g2_SetFont(&u8g2, u8g2_font_pxplusibmcga_8f);
+    u8g2_SetFont(&u8g2, u8g2_font_pxplusibmvga9_tf);
     u8g2_SetFontMode(&u8g2, 0);
     u8g2_SetDrawColor(&u8g2, 1);
+}
+
+uint8_t u8x8_GetMenuEvent(u8x8_t *u8x8)
+{
+    /*
+     * This function should override a u8g2 framework function with the
+     * same name, due to its declaration with the "weak" pragma.
+     */
+
+    /* Check for timeout */
+    if (menu_last_event_time > 0 && (HAL_GetTick() - menu_last_event_time) > MENU_TIMEOUT_MS) {
+        menu_event_timeout = true;
+        return U8X8_MSG_GPIO_MENU_HOME;
+    }
+
+    uint8_t key_state = keypad_get_state();
+    if (key_state != 0xFF) {
+        menu_last_event_time = HAL_GetTick();
+        switch (key_state) {
+        case KEYPAD_BUTTON_1:
+            return U8X8_MSG_GPIO_MENU_SELECT;
+        case KEYPAD_BUTTON_2:
+            return U8X8_MSG_GPIO_MENU_DOWN;
+        case KEYPAD_BUTTON_3:
+            return U8X8_MSG_GPIO_MENU_UP;
+        case KEYPAD_BUTTON_4:
+            return U8X8_MSG_GPIO_MENU_HOME;
+        default:
+            break;
+        }
+    }
+
+    return 0;
 }
 
 void display_static_list(const char *title, const char *list)
@@ -162,6 +202,144 @@ void display_static_list(const char *title, const char *list)
     u8g2_DrawSelectionList(&u8g2, &u8sl, yy, list);
 
     u8g2_SendBuffer(&u8g2);
+}
+
+uint8_t display_selection_list(const char *title, uint8_t start_pos, const char *list)
+{
+    display_prepare_menu_font();
+    menu_event_timeout = false;
+    menu_last_event_time = HAL_GetTick();
+
+    uint8_t option = u8g2_UserInterfaceSelectionList(&u8g2, title, start_pos, list);
+
+    return menu_event_timeout ? UINT8_MAX : option;
+}
+
+uint8_t display_message(const char *title1, const char *title2, const char *title3, const char *buttons)
+{
+    display_prepare_menu_font();
+    menu_event_timeout = false;
+    menu_last_event_time = HAL_GetTick();
+
+    uint8_t option = u8g2_UserInterfaceMessage(&u8g2, title1, title2, title3, buttons);
+
+    return menu_event_timeout ? UINT8_MAX : option;
+}
+
+static const char *display_f1_2toa(uint16_t v)
+{
+    static char buf[5];
+
+    buf[0] = '0' + (v % 1000 / 100);
+    buf[1] = '.';
+    buf[2] = '0' + (v % 100 / 10);
+    buf[3] = '0' + (v % 10);
+    buf[4] = '\0';
+
+    return buf;
+}
+
+uint8_t display_input_value_f1_2(const char *title, const char *pre, uint16_t *value, uint16_t lo, uint16_t hi, const char *post)
+{
+    /*
+     * Based off u8g2_UserInterfaceInputValue() with changes to use
+     * full frame buffer mode and to support the N.DD number format.
+     */
+
+    /* Do initial state setup */
+    display_prepare_menu_font();
+    menu_event_timeout = false;
+    menu_last_event_time = HAL_GetTick();
+
+    uint8_t line_height;
+    uint8_t height;
+    u8g2_uint_t pixel_height;
+    u8g2_uint_t y, yy;
+    u8g2_uint_t pixel_width;
+    u8g2_uint_t x, xx;
+
+    uint16_t local_value = *value;
+    uint8_t event;
+
+    /* Explicitly constrain input values */
+    if (hi > 999) { hi = 999; }
+    if (lo > 0 && lo > hi) { lo = hi; }
+    if (local_value < lo) { local_value = lo; }
+    else if (local_value > hi) { local_value = hi; }
+
+    /* Only horizontal strings are supported, so force this here */
+    u8g2_SetFontDirection(&u8g2, 0);
+
+    /* Force baseline position */
+    u8g2_SetFontPosBaseline(&u8g2);
+
+    /* Calculate line height */
+    line_height = u8g2_GetAscent(&u8g2);
+    line_height -= u8g2_GetDescent(&u8g2);
+
+    /* Calculate overall height of the input value box */
+    height = 1; /* value input line */
+    height += u8x8_GetStringLineCnt(title);
+
+    /* Calculate the height in pixels */
+    pixel_height = height;
+    pixel_height *= line_height;
+
+    /* Calculate offset from top */
+    y = 0;
+    if (pixel_height < u8g2_GetDisplayHeight(&u8g2)) {
+        y = u8g2_GetDisplayHeight(&u8g2);
+        y -= pixel_height;
+        y /= 2;
+    }
+
+    /* Calculate offset from left for the label */
+    x = 0;
+    pixel_width = u8g2_GetUTF8Width(&u8g2, pre);
+    pixel_width += u8g2_GetUTF8Width(&u8g2, "0") * 4;
+    pixel_width += u8g2_GetUTF8Width(&u8g2, post);
+    if (pixel_width < u8g2_GetDisplayWidth(&u8g2)) {
+        x = u8g2_GetDisplayWidth(&u8g2);
+        x -= pixel_width;
+        x /= 2;
+    }
+
+    /* Event loop */
+    for(;;) {
+        /* Render */
+        u8g2_ClearBuffer(&u8g2);
+        yy = y;
+        yy += u8g2_DrawUTF8Lines(&u8g2, 0, yy, u8g2_GetDisplayWidth(&u8g2), line_height, title);
+        xx = x;
+        xx += u8g2_DrawUTF8(&u8g2, xx, yy, pre);
+        xx += u8g2_DrawUTF8(&u8g2, xx, yy, display_f1_2toa(local_value));
+        u8g2_DrawUTF8(&u8g2, xx, yy, post);
+        u8g2_SendBuffer(&u8g2);
+
+        for(;;) {
+            event = u8x8_GetMenuEvent(u8g2_GetU8x8(&u8g2));
+            if (event == U8X8_MSG_GPIO_MENU_SELECT) {
+                *value = local_value;
+                return 1;
+            } else if (event == U8X8_MSG_GPIO_MENU_HOME) {
+                return 0;
+            } else if (event == U8X8_MSG_GPIO_MENU_NEXT || event == U8X8_MSG_GPIO_MENU_UP) {
+                if (local_value >= hi) {
+                    local_value = lo;
+                } else {
+                    local_value++;
+                }
+                break;
+            } else if (event == U8X8_MSG_GPIO_MENU_PREV || event == U8X8_MSG_GPIO_MENU_DOWN) {
+                if (local_value <= lo) {
+                    local_value = hi;
+                } else {
+                    local_value--;
+                }
+                break;
+            }
+        }
+    }
 }
 
 void display_draw_main_elements(const display_main_elements_t *elements)

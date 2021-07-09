@@ -16,6 +16,7 @@
 #include "light.h"
 #include "sensor.h"
 #include "tsl2591.h"
+#include "densitometer.h"
 #include "util.h"
 
 #define CMD_DATA_SIZE 64
@@ -150,67 +151,26 @@ void cdc_command_measure_reflection(const char *cmd, size_t len)
     UNUSED(cmd);
     UNUSED(len);
 
-    char buf[128];
-    char numbuf[16];
+    densitometer_result_t result = densitometer_reflection_measure();
+    if (result == DENSITOMETER_OK) {
+        char buf[128];
+        char numbuf[16];
 
-    float cal_lo_d;
-    float cal_lo_value;
-    float cal_hi_d;
-    float cal_hi_value;
-    settings_get_cal_reflection_lo(&cal_lo_d, &cal_lo_value);
-    settings_get_cal_reflection_hi(&cal_hi_d, &cal_hi_value);
-    if (cal_lo_d < 0.0F || cal_hi_d <= cal_lo_d
-        || cal_lo_value < 0.0F || cal_hi_value >= cal_lo_value) {
-        char numbuf1[16];
-        char numbuf2[16];
+        float meas_d = densitometer_reflection_get_last_reading();
+        float_to_str(meas_d, numbuf, 2);
+        sprintf(buf, "MR,D=%s\r\n", numbuf);
+        cdc_send_response(buf);
 
-        log_w("Invalid calibration values");
+    } else if (result == DENSITOMETER_CAL_ERROR) {
+        cdc_send_response("ERR,CAL\r\n");
 
-        float_to_str(cal_lo_d, numbuf1, 2);
-        float_to_str(cal_lo_value, numbuf2, 6);
-        log_w("CAL-LO: D=%s, VALUE=%s", numbuf1, numbuf2);
+    } else if (result == DENSITOMETER_SENSOR_ERROR) {
+        cdc_send_response("ERR,SENSOR\r\n");
 
-        float_to_str(cal_hi_d, numbuf1, 2);
-        float_to_str(cal_hi_value, numbuf2, 6);
-        log_w("CAL-HI: D=%s, VALUE=%s", numbuf1, numbuf2);
-
+    } else {
         cdc_send_response("ERR\r\n");
-        return;
+
     }
-
-    light_set_reflection(128);
-    light_set_transmission(0);
-
-    float ch0_basic;
-    float ch1_basic;
-    if (sensor_read(2, &ch0_basic, &ch1_basic) != HAL_OK) {
-        log_w("Sensor read error");
-        cdc_send_response("ERR\r\n");
-        light_set_reflection(0);
-        return;
-    }
-
-    if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-
-    float meas_ll = log10f(ch0_basic - ch1_basic);
-    float cal_hi_ll = log10f(cal_hi_value);
-    float cal_lo_ll = log10f(cal_lo_value);
-
-    /* Calculate the slope of the line */
-    float m = (cal_hi_d - cal_lo_d) / (cal_hi_ll - cal_lo_ll);
-
-    /* Calculate the measured density */
-    float meas_d = (m * (meas_ll - cal_lo_ll)) + cal_lo_d;
-
-    float_to_str(meas_d, numbuf, 2);
-
-    log_i("D=%s", numbuf);
-
-    sprintf(buf, "MR,D=%s\r\n", numbuf);
-
-    light_set_reflection(0);
-
-    cdc_send_response(buf);
 }
 
 void cdc_command_measure_transmission(const char *cmd, size_t len)
@@ -222,68 +182,26 @@ void cdc_command_measure_transmission(const char *cmd, size_t len)
     UNUSED(cmd);
     UNUSED(len);
 
-    char buf[128];
-    char numbuf[16];
+    densitometer_result_t result = densitometer_transmission_measure();
+    if (result == DENSITOMETER_OK) {
+        char buf[128];
+        char numbuf[16];
 
-    float cal_zero_value;
-    float cal_hi_d;
-    float cal_hi_value;
-    settings_get_cal_transmission_zero(&cal_zero_value);
-    settings_get_cal_transmission_hi(&cal_hi_d, &cal_hi_value);
-    if (cal_zero_value <= 0.0F || cal_hi_d <= 0.0F || cal_hi_value <= 0.0F
-        || cal_hi_value >= cal_zero_value) {
-        char numbuf1[16];
-        char numbuf2[16];
+        float meas_d = densitometer_transmission_get_last_reading();
+        float_to_str(meas_d, numbuf, 2);
+        sprintf(buf, "MT,D=%s\r\n", numbuf);
+        cdc_send_response(buf);
 
-        log_w("Invalid calibration values");
+    } else if (result == DENSITOMETER_CAL_ERROR) {
+        cdc_send_response("ERR,CAL\r\n");
 
-        float_to_str(cal_zero_value, numbuf1, 6);
-        log_w("CAL-ZERO: VALUE=%s", numbuf1);
+    } else if (result == DENSITOMETER_SENSOR_ERROR) {
+        cdc_send_response("ERR,SENSOR\r\n");
 
-        float_to_str(cal_hi_d, numbuf1, 2);
-        float_to_str(cal_hi_value, numbuf2, 6);
-        log_w("CAL-HI: D=%s, VALUE=%s", numbuf1, numbuf2);
-
+    } else {
         cdc_send_response("ERR\r\n");
-        return;
+
     }
-
-    light_set_reflection(0);
-    light_set_transmission(128);
-
-    float ch0_basic;
-    float ch1_basic;
-    if (sensor_read(2, &ch0_basic, &ch1_basic) != HAL_OK) {
-        log_w("Sensor read error");
-        cdc_send_response("ERR\r\n");
-        light_set_transmission(0);
-        return;
-    }
-
-    if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-    float meas_value = ch0_basic - ch1_basic;
-
-    /* Calculate the measured CAL-HI density relative to the zero value */
-    float cal_hi_meas_d = -1.0F * log10f(cal_hi_value / cal_zero_value);
-
-    /* Calculate the measured target density relative to the zero value */
-    float meas_d = -1.0F * log10f(meas_value / cal_zero_value);
-
-    /* Calculate the adjustment factor */
-    float adj_factor = cal_hi_d / cal_hi_meas_d;
-
-    /* Calculate the calibration corrected density */
-    float corr_d = meas_d * adj_factor;
-
-    float_to_str(corr_d, numbuf, 2);
-
-    log_i("D=%s", numbuf);
-
-    sprintf(buf, "MT,D=%s\r\n", numbuf);
-
-    light_set_transmission(0);
-
-    cdc_send_response(buf);
 }
 
 void cdc_command_cal_gain(const char *cmd, size_t len)
@@ -301,7 +219,7 @@ void cdc_command_cal_gain(const char *cmd, size_t len)
     char prefix = toupper(cmd[2]);
 
     if (prefix == 'M') {
-        sensor_gain_calibration();
+        sensor_gain_calibration(NULL, NULL);
     } if (prefix == 'P') {
         char buf[128];
         char numbuf1[16];
@@ -352,8 +270,7 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
     }
 
     if (prefix == 'M') {
-        float ch0_basic;
-        float ch1_basic;
+        densitometer_result_t result = DENSITOMETER_OK;
 
         int val = (len > 4) ? atoi(cmd + 4) : 0;
 
@@ -361,19 +278,19 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
         if (d < 0) { d = 0.0F; }
         else if (d > 2.50F) { d = 2.50F; }
 
-        light_set_reflection(128);
-        light_set_transmission(0);
+        float meas_value = NAN;
 
-        if (sensor_read(5, &ch0_basic, &ch1_basic) == HAL_OK) {
-            if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-            float meas_value = ch0_basic - ch1_basic;
+        if (mode == 'L') {
+            result = densitometer_calibrate_reflection_lo(d);
+            settings_get_cal_reflection_lo(NULL, &meas_value);
+        } else if (mode == 'H') {
+            result = densitometer_calibrate_reflection_hi(d);
+            settings_get_cal_reflection_hi(NULL, &meas_value);
+        } else {
+            result = DENSITOMETER_SENSOR_ERROR;
+        }
 
-            if (mode == 'L') {
-                settings_set_cal_reflection_lo(d, meas_value);
-            } else if (mode == 'H') {
-                settings_set_cal_reflection_hi(d, meas_value);
-            }
-
+        if (result == DENSITOMETER_OK) {
             char numbuf1[16];
             char numbuf2[16];
             float_to_str(d, numbuf1, 2);
@@ -427,9 +344,9 @@ void cdc_command_cal_transmission(const char *cmd, size_t len)
     }
 
     if (prefix == 'M') {
-        float ch0_basic;
-        float ch1_basic;
+        densitometer_result_t result = DENSITOMETER_OK;
         float d = NAN;
+        float meas_value = NAN;
 
         if (mode == 'H') {
             int val = (len > 4) ? atoi(cmd + 4) : 0;
@@ -437,23 +354,21 @@ void cdc_command_cal_transmission(const char *cmd, size_t len)
             if (d < 0) { d = 0.0F; }
         }
 
-        light_set_reflection(0);
-        light_set_transmission(128);
+        if (mode == 'Z') {
+            result = densitometer_calibrate_transmission_zero();
+            settings_get_cal_transmission_zero(&meas_value);
+        } else if (mode == 'H') {
+            result = densitometer_calibrate_transmission_hi(d);
+            settings_get_cal_transmission_hi(NULL, &meas_value);
+        } else {
+            result = DENSITOMETER_SENSOR_ERROR;
+        }
 
-        if (sensor_read(5, &ch0_basic, &ch1_basic) == HAL_OK) {
-            if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-            float value = ch0_basic - ch1_basic;
-
-            if (mode == 'Z') {
-                settings_set_cal_transmission_zero(value);
-            } else if (mode == 'H') {
-                settings_set_cal_transmission_hi(d, value);
-            }
-
+        if (result == DENSITOMETER_OK) {
             char numbuf1[16];
             char numbuf2[16];
             float_to_str(d, numbuf1, 2);
-            float_to_str(value, numbuf2, 6);
+            float_to_str(meas_value, numbuf2, 6);
             log_i("CAL, %c, D=%s, VALUE=%s", mode, numbuf1, numbuf2);
 
             cdc_send_response("OK\r\n");
@@ -462,7 +377,6 @@ void cdc_command_cal_transmission(const char *cmd, size_t len)
         }
 
         light_set_transmission(0);
-
 
     } else if (prefix == 'P') {
         char buf[128];
