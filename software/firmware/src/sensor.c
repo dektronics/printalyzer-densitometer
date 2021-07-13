@@ -14,11 +14,13 @@
 I2C_HandleTypeDef *sensor_i2c = 0;
 
 static HAL_StatusTypeDef sensor_wait_for_status(uint8_t flags, uint32_t timeout);
-static HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_saturated);
+static HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_saturated,
+    sensor_read_callback_t callback, void *user_data);
 static HAL_StatusTypeDef sensor_gain_calibration_loop(
     tsl2591_gain_t gain0, tsl2591_gain_t gain1, tsl2591_time_t time,
     float *gain_ch0, float *gain_ch1);
-static HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limit, float *ch0_avg, float *ch1_avg);
+static HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limit, float *ch0_avg, float *ch1_avg,
+    sensor_read_callback_t callback, void *user_data);
 static void sensor_convert_to_basic_counts(tsl2591_gain_t gain, tsl2591_time_t time,
     float ch0_val, float ch1_val, float *ch0_basic, float *ch1_basic);
 
@@ -90,7 +92,7 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
 
     do {
         /* Put the sensor into a known initial state */
-        ret = sensor_clean_startup(TSL2591_TIME_100MS, 0);
+        ret = sensor_clean_startup(TSL2591_TIME_100MS, 0, NULL, NULL);
         if (ret != HAL_OK) { break; }
 
         /* Calibrate the value for medium gain */
@@ -186,7 +188,7 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
     return ret;
 }
 
-HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_result)
+HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_result, sensor_read_callback_t callback, void *user_data)
 {
     HAL_StatusTypeDef ret = HAL_OK;
     tsl2591_gain_t gain = TSL2591_GAIN_MAXIMUM;
@@ -199,7 +201,7 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
 
     do {
         /* Put the sensor into a known initial state, with maximum gain */
-        ret = sensor_clean_startup(TSL2591_TIME_600MS, &is_saturated);
+        ret = sensor_clean_startup(TSL2591_TIME_600MS, &is_saturated, callback, user_data);
         if (ret != HAL_OK) { break; }
 
         do {
@@ -217,7 +219,7 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
             }
 
             /* Run the read loop */
-            ret = sensor_read_loop(iterations, discard, TSL2591_DIGITAL_SATURATION, &ch0_avg, &ch1_avg);
+            ret = sensor_read_loop(iterations, discard, TSL2591_DIGITAL_SATURATION, &ch0_avg, &ch1_avg, callback, user_data);
             if (ret != HAL_OK) { break; }
 
             /* Check for saturation */
@@ -262,11 +264,13 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
  * @param target_time Integration time to bring the sensor to at the end of startup
  * @param is_saturated Set to true if the sensor saturates at maximum gain
  */
-HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_saturated)
+HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_saturated, sensor_read_callback_t callback, void *user_data)
 {
     HAL_StatusTypeDef ret = HAL_OK;
     uint16_t ch0_val = 0;
     uint16_t ch1_val = 0;
+
+    if (callback) { callback(user_data); }
 
     do {
         /* Put the sensor into a known initial state */
@@ -308,6 +312,7 @@ HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_satu
         /* Wait for the interrupt flag */
         ret = sensor_wait_for_status(TSL2591_STATUS_AINT, 2000);
         if (ret != HAL_OK) { break; }
+        if (callback) { callback(user_data); }
 
         /* Clear and disable the interrupt */
         ret = tsl2591_set_enable(sensor_i2c, TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN);
@@ -355,7 +360,8 @@ HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_satu
  * @param ch0_avg Average reading of Channel 0
  * @param ch1_avg Average reading of Channel 1
  */
-HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limit, float *ch0_avg, float *ch1_avg)
+HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limit, float *ch0_avg, float *ch1_avg,
+    sensor_read_callback_t callback, void *user_data)
 {
     HAL_StatusTypeDef ret = HAL_OK;
     uint16_t ch0_val = 0;
@@ -369,7 +375,6 @@ HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limi
     }
 
     do {
-
         /* Clear and disable the interrupt */
         ret = tsl2591_set_enable(sensor_i2c, TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN);
         if (ret != HAL_OK) { break; }
@@ -390,6 +395,7 @@ HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limi
             /* Wait for the interrupt flag */
             ret = sensor_wait_for_status(TSL2591_STATUS_AINT, 2000);
             if (ret != HAL_OK) { break; }
+            if (callback) { callback(user_data); }
 
             /* Clear the interrupt */
             ret = tsl2591_clear_als_int(sensor_i2c);
@@ -468,7 +474,7 @@ HAL_StatusTypeDef sensor_gain_calibration_loop(
 
         /* Do the high gain read loop */
         log_d("Higher gain loop...");
-        ret = sensor_read_loop(5, 2, 0, &ch0_avg_high, &ch1_avg_high);
+        ret = sensor_read_loop(5, 2, 0, &ch0_avg_high, &ch1_avg_high, NULL, NULL);
         if (ret != HAL_OK) { break; }
 
         log_d("TSL2591[Higher]: CH0=%d, CH1=%d", lroundf(ch0_avg_high), lroundf(ch1_avg_high));
@@ -479,7 +485,7 @@ HAL_StatusTypeDef sensor_gain_calibration_loop(
 
         /* Do the low gain read loop */
         log_d("Lower gain loop...");
-        ret = sensor_read_loop(5, 2, 0, &ch0_avg_low, &ch1_avg_low);
+        ret = sensor_read_loop(5, 2, 0, &ch0_avg_low, &ch1_avg_low, NULL, NULL);
         if (ret != HAL_OK) { break; }
 
         log_d("TSL2591[Lower]: CH0=%d, CH1=%d", lroundf(ch0_avg_low), lroundf(ch1_avg_low));

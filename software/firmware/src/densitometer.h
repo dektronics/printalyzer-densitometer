@@ -3,16 +3,18 @@
 
 #include <math.h>
 
+#include "sensor.h"
+
 typedef enum {
     DENSITOMETER_OK = 0,
     DENSITOMETER_CAL_ERROR,
     DENSITOMETER_SENSOR_ERROR
 } densitometer_result_t;
 
-densitometer_result_t densitometer_reflection_measure();
+densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t callback, void *user_data);
 float densitometer_reflection_get_last_reading();
 
-densitometer_result_t densitometer_transmission_measure();
+densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t callback, void *user_data);
 float densitometer_transmission_get_last_reading();
 
 void densitometer_calibrate_gain();

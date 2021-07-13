@@ -151,7 +151,7 @@ void cdc_command_measure_reflection(const char *cmd, size_t len)
     UNUSED(cmd);
     UNUSED(len);
 
-    densitometer_result_t result = densitometer_reflection_measure();
+    densitometer_result_t result = densitometer_reflection_measure(NULL, NULL);
     if (result == DENSITOMETER_OK) {
         char buf[128];
         char numbuf[16];
@@ -182,7 +182,7 @@ void cdc_command_measure_transmission(const char *cmd, size_t len)
     UNUSED(cmd);
     UNUSED(len);
 
-    densitometer_result_t result = densitometer_transmission_measure();
+    densitometer_result_t result = densitometer_transmission_measure(NULL, NULL);
     if (result == DENSITOMETER_OK) {
         char buf[128];
         char numbuf[16];

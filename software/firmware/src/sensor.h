@@ -16,6 +16,8 @@ typedef enum {
 
 typedef void (*sensor_gain_calibration_callback_t)(sensor_gain_calibration_status_t status, void *user_data);
 
+typedef void (*sensor_read_callback_t)(void *user_data);
+
 HAL_StatusTypeDef sensor_init(I2C_HandleTypeDef *hi2c);
 
 bool sensor_is_initialized();
@@ -41,6 +43,6 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
  * @param ch1_result Channel 1 result, in basic counts
  * @return HAL_OK on success
  */
-HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_result);
+HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_result, sensor_read_callback_t callback, void *user_data);
 
 #endif /* SENSOR_H */

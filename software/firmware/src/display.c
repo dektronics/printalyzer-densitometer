@@ -342,6 +342,47 @@ uint8_t display_input_value_f1_2(const char *title, const char *pre, uint16_t *v
     }
 }
 
+static bool display_get_main_icon(display_mode_t mode, uint8_t frame, asset_info_t *asset)
+{
+    if (!asset) { return false; }
+
+    asset_name_t name = ASSET_MAX;
+
+    if (mode == DISPLAY_MODE_REFLECTION) {
+        switch (frame) {
+        case 0:
+            name = ASSET_REFLECTION_ICON_40;
+            break;
+        case 1:
+            name = ASSET_REFLECTION_ICON_40_1;
+            break;
+        case 2:
+            name = ASSET_REFLECTION_ICON_40_2;
+            break;
+        default:
+            name = ASSET_REFLECTION_ICON_40;
+            break;
+        }
+    } else if (mode == DISPLAY_MODE_TRANSMISSION) {
+        switch (frame) {
+        case 0:
+            name = ASSET_TRANSMISSION_ICON_40;
+            break;
+        case 1:
+            name = ASSET_TRANSMISSION_ICON_40_1;
+            break;
+        case 2:
+            name = ASSET_TRANSMISSION_ICON_40_2;
+            break;
+        default:
+            name = ASSET_TRANSMISSION_ICON_40;
+            break;
+        }
+    }
+
+    return display_asset_get(asset, name) == 1;
+}
+
 void display_draw_main_elements(const display_main_elements_t *elements)
 {
     if (!elements) { return; }
@@ -355,27 +396,26 @@ void display_draw_main_elements(const display_main_elements_t *elements)
     u8g2_uint_t x = u8g2_GetDisplayWidth(&u8g2) - 22;
     u8g2_uint_t y = 18;
 
-    display_draw_mdigit(&u8g2, x, y, elements->density100 % 10);
-    x -= 22;
+    if (elements->density100 != UINT16_MAX) {
+        display_draw_mdigit(&u8g2, x, y, elements->density100 % 10);
+        x -= 22;
 
-    display_draw_mdigit(&u8g2, x, y, elements->density100 % 100 / 10);
-    x -= 8;
+        display_draw_mdigit(&u8g2, x, y, elements->density100 % 100 / 10);
+        x -= 8;
 
-    u8g2_DrawBox(&u8g2, x, y + 33, 4, 4);
-    x -= 22;
+        u8g2_DrawBox(&u8g2, x, y + 33, 4, 4);
+        x -= 22;
 
-    display_draw_mdigit(&u8g2, x, y, elements->density100 % 1000 / 100);
+        display_draw_mdigit(&u8g2, x, y, elements->density100 % 1000 / 100);
+    }
 
-    if (elements->mode == DISPLAY_MODE_REFLECTION) {
-        asset_info_t asset;
-        display_asset_get(&asset, ASSET_REFLECTION_ICON_40);
+    asset_info_t asset;
+    if (display_get_main_icon(elements->mode, elements->frame, &asset)) {
         u8g2_DrawXBM(&u8g2, 4, y - 1, asset.width, asset.height, asset.bits);
-        u8g2_DrawUTF8(&u8g2, 0, u8g2_GetAscent(&u8g2), "Reflection");
-    } else if (elements->mode == DISPLAY_MODE_TRANSMISSION) {
-        asset_info_t asset;
-        display_asset_get(&asset, ASSET_TRANSMISSION_ICON_40);
-        u8g2_DrawXBM(&u8g2, 4, y - 1, asset.width, asset.height, asset.bits);
-        u8g2_DrawUTF8(&u8g2, 0, u8g2_GetAscent(&u8g2), "Transmission");
+    }
+
+    if (elements->title) {
+        u8g2_DrawUTF8(&u8g2, 0, u8g2_GetAscent(&u8g2), elements->title);
     }
 
     u8g2_SendBuffer(&u8g2);

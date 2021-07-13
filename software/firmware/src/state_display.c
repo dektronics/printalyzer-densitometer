@@ -83,6 +83,7 @@ void state_reflection_display_process(state_t *state_base, state_controller_t *c
     if (state->display_dirty) {
         float reading = densitometer_reflection_get_last_reading();
         display_main_elements_t elements = {
+            .title = "Reflection",
             .mode = DISPLAY_MODE_REFLECTION,
             .density100 = (!isnanf(reading)) ? lroundf(reading * 100) : 0
         };
@@ -133,6 +134,7 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
     if (state->display_dirty) {
         float reading = densitometer_transmission_get_last_reading();
         display_main_elements_t elements = {
+            .title = "Transmission",
             .mode = DISPLAY_MODE_TRANSMISSION,
             .density100 = (!isnanf(reading)) ? lroundf(reading * 100) : 0
         };
