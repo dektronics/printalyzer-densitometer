@@ -535,7 +535,7 @@ void sensor_convert_to_basic_counts(tsl2591_gain_t gain, tsl2591_time_t time, fl
 {
     float ch0_gain;
     float ch1_gain;
-    uint16_t atime_ms = tsl2591_get_time_value_ms(TSL2591_TIME_600MS);
+    uint16_t atime_ms = tsl2591_get_time_value_ms(time);
     settings_get_cal_gain(gain, &ch0_gain, &ch1_gain);
 
     float ch0_cpl = (atime_ms * ch0_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);
