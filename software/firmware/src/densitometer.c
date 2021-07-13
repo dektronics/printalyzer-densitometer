@@ -77,6 +77,10 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     float_to_str(meas_value, numbuf2, 6);
     log_i("D=%s, VALUE=%s", numbuf1, numbuf2);
 
+    /* Clamp the return value to be within an acceptable range */
+    if (meas_d < 0.0F) { meas_d = 0.0F; }
+    else if (meas_d > 2.5F) { meas_d = 2.5F; }
+
     densitometer_reflection_d = meas_d;
 
     /* Set light back to idle */
@@ -149,6 +153,10 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     float_to_str(corr_d, numbuf1, 2);
     float_to_str(meas_value, numbuf2, 6);
     log_i("D=%s, VALUE=%s", numbuf1, numbuf2);
+
+    /* Clamp the return value to be within an acceptable range */
+    if (corr_d < 0.0F) { corr_d = 0.0F; }
+    else if (corr_d > 4.00F) { corr_d = 4.00F; }
 
     densitometer_transmission_d = corr_d;
 
