@@ -281,10 +281,10 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
         float meas_value = NAN;
 
         if (mode == 'L') {
-            result = densitometer_calibrate_reflection_lo(d);
+            result = densitometer_calibrate_reflection_lo(d, NULL, NULL);
             settings_get_cal_reflection_lo(NULL, &meas_value);
         } else if (mode == 'H') {
-            result = densitometer_calibrate_reflection_hi(d);
+            result = densitometer_calibrate_reflection_hi(d, NULL, NULL);
             settings_get_cal_reflection_hi(NULL, &meas_value);
         } else {
             result = DENSITOMETER_SENSOR_ERROR;
@@ -355,10 +355,10 @@ void cdc_command_cal_transmission(const char *cmd, size_t len)
         }
 
         if (mode == 'Z') {
-            result = densitometer_calibrate_transmission_zero();
+            result = densitometer_calibrate_transmission_zero(NULL, NULL);
             settings_get_cal_transmission_zero(&meas_value);
         } else if (mode == 'H') {
-            result = densitometer_calibrate_transmission_hi(d);
+            result = densitometer_calibrate_transmission_hi(d, NULL, NULL);
             settings_get_cal_transmission_hi(NULL, &meas_value);
         } else {
             result = DENSITOMETER_SENSOR_ERROR;

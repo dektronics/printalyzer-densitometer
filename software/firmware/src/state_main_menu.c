@@ -53,6 +53,7 @@ static void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_co
 static void sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data);
 static void main_menu_settings(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_about(state_main_menu_t *state, state_controller_t *controller);
+static void sensor_read_callback(void *user_data);
 
 state_t *state_main_menu()
 {
@@ -191,6 +192,13 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
         } else if (option == 3) {
             densitometer_result_t meas_result = DENSITOMETER_OK;
             uint8_t meas_option = 0;
+            display_main_elements_t elements = {
+                .title = "Calibrating...",
+                .mode = DISPLAY_MODE_REFLECTION,
+                .density100 = 0,
+                .frame = 0
+            };
+
             do {
                 meas_option = display_message(
                     "Position\n"
@@ -198,9 +206,10 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                     "under sensor",
                     NULL, NULL, " Measure ");
                 if (meas_option == 1) {
-                    //TODO measurement progress screen
-                    display_clear();
-                    meas_result = densitometer_calibrate_reflection_lo(cal_lo_d);
+                    elements.density100 = lroundf(cal_lo_d * 100);
+                    elements.frame = 0;
+                    display_draw_main_elements(&elements);
+                    meas_result = densitometer_calibrate_reflection_lo(cal_lo_d, sensor_read_callback, &elements);
                 } else {
                     break;
                 }
@@ -212,9 +221,10 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                     "under sensor",
                     NULL, NULL, " Measure ");
                 if (meas_option == 1) {
-                    //TODO measurement progress screen
-                    display_clear();
-                    meas_result = densitometer_calibrate_reflection_hi(cal_hi_d);
+                    elements.density100 = lroundf(cal_hi_d * 100);
+                    elements.frame = 0;
+                    display_draw_main_elements(&elements);
+                    meas_result = densitometer_calibrate_reflection_hi(cal_hi_d, sensor_read_callback, &elements);
                 } else {
                     break;
                 }
@@ -295,6 +305,13 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
         } else if (option == 2) {
             densitometer_result_t meas_result = DENSITOMETER_OK;
             uint8_t meas_option = 0;
+            display_main_elements_t elements = {
+                .title = "Calibrating...",
+                .mode = DISPLAY_MODE_TRANSMISSION,
+                .density100 = 0,
+                .frame = 0
+            };
+
             do {
                 meas_option = display_message(
                     "Hold device\n"
@@ -302,9 +319,10 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
                     "with no film",
                     NULL, NULL, " Measure ");
                 if (meas_option == 1) {
-                    //TODO measurement progress screen
-                    display_clear();
-                    meas_result = densitometer_calibrate_transmission_zero();
+                    elements.density100 = 0;
+                    elements.frame = 0;
+                    display_draw_main_elements(&elements);
+                    meas_result = densitometer_calibrate_transmission_zero(sensor_read_callback, &elements);
                 } else {
                     break;
                 }
@@ -316,9 +334,10 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
                     "under sensor",
                     NULL, NULL, " Measure ");
                 if (meas_option == 1) {
-                    //TODO measurement progress screen
-                    display_clear();
-                    meas_result = densitometer_calibrate_transmission_hi(cal_hi_d);
+                    elements.density100 = lroundf(cal_hi_d * 100);
+                    elements.frame = 0;
+                    display_draw_main_elements(&elements);
+                    meas_result = densitometer_calibrate_transmission_hi(cal_hi_d, sensor_read_callback, &elements);
                 } else {
                     break;
                 }
@@ -435,4 +454,12 @@ void main_menu_about(state_main_menu_t *state, state_controller_t *controller)
     } else {
         state->menu_state = MAIN_MENU_HOME;
     }
+}
+
+void sensor_read_callback(void *user_data)
+{
+    display_main_elements_t *elements = (display_main_elements_t *)user_data;
+    elements->frame++;
+    if (elements->frame > 2) { elements->frame = 0; }
+    display_draw_main_elements(elements);
 }

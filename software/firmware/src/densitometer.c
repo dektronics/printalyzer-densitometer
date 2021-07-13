@@ -168,7 +168,7 @@ void densitometer_calibrate_gain()
     //TODO Currently in the sensor module. Not sure if it should be there or here.
 }
 
-densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d)
+densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d, sensor_read_callback_t callback, void *user_data)
 {
     float ch0_basic;
     float ch1_basic;
@@ -183,7 +183,7 @@ densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d)
     light_set_transmission(0);
 
     /* Perform sensor read */
-    if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, NULL, NULL) != HAL_OK) {
+    if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
         light_set_reflection(LIGHT_REFLECTION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
@@ -205,7 +205,7 @@ densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d)
     return DENSITOMETER_OK;
 }
 
-densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d)
+densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d, sensor_read_callback_t callback, void *user_data)
 {
     float ch0_basic;
     float ch1_basic;
@@ -220,7 +220,7 @@ densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d)
     light_set_transmission(0);
 
     /* Perform sensor read */
-    if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, NULL, NULL) != HAL_OK) {
+    if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
         light_set_reflection(LIGHT_REFLECTION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
@@ -242,7 +242,7 @@ densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d)
     return DENSITOMETER_OK;
 }
 
-densitometer_result_t densitometer_calibrate_transmission_zero()
+densitometer_result_t densitometer_calibrate_transmission_zero(sensor_read_callback_t callback, void *user_data)
 {
     float ch0_basic;
     float ch1_basic;
@@ -252,7 +252,7 @@ densitometer_result_t densitometer_calibrate_transmission_zero()
     light_set_transmission(128);
 
     /* Perform sensor read */
-    if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, NULL, NULL) != HAL_OK) {
+    if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
         light_set_transmission(LIGHT_TRANSMISSION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
@@ -274,7 +274,7 @@ densitometer_result_t densitometer_calibrate_transmission_zero()
     return DENSITOMETER_OK;
 }
 
-densitometer_result_t densitometer_calibrate_transmission_hi(float cal_hi_d)
+densitometer_result_t densitometer_calibrate_transmission_hi(float cal_hi_d, sensor_read_callback_t callback, void *user_data)
 {
     float ch0_basic;
     float ch1_basic;
@@ -289,7 +289,7 @@ densitometer_result_t densitometer_calibrate_transmission_hi(float cal_hi_d)
     light_set_transmission(128);
 
     /* Perform sensor read */
-    if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, NULL, NULL) != HAL_OK) {
+    if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
         light_set_transmission(LIGHT_TRANSMISSION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
