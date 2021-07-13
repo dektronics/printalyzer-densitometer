@@ -11,7 +11,9 @@
 #include "light.h"
 #include "util.h"
 
-I2C_HandleTypeDef *sensor_i2c = 0;
+#define SENSOR_DEFAULT_READ_TIME (TSL2591_TIME_200MS)
+
+static I2C_HandleTypeDef *sensor_i2c = 0;
 
 static HAL_StatusTypeDef sensor_wait_for_status(uint8_t flags, uint32_t timeout);
 static HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_saturated,
@@ -192,6 +194,7 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
 {
     HAL_StatusTypeDef ret = HAL_OK;
     tsl2591_gain_t gain = TSL2591_GAIN_MAXIMUM;
+    tsl2591_time_t time = SENSOR_DEFAULT_READ_TIME;
     uint8_t discard = 0;
     float ch0_avg = NAN;
     float ch1_avg = NAN;
@@ -201,7 +204,7 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
 
     do {
         /* Put the sensor into a known initial state, with maximum gain */
-        ret = sensor_clean_startup(TSL2591_TIME_600MS, &is_saturated, callback, user_data);
+        ret = sensor_clean_startup(time, &is_saturated, callback, user_data);
         if (ret != HAL_OK) { break; }
 
         do {
@@ -210,7 +213,7 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
                 gain--;
 
                 /* Set the new gain value */
-                ret = tsl2591_set_config(sensor_i2c, gain, TSL2591_TIME_600MS);
+                ret = tsl2591_set_config(sensor_i2c, gain, time);
                 if (ret != HAL_OK) { break; }
 
                 /* Discard the first result after reading again */
@@ -236,8 +239,9 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
 
     if (!is_saturated && ret == HAL_OK) {
         log_i("Sensor read complete");
-        log_d("TSL2591: CH0=%d, CH1=%d, Gain=[%d], Time=600ms", lroundf(ch0_avg), lroundf(ch1_avg), gain);
-        sensor_convert_to_basic_counts(gain, TSL2591_TIME_600MS, ch0_avg, ch1_avg, ch0_result, ch1_result);
+        uint16_t time_ms = tsl2591_get_time_value_ms(time);
+        log_d("TSL2591: CH0=%d, CH1=%d, Gain=[%d], Time=%dms", lroundf(ch0_avg), lroundf(ch1_avg), gain, time_ms);
+        sensor_convert_to_basic_counts(gain, time, ch0_avg, ch1_avg, ch0_result, ch1_result);
     } else {
         log_e("Sensor read failed: is_saturated=%d, ret=%d", is_saturated, ret);
         if (ret == HAL_OK) {
@@ -370,8 +374,8 @@ HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limi
     HAL_StatusTypeDef ret = HAL_OK;
     uint16_t ch0_val = 0;
     uint16_t ch1_val = 0;
-    uint32_t ch0_sum = 0;
-    uint32_t ch1_sum = 0;
+    float ch0_sum = 0;
+    float ch1_sum = 0;
     bool saturation = false;
 
     if (count == 0) {
@@ -419,8 +423,8 @@ HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limi
                     saturation = true;
                     break;
                 }
-                ch0_sum += ch0_val;
-                ch1_sum += ch1_val;
+                ch0_sum += logf(ch0_val);
+                ch1_sum += logf(ch1_val);
             }
         }
         if (ret != HAL_OK) { break; }
@@ -436,10 +440,10 @@ HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limi
 
     if (ret == HAL_OK) {
         if (ch0_avg) {
-            *ch0_avg = saturation ? NAN : (float)ch0_sum / (float)count;
+            *ch0_avg = saturation ? NAN : expf((float)ch0_sum / (float)count);
         }
         if (ch1_avg) {
-            *ch1_avg = saturation ? NAN : (float)ch1_sum / (float)count;
+            *ch1_avg = saturation ? NAN : expf((float)ch1_sum / (float)count);
         }
     } else {
         tsl2591_set_enable(sensor_i2c, 0x00);
