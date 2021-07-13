@@ -288,15 +288,8 @@ HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_satu
         ret = tsl2591_set_config(sensor_i2c, TSL2591_GAIN_MAXIMUM, TSL2591_TIME_100MS);
         if (ret != HAL_OK) { break; }
 
-        /* Set thresholds to ensure an interrupt */
-        ret = tsl2591_set_als_low_int_threshold(sensor_i2c, 0x0000);
-        if (ret != HAL_OK) { break; }
-
-        ret = tsl2591_set_als_high_int_threshold(sensor_i2c, 0x0000);
-        if (ret != HAL_OK) { break; }
-
-        /* Interrupt after two integration cycles out of range */
-        ret = tsl2591_set_persist(sensor_i2c, TSL2591_PERSIST_2);
+        /* Interrupt after every integration cycle */
+        ret = tsl2591_set_persist(sensor_i2c, TSL2591_PERSIST_EVERY);
         if (ret != HAL_OK) { break; }
 
         /* Enable ALS with interrupts */
@@ -309,10 +302,19 @@ HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_satu
             if (ret != HAL_OK) { break; }
         }
 
-        /* Wait for the interrupt flag */
+        /* Wait for the first interrupt */
         ret = sensor_wait_for_status(TSL2591_STATUS_AINT, 2000);
         if (ret != HAL_OK) { break; }
+
+        /* Clear the interrupt */
+        ret = tsl2591_clear_als_int(sensor_i2c);
+        if (ret != HAL_OK) { break; }
+
         if (callback) { callback(user_data); }
+
+        /* Wait for the second interrupt */
+        ret = sensor_wait_for_status(TSL2591_STATUS_AINT, 2000);
+        if (ret != HAL_OK) { break; }
 
         /* Clear and disable the interrupt */
         ret = tsl2591_set_enable(sensor_i2c, TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN);
@@ -320,6 +322,8 @@ HAL_StatusTypeDef sensor_clean_startup(tsl2591_time_t target_time, bool *is_satu
 
         ret = tsl2591_clear_als_int(sensor_i2c);
         if (ret != HAL_OK) { break; }
+
+        if (callback) { callback(user_data); }
 
         /* Read full channel data */
         ret = tsl2591_get_full_channel_data(sensor_i2c, &ch0_val, &ch1_val);
@@ -395,11 +399,12 @@ HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limi
             /* Wait for the interrupt flag */
             ret = sensor_wait_for_status(TSL2591_STATUS_AINT, 2000);
             if (ret != HAL_OK) { break; }
-            if (callback) { callback(user_data); }
 
             /* Clear the interrupt */
             ret = tsl2591_clear_als_int(sensor_i2c);
             if (ret != HAL_OK) { break; }
+
+            if (callback) { callback(user_data); }
 
             /* Read full channel data */
             ret = tsl2591_get_full_channel_data(sensor_i2c, &ch0_val, &ch1_val);
