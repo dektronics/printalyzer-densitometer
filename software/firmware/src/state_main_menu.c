@@ -18,7 +18,7 @@ typedef enum {
     MAIN_MENU_CALIBRATION,
     MAIN_MENU_CALIBRATION_REFLECTION,
     MAIN_MENU_CALIBRATION_TRANSMISSION,
-    MAIN_MENU_CALIBRATION_SENSOR_GAIN,
+    MAIN_MENU_CALIBRATION_SENSOR,
     MAIN_MENU_SETTINGS,
     MAIN_MENU_ABOUT
 } main_menu_state_t;
@@ -49,8 +49,9 @@ static void main_menu_home(state_main_menu_t *state, state_controller_t *control
 static void main_menu_calibration(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_reflection(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_transmission(state_main_menu_t *state, state_controller_t *controller);
-static void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controller_t *controller);
+static void main_menu_calibration_sensor(state_main_menu_t *state, state_controller_t *controller);
 static void sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data);
+static void sensor_time_calibration_callback(tsl2591_time_t time, void *user_data);
 static void main_menu_settings(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_about(state_main_menu_t *state, state_controller_t *controller);
 static void sensor_read_callback(void *user_data);
@@ -86,8 +87,8 @@ void state_main_menu_process(state_t *state_base, state_controller_t *controller
         main_menu_calibration_reflection(state, controller);
     } else if (state->menu_state == MAIN_MENU_CALIBRATION_TRANSMISSION) {
         main_menu_calibration_transmission(state, controller);
-    } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR_GAIN) {
-        main_menu_calibration_sensor_gain(state, controller);
+    } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR) {
+        main_menu_calibration_sensor(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS) {
         main_menu_settings(state, controller);
     } else if (state->menu_state == MAIN_MENU_ABOUT) {
@@ -121,14 +122,14 @@ void main_menu_calibration(state_main_menu_t *state, state_controller_t *control
         "Calibration", state->cal_option,
         "Reflection\n"
         "Transmission\n"
-        "Sensor Gain");
+        "Sensor");
 
     if (state->cal_option == 1) {
         state->menu_state = MAIN_MENU_CALIBRATION_REFLECTION;
     } else if (state->cal_option == 2) {
         state->menu_state = MAIN_MENU_CALIBRATION_TRANSMISSION;
     } else if (state->cal_option == 3) {
-        state->menu_state = MAIN_MENU_CALIBRATION_SENSOR_GAIN;
+        state->menu_state = MAIN_MENU_CALIBRATION_SENSOR;
     } else if (state->cal_option == UINT8_MAX) {
         state_controller_set_next_state(controller, state->last_display_state);
     } else {
@@ -380,23 +381,30 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
     }
 }
 
-void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controller_t *controller)
+void main_menu_calibration_sensor(state_main_menu_t *state, state_controller_t *controller)
 {
     uint8_t option = display_message(
         "Hold device\n"
         "firmly closed\n"
         "with no film", NULL, NULL, " Measure ");
     if (option == 1) {
-        HAL_StatusTypeDef ret = sensor_gain_calibration(sensor_gain_calibration_callback, NULL);
+        HAL_StatusTypeDef ret = HAL_OK;
+        do {
+            display_static_list("Sensor Gain", "\nStarting...");
+            ret = sensor_gain_calibration(sensor_gain_calibration_callback, NULL);
+
+            display_static_list("Int Time", "\nStarting...");
+            ret = sensor_time_calibration(sensor_time_calibration_callback, NULL);
+        } while (0);
 
         if (ret == HAL_OK) {
             display_message(
-                "Sensor Gain", NULL,
+                "Sensor", NULL,
                 "calibration\n"
                 "complete", " OK ");
         } else {
             display_message(
-                "Sensor Gain", NULL,
+                "Sensor", NULL,
                 "calibration\n"
                 "failed", " OK ");
         }
@@ -412,25 +420,36 @@ void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controlle
 void sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data)
 {
     char buf[128];
-    if (status == SENSOR_GAIN_CALIBRATION_STATUS_INIT) {
-        sprintf(buf, "\nStarting...");
-    } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_MEDIUM) {
-        sprintf(buf,"\n"
+    if (status == SENSOR_GAIN_CALIBRATION_STATUS_MEDIUM) {
+        sprintf(buf, "\n"
             "Measuring\n"
-            "medium gain\n...");
+            "medium gain");
     } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_HIGH) {
-        sprintf(buf,"\n"
+        sprintf(buf, "\n"
             "Measuring\n"
-            "high gain\n...");
+            "high gain");
     } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_MAXIMUM) {
-        sprintf(buf,"\n"
+        sprintf(buf, "\n"
             "Measuring\n"
-            "max gain\n...");
+            "maximum gain");
     } else {
         return;
     }
 
     display_static_list("Sensor Gain", buf);
+}
+
+void sensor_time_calibration_callback(tsl2591_time_t time, void *user_data)
+{
+    char buf[128];
+    uint16_t time_ms = tsl2591_get_time_value_ms(time);
+    if (time_ms > 0) {
+        sprintf(buf,
+            "Measuring\n"
+            "%dms\n"
+            "integration", time_ms);
+        display_static_list("Int Time", buf);
+    }
 }
 
 void main_menu_settings(state_main_menu_t *state, state_controller_t *controller)

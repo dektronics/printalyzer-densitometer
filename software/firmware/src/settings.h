@@ -12,6 +12,9 @@ HAL_StatusTypeDef settings_init();
 void settings_set_cal_gain(tsl2591_gain_t gain, float ch0_gain, float ch1_gain);
 void settings_get_cal_gain(tsl2591_gain_t gain, float *ch0_gain, float *ch1_gain);
 
+void settings_set_cal_time(tsl2591_time_t time, float value);
+void settings_get_cal_time(tsl2591_time_t time, float *value);
+
 void settings_set_cal_reflection_lo(float d, float value);
 void settings_get_cal_reflection_lo(float *d, float *value);
 

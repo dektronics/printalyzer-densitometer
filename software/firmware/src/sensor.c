@@ -23,8 +23,6 @@ static HAL_StatusTypeDef sensor_gain_calibration_loop(
     float *gain_ch0, float *gain_ch1);
 static HAL_StatusTypeDef sensor_read_loop(uint8_t count, uint8_t discard, uint16_t limit, float *ch0_avg, float *ch1_avg,
     sensor_read_callback_t callback, void *user_data);
-static void sensor_convert_to_basic_counts(tsl2591_gain_t gain, tsl2591_time_t time,
-    float ch0_val, float ch1_val, float *ch0_basic, float *ch1_basic);
 
 HAL_StatusTypeDef sensor_init(I2C_HandleTypeDef *hi2c)
 {
@@ -96,6 +94,9 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
         /* Put the sensor into a known initial state */
         ret = sensor_clean_startup(TSL2591_TIME_100MS, 0, NULL, NULL);
         if (ret != HAL_OK) { break; }
+
+        /* Wait for things to stabilize */
+        HAL_Delay(1000);
 
         /* Calibrate the value for medium gain */
         log_i("Medium gain calibration");
@@ -185,6 +186,77 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
         settings_set_cal_gain(TSL2591_GAIN_MAXIMUM, gain_max_ch1, gain_max_ch1);
     } else {
         log_e("Gain calibration failed");
+    }
+
+    return ret;
+}
+
+HAL_StatusTypeDef sensor_time_calibration(sensor_time_calibration_callback_t callback, void *user_data)
+{
+    HAL_StatusTypeDef ret = HAL_OK;
+    float ch0_readings[6];
+
+    log_i("Starting integration time calibration");
+
+    /* Set lights to initial state */
+    light_set_reflection(0);
+    light_set_transmission(128);
+
+    do {
+        /* Put the sensor into a known initial state */
+        ret = sensor_clean_startup(TSL2591_TIME_100MS, 0, NULL, NULL);
+        if (ret != HAL_OK) { break; }
+
+        /* Wait for things to stabilize */
+        HAL_Delay(1000);
+
+        /* Loop over each integration time and collect the average measurement on CH0 */
+        for (tsl2591_time_t time = TSL2591_TIME_100MS; time <= TSL2591_TIME_600MS; time++) {
+            float ch0_avg;
+
+            log_i("Measuring %dms integration", tsl2591_get_time_value_ms(time));
+            if (callback) { callback(time, user_data); }
+
+            /* Set integration time for measurement */
+            ret = tsl2591_set_config(sensor_i2c, TSL2591_GAIN_MEDIUM, time);
+            if (ret != HAL_OK) { break; }
+
+            /* Take an average measurement at the specified time */
+            ret = sensor_read_loop(5, 2, TSL2591_DIGITAL_SATURATION, &ch0_avg, NULL, NULL, NULL);
+            if (ret != HAL_OK) { break; }
+
+            /* Check for a bad result */
+            if (ch0_avg <= 0.0F || isnanf(ch0_avg)) {
+                ret = HAL_ERROR;
+                break;
+            }
+            ch0_readings[time] = ch0_avg;
+        }
+    } while (0);
+
+    /* Turn off the sensor */
+    tsl2591_set_enable(sensor_i2c, 0x00);
+
+    /* Turn off the lights */
+    light_set_transmission(0);
+
+    if (ret == HAL_OK) {
+        log_i("Integration time calibration complete");
+        float measured_time[6];
+        char numbuf[16];
+        for (tsl2591_time_t time = TSL2591_TIME_100MS; time <= TSL2591_TIME_600MS; time++) {
+            if (time == TSL2591_TIME_100MS) {
+                measured_time[time] = 100.0F;
+            } else {
+                measured_time[time] = (ch0_readings[time] / ch0_readings[TSL2591_TIME_100MS]) * 100.0F;
+            }
+
+            float_to_str(measured_time[time], numbuf, 6);
+            log_d("%dms -> %s", tsl2591_get_time_value_ms(time), numbuf);
+            settings_set_cal_time(time, measured_time[time]);
+        }
+    } else {
+        log_e("Integration time calibration failed");
     }
 
     return ret;
@@ -539,8 +611,9 @@ void sensor_convert_to_basic_counts(tsl2591_gain_t gain, tsl2591_time_t time, fl
 {
     float ch0_gain;
     float ch1_gain;
-    uint16_t atime_ms = tsl2591_get_time_value_ms(time);
+    float atime_ms;
     settings_get_cal_gain(gain, &ch0_gain, &ch1_gain);
+    settings_get_cal_time(time, &atime_ms);
 
     float ch0_cpl = (atime_ms * ch0_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);
     float ch1_cpl = (atime_ms * ch1_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);

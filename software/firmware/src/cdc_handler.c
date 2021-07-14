@@ -29,6 +29,7 @@ static void cdc_command_version(const char *cmd, size_t len);
 static void cdc_command_measure_reflection(const char *cmd, size_t len);
 static void cdc_command_measure_transmission(const char *cmd, size_t len);
 static void cdc_command_cal_gain(const char *cmd, size_t len);
+static void cdc_command_cal_time(const char *cmd, size_t len);
 static void cdc_command_cal_reflection(const char *cmd, size_t len);
 static void cdc_command_cal_transmission(const char *cmd, size_t len);
 static void cdc_command_diag_system(const char *cmd, size_t len);
@@ -115,6 +116,8 @@ void cdc_process_command(const char *cmd, size_t len)
         char cal_prefix = toupper(cmd[1]);
         if (cal_prefix == 'G') {
             cdc_command_cal_gain(cmd, len);
+        } else if (cal_prefix == 'I') {
+            cdc_command_cal_time(cmd, len);
         } else if (cal_prefix == 'R') {
             cdc_command_cal_reflection(cmd, len);
         } else if (cal_prefix == 'T') {
@@ -219,7 +222,11 @@ void cdc_command_cal_gain(const char *cmd, size_t len)
     char prefix = toupper(cmd[2]);
 
     if (prefix == 'M') {
-        sensor_gain_calibration(NULL, NULL);
+        if (sensor_gain_calibration(NULL, NULL) == HAL_OK) {
+            cdc_send_response("OK\r\n");
+        } else {
+            cdc_send_response("ERR\r\n");
+        }
     } if (prefix == 'P') {
         char buf[128];
         char numbuf1[16];
@@ -243,6 +250,40 @@ void cdc_command_cal_gain(const char *cmd, size_t len)
         float_to_str(ch1_gain, numbuf2, 2);
         sprintf(buf, "TSL2591,MAXIMUM,%s,%s\r\n", numbuf1, numbuf2);
         cdc_send_response(buf);
+    }
+}
+
+void cdc_command_cal_time(const char *cmd, size_t len)
+{
+    /*
+     * "CI" : Calibration Integration Time
+     * "CIM" -> Measure actual sensor relative integration time and save as calibration values
+     * "CIP" -> Return currently saved integration time calibration values
+     */
+
+    if (len < 3) {
+        return;
+    }
+
+    char prefix = toupper(cmd[2]);
+
+    if (prefix == 'M') {
+        if (sensor_time_calibration(NULL, NULL) == HAL_OK) {
+            cdc_send_response("OK\r\n");
+        } else {
+            cdc_send_response("ERR\r\n");
+        }
+    } if (prefix == 'P') {
+        char buf[128];
+        char numbuf[16];
+        float time_value;
+
+        for (tsl2591_time_t time = TSL2591_TIME_100MS; time <= TSL2591_TIME_600MS; time++) {
+            settings_get_cal_time(time, &time_value);
+            float_to_str(time_value, numbuf, 2);
+            sprintf(buf, "TSL2591,%dms,%s\r\n", tsl2591_get_time_value_ms(time), numbuf);
+            cdc_send_response(buf);
+        }
     }
 }
 
@@ -508,11 +549,16 @@ void cdc_command_diag_sensor(const char *cmd, size_t len)
         bool valid = false;
         uint16_t ch0_val = 0;
         uint16_t ch1_val = 0;
+        tsl2591_gain_t gain = TSL2591_GAIN_LOW;
+        tsl2591_time_t time = TSL2591_TIME_100MS;
 
         do {
             ret = tsl2591_enable(&hi2c1);
             if (ret != HAL_OK) { break; }
             enabled = true;
+
+            ret = tsl2591_get_config(&hi2c1, &gain, &time);
+            if (ret != HAL_OK) { break; }
 
             do {
                 ret = tsl2591_get_status_valid(&hi2c1, &valid);
@@ -528,10 +574,19 @@ void cdc_command_diag_sensor(const char *cmd, size_t len)
         }
 
         if (ret == HAL_OK) {
-            char buf[64];
-            sprintf(buf, "TSL2591,%d,%d\r\n", ch0_val, ch1_val);
+            float ch0_basic;
+            float ch1_basic;
+            char buf[128];
+            char numbuf1[16];
+            char numbuf2[16];
+
+            sensor_convert_to_basic_counts(gain, time, ch0_val, ch1_val, &ch0_basic, &ch1_basic);
+            float_to_str(ch0_basic, numbuf1, 6);
+            float_to_str(ch1_basic, numbuf2, 6);
+
+            sprintf(buf, "TSL2591,%d,%d,%s,%s\r\n", ch0_val, ch1_val, numbuf1, numbuf2);
             cdc_send_response(buf);
-            log_d("TSL2591: CH0=%d, CH1=%d", ch0_val, ch1_val);
+            log_d("TSL2591: CH0=%d, CH1=%d, %s, %s", ch0_val, ch1_val, numbuf1, numbuf2);
         } else {
             cdc_send_response("ERR\r\n");
         }

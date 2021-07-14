@@ -171,11 +171,6 @@ float densitometer_transmission_get_last_reading()
     return densitometer_transmission_d;
 }
 
-void densitometer_calibrate_gain()
-{
-    //TODO Currently in the sensor module. Not sure if it should be there or here.
-}
-
 densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d, sensor_read_callback_t callback, void *user_data)
 {
     float ch0_basic;

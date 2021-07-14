@@ -17,7 +17,6 @@ float densitometer_reflection_get_last_reading();
 densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t callback, void *user_data);
 float densitometer_transmission_get_last_reading();
 
-void densitometer_calibrate_gain();
 densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d, sensor_read_callback_t callback, void *user_data);
 densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d, sensor_read_callback_t callback, void *user_data);
 densitometer_result_t densitometer_calibrate_transmission_zero(sensor_read_callback_t callback, void *user_data);

@@ -24,6 +24,10 @@ Calibration
 * `CGM` - Run the gain calibration process
 * `CGP` - Print the current gain calibration values
 
+### Integration Time Calibration
+* `CIM` - Run the integration time calibration process
+* `CIP` - Print the current integration time calibration values
+
 ### Reflection Calibration
 * CAL-LO Target Measurement
   * `CRLMnnn` - Calibrate using low target with a known density of n.nn (e.g. 123 = 1.23)

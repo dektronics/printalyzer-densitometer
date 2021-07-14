@@ -36,6 +36,12 @@ static float copy_to_f32(const uint8_t *buf);
 #define CONFIG_CAL_TRANSMISSION_HI_D       (CONFIG_CAL_BASE + 44U)
 #define CONFIG_CAL_TRANSMISSION_HI_VALUE   (CONFIG_CAL_BASE + 48U)
 
+#define CONFIG_CAL_TIME_200 (CONFIG_CAL_BASE + 52U)
+#define CONFIG_CAL_TIME_300 (CONFIG_CAL_BASE + 56U)
+#define CONFIG_CAL_TIME_400 (CONFIG_CAL_BASE + 60U)
+#define CONFIG_CAL_TIME_500 (CONFIG_CAL_BASE + 64U)
+#define CONFIG_CAL_TIME_600 (CONFIG_CAL_BASE + 68U)
+
 static float setting_cal_gain_medium_ch0 = 0;
 static float setting_cal_gain_medium_ch1 = 0;
 static float setting_cal_gain_high_ch0 = 0;
@@ -51,6 +57,12 @@ static float setting_cal_reflection_hi_value = 0;
 static float setting_cal_transmission_zero_value = 0;
 static float setting_cal_transmission_hi_d = 0;
 static float setting_cal_transmission_hi_value = 0;
+
+static float setting_cal_time_200 = 0;
+static float setting_cal_time_300 = 0;
+static float setting_cal_time_400 = 0;
+static float setting_cal_time_500 = 0;
+static float setting_cal_time_600 = 0;
 
 HAL_StatusTypeDef settings_init()
 {
@@ -84,6 +96,12 @@ HAL_StatusTypeDef settings_init()
             settings_write_float(CONFIG_CAL_TRANSMISSION_ZERO_VALUE, NAN);
             settings_write_float(CONFIG_CAL_TRANSMISSION_HI_D, NAN);
             settings_write_float(CONFIG_CAL_TRANSMISSION_HI_VALUE, NAN);
+
+            settings_write_float(CONFIG_CAL_TIME_200, NAN);
+            settings_write_float(CONFIG_CAL_TIME_300, NAN);
+            settings_write_float(CONFIG_CAL_TIME_400, NAN);
+            settings_write_float(CONFIG_CAL_TIME_500, NAN);
+            settings_write_float(CONFIG_CAL_TIME_600, NAN);
         } else {
             /* Load Calibration Page */
             setting_cal_gain_medium_ch0 = settings_read_float(CONFIG_CAL_GAIN_MEDIUM_CH0);
@@ -101,6 +119,12 @@ HAL_StatusTypeDef settings_init()
             setting_cal_transmission_zero_value = settings_read_float(CONFIG_CAL_TRANSMISSION_ZERO_VALUE);
             setting_cal_transmission_hi_d = settings_read_float(CONFIG_CAL_TRANSMISSION_HI_D);
             setting_cal_transmission_hi_value = settings_read_float(CONFIG_CAL_TRANSMISSION_HI_VALUE);
+
+            setting_cal_time_200 = settings_read_float(CONFIG_CAL_TIME_200);
+            setting_cal_time_300 = settings_read_float(CONFIG_CAL_TIME_300);
+            setting_cal_time_400 = settings_read_float(CONFIG_CAL_TIME_400);
+            setting_cal_time_500 = settings_read_float(CONFIG_CAL_TIME_500);
+            setting_cal_time_600 = settings_read_float(CONFIG_CAL_TIME_600);
         }
     } while (0);
 
@@ -178,6 +202,68 @@ void settings_get_cal_gain(tsl2591_gain_t gain, float *ch0_gain, float *ch1_gain
     }
     if (ch1_gain) {
         *ch1_gain = ch1_value;
+    }
+}
+
+void settings_set_cal_time(tsl2591_time_t time, float value)
+{
+    switch (time) {
+    case TSL2591_TIME_200MS:
+        settings_write_float(CONFIG_CAL_TIME_200, value);
+        setting_cal_time_200 = value;
+        break;
+    case TSL2591_TIME_300MS:
+        settings_write_float(CONFIG_CAL_TIME_300, value);
+        setting_cal_time_300 = value;
+        break;
+    case TSL2591_TIME_400MS:
+        settings_write_float(CONFIG_CAL_TIME_400, value);
+        setting_cal_time_400 = value;
+        break;
+    case TSL2591_TIME_500MS:
+        settings_write_float(CONFIG_CAL_TIME_500, value);
+        setting_cal_time_500 = value;
+        break;
+    case TSL2591_TIME_600MS:
+        settings_write_float(CONFIG_CAL_TIME_600, value);
+        setting_cal_time_600 = value;
+        break;
+    default:
+        break;
+    }
+}
+
+void settings_get_cal_time(tsl2591_time_t time, float *value)
+{
+    float result = NAN;
+    switch (time) {
+    case TSL2591_TIME_100MS:
+        result = 100.0F;
+        break;
+    case TSL2591_TIME_200MS:
+        result = setting_cal_time_200;
+        break;
+    case TSL2591_TIME_300MS:
+        result = setting_cal_time_300;
+        break;
+    case TSL2591_TIME_400MS:
+        result = setting_cal_time_400;
+        break;
+    case TSL2591_TIME_500MS:
+        result = setting_cal_time_500;
+        break;
+    case TSL2591_TIME_600MS:
+        result = setting_cal_time_600;
+        break;
+    default:
+        break;
+    }
+    if (isnanf(result) || fabs(result - tsl2591_get_time_value_ms(time)) > 100.0F) {
+        result = tsl2591_get_time_value_ms(time);
+    }
+
+    if (value) {
+        *value = result;
     }
 }
 
