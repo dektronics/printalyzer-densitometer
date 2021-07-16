@@ -1,6 +1,6 @@
 # Printalyzer Densitometer
 
-![Printalyzer Densitometer Logo](https://github.com/dkonigsberg/densitometer/blob/master/docs/images/dens-logo.png?raw=true)
+![Printalyzer Densitometer Logo](https://github.com/dkonigsberg/printalyzer-densitometer/blob/master/docs/images/dens-logo.png?raw=true)
 
 ## Introduction
 
