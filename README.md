@@ -1,6 +1,6 @@
 # Printalyzer Densitometer
 
-![Printalyzer Logo](https://github.com/dkonigsberg/printalyzer/blob/master/docs/images/printalyzer-logo.png?raw=true)
+![Printalyzer Densitometer Logo](https://github.com/dkonigsberg/densitometer/blob/master/docs/images/dens-logo.png?raw=true)
 
 ## Introduction
 
@@ -13,6 +13,9 @@ It was initially conceived as an accessory to complement the
 to ease the process of creating paper profiles. However, given the general
 utility of such a device, it has been spun off as a separate project in its
 own right.
+
+A good overview of the project can be found in these blog posts:
+* [The Printalyzer Densitometer Project](https://hecgeek.blogspot.com/2021/07/the-printalyzer-densitometer-project.html)
 
 _**Note: This project is currently a work-in-progress, and may still go through
 major changes before it can be considered to be stable.**_
@@ -31,5 +34,10 @@ that runs on the hardware.
 ### Models
 The "models" directory contains any CAD models and related resources
 necessary to physically assemble the project.
+
+## License
+Individual directories will contain LICENSE files as needed, with relevant
+details. Generally, the hardware will be CC BY-SA and the software will be
+BSD 3-Clause. However, external resources may have their own individual license terms.
 
 ## Credits
