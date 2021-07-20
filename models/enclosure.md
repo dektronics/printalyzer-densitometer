@@ -40,7 +40,22 @@ may be generated from them:
 
 ### 3D Printable Files
 
-* TBD
+These files have been generated from the CAD models, and are used to actually
+create the enclosure. They must be printed in a material that is minimally
+reflective and opaque to infrared light.
+
+* Upper Enclosure
+  * `dens-main-housing.stl` - Main housing for the circuit board and major components
+  * `dens-main-cover.stl` - Top cover for the main housing
+  * `diffuser-spacer.stl` - Spacer that sits between the diffuser material and the UV/IR filter
+  * `filter-ring.stl` - Ring that sits between the UV/IR filter and the main circuit board
+  * `sensor-board-cover.stl` - Internal cover for the backside of the circuit board above the sensor elements
+* Lower Enclosure
+  * `dens-base.stl` - Base housing that contains the transmission LED components
+  * `dens-base-cover.stl` - Bottom cover for the base housing
+  * `stage-plate-spacer.stl` - Opaque ring that goes between the inner and outer portions of the stage plate
+* Accessory components
+  * `reflec-std-base.stl` - Alternate base designed to hold the main unit above a reflectance standard
 
 ### Non-PCB Electronic Components
 
