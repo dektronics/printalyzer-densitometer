@@ -2,6 +2,7 @@
 #define KEYPAD_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
     KEYPAD_BUTTON_1 = 0x01,
@@ -12,6 +13,8 @@ typedef enum {
 } keypad_key_t;
 
 uint8_t keypad_get_state();
+
+bool keypad_is_detect();
 
 void keypad_int_handler(uint16_t gpio_pin);
 

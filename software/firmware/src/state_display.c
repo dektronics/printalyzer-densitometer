@@ -51,15 +51,21 @@ void state_reflection_display_entry(state_t *state_base, state_controller_t *con
     state_display_t *state = (state_display_t *)state_base;
     state->display_dirty = true;
     state->menu_pending = false;
-
-    light_set_reflection(LIGHT_REFLECTION_IDLE);
-    light_set_transmission(0);
 }
 
 void state_reflection_display_process(state_t *state_base, state_controller_t *controller)
 {
     state_display_t *state = (state_display_t *)state_base;
     uint8_t key_state = keypad_get_state();
+    bool is_detect = keypad_is_detect();
+
+    if (is_detect) {
+        light_set_reflection(LIGHT_REFLECTION_IDLE);
+        light_set_transmission(0);
+    } else {
+        light_set_reflection(0);
+        light_set_transmission(0);
+    }
 
     if (key_state != 0xFF) {
         state->display_dirty = true;
@@ -70,7 +76,7 @@ void state_reflection_display_process(state_t *state_base, state_controller_t *c
                 state_controller_set_next_state(controller, STATE_MAIN_MENU);
             }
         } else {
-            if (key_state & KEYPAD_BUTTON_1) {
+            if (is_detect && (key_state & KEYPAD_BUTTON_1)) {
                 state_controller_set_next_state(controller, STATE_REFLECTION_MEASURE);
             } else if ((key_state & KEYPAD_BUTTON_2) && (key_state & KEYPAD_BUTTON_3)) {
                 state->menu_pending = true;
@@ -102,15 +108,21 @@ void state_transmission_display_entry(state_t *state_base, state_controller_t *c
     state_display_t *state = (state_display_t *)state_base;
     state->display_dirty = true;
     state->menu_pending = false;
-
-    light_set_reflection(0);
-    light_set_transmission(LIGHT_TRANSMISSION_IDLE);
 }
 
 void state_transmission_display_process(state_t *state_base, state_controller_t *controller)
 {
     state_display_t *state = (state_display_t *)state_base;
     uint8_t key_state = keypad_get_state();
+    bool is_detect = keypad_is_detect();
+
+    if (is_detect) {
+        light_set_reflection(0);
+        light_set_transmission(LIGHT_TRANSMISSION_IDLE);
+    } else {
+        light_set_reflection(0);
+        light_set_transmission(0);
+    }
 
     if (key_state != 0xFF) {
         state->display_dirty = true;
@@ -121,7 +133,7 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
                 state_controller_set_next_state(controller, STATE_MAIN_MENU);
             }
         } else {
-            if (key_state & KEYPAD_BUTTON_1) {
+            if (is_detect && (key_state & KEYPAD_BUTTON_1)) {
                 state_controller_set_next_state(controller, STATE_TRANSMISSION_MEASURE);
             } else if ((key_state & KEYPAD_BUTTON_2) && (key_state & KEYPAD_BUTTON_3)) {
                 state->menu_pending = true;

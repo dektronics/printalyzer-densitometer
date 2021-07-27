@@ -539,14 +539,18 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
                     time = TSL2591_TIME_100MS;
                 }
                 config_changed = true;
-            } else if (key_state & KEYPAD_BUTTON_3) {
+            }
+
+            if (key_state & KEYPAD_BUTTON_3) {
                 if (light_mode < 2) {
                     light_mode++;
                 } else {
                     light_mode = 0;
                 }
                 settings_changed = true;
-            } else if (key_state & KEYPAD_BUTTON_4) {
+            }
+
+            if (key_state & KEYPAD_BUTTON_4) {
                 break;
             }
         }
@@ -600,6 +604,7 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
         }
 
         if (tsl2591_get_full_channel_data(&hi2c1, &ch0_val, &ch1_val) == HAL_OK) {
+            bool is_detect = keypad_is_detect();
             if (display_mode) {
                 sensor_convert_to_basic_counts(gain, time, ch0_val, ch1_val, &ch0_basic, &ch1_basic);
                 float_to_str(ch0_basic, numbuf1, 5);
@@ -607,16 +612,18 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
                 sprintf(buf,
                     "CH0=%s\n"
                     "CH1=%s\n"
-                    "[%c][%d][%c]",
+                    "[%c][%d][%c][%c]",
                     numbuf1, numbuf2,
-                    gain_ch, tsl2591_get_time_value_ms(time), light_ch);
+                    gain_ch, tsl2591_get_time_value_ms(time), light_ch,
+                    (is_detect ? '*' : ' '));
             } else {
                 sprintf(buf,
                     "CH0=%5d\n"
                     "CH1=%5d\n"
-                    "[%c][%d][%c]",
+                    "[%c][%d][%c][%c]",
                     ch0_val, ch1_val,
-                    gain_ch, tsl2591_get_time_value_ms(time), light_ch);
+                    gain_ch, tsl2591_get_time_value_ms(time), light_ch,
+                    (is_detect ? '*' : ' '));
             }
             display_static_list("Diagnostics", buf);
         }

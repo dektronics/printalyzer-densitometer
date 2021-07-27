@@ -161,9 +161,15 @@ void gpio_init(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    /* Configure GPIO pins: BTN5_Pin BTN4_Pin */
-    GPIO_InitStruct.Pin = BTN5_Pin | BTN4_Pin;
+    /* Configure GPIO pin: BTN4_Pin */
+    GPIO_InitStruct.Pin = BTN4_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* Configure GPIO pin: BTN5_Pin */
+    GPIO_InitStruct.Pin = BTN5_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 

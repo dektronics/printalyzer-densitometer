@@ -32,6 +32,11 @@ uint8_t keypad_get_state()
     return result;
 }
 
+bool keypad_is_detect()
+{
+    return HAL_GPIO_ReadPin(BTN5_GPIO_Port, BTN5_Pin) == GPIO_PIN_RESET;
+}
+
 void keypad_int_handler(uint16_t gpio_pin)
 {
     GPIO_TypeDef *gpio_port = 0;
@@ -55,10 +60,6 @@ void keypad_int_handler(uint16_t gpio_pin)
     case BTN4_Pin:
         gpio_port = BTN4_GPIO_Port;
         button_mask = KEYPAD_BUTTON_4;
-        break;
-    case BTN5_Pin:
-        gpio_port = BTN5_GPIO_Port;
-        button_mask = KEYPAD_BUTTON_5;
         break;
     default:
         return;
