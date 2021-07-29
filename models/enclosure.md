@@ -35,6 +35,12 @@ may be generated from them:
   (_Note: Does not include models of the PCBs or mounting hardware, to avoid
   accidentally redistributing component models under restrictive
   license terms._)
+* `densitometer-dev-cover.f3z` - Derived version of the top cover, which has
+  a clearance hole a debug connector.
+* `reflec-std-base.f3z` - Alternative base designed to hold the main unit
+  above a reflectance standard for calibration. Can also be used as a jig
+  to aid in assembly.
+* `button-cap.f3d` - Custom button cap, as an alternative to the stock choices.
 * `stage-plate-rings.dxf` - Outline of the stage plate components, which can
   be used for manufacture.
 
@@ -47,9 +53,11 @@ reflective and opaque to infrared light.
 * Upper Enclosure
   * `dens-main-housing.stl` - Main housing for the circuit board and major components
   * `dens-main-cover.stl` - Top cover for the main housing
+  * `dens-main-cover-dev.stl` - Alternative top cover with a clearance hole for a debug connector
   * `diffuser-spacer.stl` - Spacer that sits between the diffuser material and the UV/IR filter
   * `filter-ring.stl` - Ring that sits between the UV/IR filter and the main circuit board
   * `sensor-board-cover.stl` - Internal cover for the backside of the circuit board above the sensor elements
+  * `button-cap.stl` - Custom button cap, as an alternative to the stock choices.
 * Lower Enclosure
   * `dens-base.stl` - Base housing that contains the transmission LED components
   * `dens-base-cover.stl` - Bottom cover for the base housing
