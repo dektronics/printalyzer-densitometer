@@ -139,8 +139,9 @@ uint8_t u8x8_GetMenuEvent(u8x8_t *u8x8)
         return U8X8_MSG_GPIO_MENU_HOME;
     }
 
-    uint8_t key_state = keypad_get_state();
-    if (key_state != 0xFF) {
+    bool key_changed = false;
+    uint8_t key_state = keypad_get_state(&key_changed);
+    if (key_changed) {
         menu_last_event_time = HAL_GetTick();
         switch (key_state) {
         case KEYPAD_BUTTON_1:

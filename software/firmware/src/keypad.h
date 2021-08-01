@@ -12,7 +12,7 @@ typedef enum {
     KEYPAD_BUTTON_5 = 0x10
 } keypad_key_t;
 
-uint8_t keypad_get_state();
+uint8_t keypad_get_state(bool *changed);
 
 bool keypad_is_detect();
 

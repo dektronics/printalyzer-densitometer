@@ -10,26 +10,31 @@
 static uint8_t keypad_state = 0;
 static bool keypad_state_changed = false;
 
-//TODO Need to rewrite this to use some sort of key event queue
-
-uint8_t keypad_get_state()
+uint8_t keypad_get_state(bool *changed)
 {
-    uint8_t result = 0;
+    uint8_t result_state = 0;
+    bool result_changed = false;
 
     HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
     HAL_NVIC_DisableIRQ(EXTI4_15_IRQn);
 
+    result_state = keypad_state;
+
     if (keypad_state_changed) {
-        result = keypad_state;
+        result_changed = true;
         keypad_state_changed = false;
     } else {
-        result = 0xFF;
+        result_changed = false;
     }
 
     HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
     HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
-    return result;
+    if (changed) {
+        *changed = result_changed;
+    }
+
+    return result_state;
 }
 
 bool keypad_is_detect()

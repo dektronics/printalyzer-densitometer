@@ -521,8 +521,9 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
     }
 
     do {
-        uint8_t key_state = keypad_get_state();
-        if (key_state != 0xFF) {
+        bool key_changed = false;
+        uint8_t key_state = keypad_get_state(&key_changed);
+        if (key_changed) {
             if ((key_state & KEYPAD_BUTTON_1) && (key_state & KEYPAD_BUTTON_2)) {
                 display_mode = !display_mode;
             } else if (key_state & KEYPAD_BUTTON_1) {

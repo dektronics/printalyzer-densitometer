@@ -56,7 +56,8 @@ void state_reflection_display_entry(state_t *state_base, state_controller_t *con
 void state_reflection_display_process(state_t *state_base, state_controller_t *controller)
 {
     state_display_t *state = (state_display_t *)state_base;
-    uint8_t key_state = keypad_get_state();
+    bool key_changed = false;
+    uint8_t key_state = keypad_get_state(&key_changed);
     bool is_detect = keypad_is_detect();
 
     if (is_detect) {
@@ -67,7 +68,7 @@ void state_reflection_display_process(state_t *state_base, state_controller_t *c
         light_set_transmission(0);
     }
 
-    if (key_state != 0xFF) {
+    if (key_changed) {
         state->display_dirty = true;
 
         if (state->menu_pending) {
@@ -113,7 +114,8 @@ void state_transmission_display_entry(state_t *state_base, state_controller_t *c
 void state_transmission_display_process(state_t *state_base, state_controller_t *controller)
 {
     state_display_t *state = (state_display_t *)state_base;
-    uint8_t key_state = keypad_get_state();
+    bool key_changed = false;
+    uint8_t key_state = keypad_get_state(&key_changed);
     bool is_detect = keypad_is_detect();
 
     if (is_detect) {
@@ -124,7 +126,7 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
         light_set_transmission(0);
     }
 
-    if (key_state != 0xFF) {
+    if (key_changed) {
         state->display_dirty = true;
 
         if (state->menu_pending) {
