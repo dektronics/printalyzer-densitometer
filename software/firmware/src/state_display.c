@@ -92,7 +92,8 @@ void state_reflection_display_process(state_t *state_base, state_controller_t *c
         display_main_elements_t elements = {
             .title = "Reflection",
             .mode = DISPLAY_MODE_REFLECTION,
-            .density100 = (!isnanf(reading)) ? lroundf(reading * 100) : 0
+            .density100 = ((!isnanf(reading)) ? lroundf(reading * 100) : 0),
+            .zero_indicator = densitometer_reflection_has_zero()
         };
         display_draw_main_elements(&elements);
         state->display_dirty = false;
@@ -150,7 +151,8 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
         display_main_elements_t elements = {
             .title = "Transmission",
             .mode = DISPLAY_MODE_TRANSMISSION,
-            .density100 = (!isnanf(reading)) ? lroundf(reading * 100) : 0
+            .density100 = ((!isnanf(reading)) ? lroundf(reading * 100) : 0),
+            .zero_indicator = densitometer_transmission_has_zero()
         };
         display_draw_main_elements(&elements);
         state->display_dirty = false;

@@ -11,7 +11,9 @@
 #include "util.h"
 
 float densitometer_reflection_d = NAN;
+float densitometer_reflection_zero_d = NAN;
 float densitometer_transmission_d = NAN;
+float densitometer_transmission_zero_d = NAN;
 
 #define CAL_READ_ITERATIONS 5
 
@@ -89,9 +91,30 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     return DENSITOMETER_OK;
 }
 
+void densitometer_reflection_set_zero()
+{
+    if (!isnanf(densitometer_reflection_d)) {
+        densitometer_reflection_zero_d = densitometer_reflection_d;
+    }
+}
+
+void densitometer_reflection_clear_zero()
+{
+    densitometer_reflection_zero_d = NAN;
+}
+
+bool densitometer_reflection_has_zero()
+{
+    return !isnanf(densitometer_reflection_zero_d);
+}
+
 float densitometer_reflection_get_last_reading()
 {
-    return densitometer_reflection_d;
+    if (!isnanf(densitometer_reflection_zero_d)) {
+        return densitometer_reflection_d - densitometer_reflection_zero_d;
+    } else {
+        return densitometer_reflection_d;
+    }
 }
 
 densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t callback, void *user_data)
@@ -166,9 +189,30 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     return DENSITOMETER_OK;
 }
 
+void densitometer_transmission_set_zero()
+{
+    if (!isnanf(densitometer_transmission_d)) {
+        densitometer_transmission_zero_d = densitometer_transmission_d;
+    }
+}
+
+void densitometer_transmission_clear_zero()
+{
+    densitometer_transmission_zero_d = NAN;
+}
+
+bool densitometer_transmission_has_zero()
+{
+    return !isnanf(densitometer_transmission_zero_d);
+}
+
 float densitometer_transmission_get_last_reading()
 {
-    return densitometer_transmission_d;
+    if (!isnanf(densitometer_transmission_zero_d)) {
+        return densitometer_transmission_d - densitometer_transmission_zero_d;
+    } else {
+        return densitometer_transmission_d;
+    }
 }
 
 densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d, sensor_read_callback_t callback, void *user_data)
