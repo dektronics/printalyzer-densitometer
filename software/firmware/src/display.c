@@ -1,6 +1,7 @@
 #include "display.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "u8g2_stm32_hal.h"
@@ -412,22 +413,32 @@ void display_draw_main_elements(const display_main_elements_t *elements)
     u8g2_uint_t x = u8g2_GetDisplayWidth(&u8g2) - 22;
     u8g2_uint_t y = 18;
 
-    if (elements->density100 != UINT16_MAX) {
-        display_draw_mdigit(&u8g2, x, y, elements->density100 % 10);
+    if (elements->density100 != INT16_MAX) {
+        int d100 = abs(elements->density100);
+        if (d100 > 999) { d100 = 999; }
+
+        display_draw_mdigit(&u8g2, x, y, d100 % 10);
         x -= 22;
 
-        display_draw_mdigit(&u8g2, x, y, elements->density100 % 100 / 10);
+        display_draw_mdigit(&u8g2, x, y, d100 % 100 / 10);
         x -= 8;
 
         u8g2_DrawBox(&u8g2, x, y + 33, 4, 4);
         x -= 22;
 
-        display_draw_mdigit(&u8g2, x, y, elements->density100 % 1000 / 100);
+        display_draw_mdigit(&u8g2, x, y, d100 % 1000 / 100);
+        x -= 12;
+
+        if (elements->density100 < 0) {
+            u8g2_DrawLine(&u8g2, x + 1, y + 17, x + 8, y + 17);
+            u8g2_DrawLine(&u8g2, x, y + 18, x + 9, y + 18);
+            u8g2_DrawLine(&u8g2, x + 1, y + 19, x + 8, y + 19);
+        }
     }
 
     asset_info_t asset;
     if (display_get_main_icon(elements->mode, elements->frame, &asset)) {
-        u8g2_DrawXBM(&u8g2, 4, y - 1, asset.width, asset.height, asset.bits);
+        u8g2_DrawXBM(&u8g2, 0, y - 1, asset.width, asset.height, asset.bits);
     }
 
     if (elements->title) {

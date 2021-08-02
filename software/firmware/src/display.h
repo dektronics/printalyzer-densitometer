@@ -13,7 +13,7 @@ typedef struct {
     const char *title;
     display_mode_t mode;
     uint8_t frame;
-    uint16_t density100;
+    int16_t density100;
 } display_main_elements_t;
 
 HAL_StatusTypeDef display_init(SPI_HandleTypeDef *hspi);
