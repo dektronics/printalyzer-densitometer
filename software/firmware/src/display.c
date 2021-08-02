@@ -445,5 +445,12 @@ void display_draw_main_elements(const display_main_elements_t *elements)
         u8g2_DrawUTF8(&u8g2, 0, u8g2_GetAscent(&u8g2), elements->title);
     }
 
+    if (elements->zero_indicator) {
+        display_asset_get(&asset, ASSET_ZERO_INDICATOR);
+        u8g2_DrawXBM(&u8g2,
+            u8g2_GetDisplayWidth(&u8g2) - asset.width, 0,
+            asset.width, asset.height, asset.bits);
+    }
+
     u8g2_SendBuffer(&u8g2);
 }

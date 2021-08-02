@@ -128,6 +128,13 @@ static unsigned char asset_transmission_40_2_bits[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
+#define asset_zero_indicator_width 14
+#define asset_zero_indicator_height 14
+static unsigned char asset_zero_indicator_bits[] = {
+    0xe0, 0x01, 0xf8, 0x07, 0x0c, 0x0c, 0x06, 0x18, 0xc2, 0x10, 0xc3, 0x30,
+    0xc3, 0x30, 0xf3, 0x33, 0xe3, 0x31, 0xc2, 0x10, 0x06, 0x18, 0x0c, 0x0c,
+    0xf8, 0x07, 0xe0, 0x01 };
+
 #define ASSET_ENTRY(x) { x##_bits, x##_width, x##_height }
 
 static asset_info_t asset_list[] = {
@@ -136,7 +143,8 @@ static asset_info_t asset_list[] = {
     ASSET_ENTRY(asset_reflection_40_2),
     ASSET_ENTRY(asset_transmission_40),
     ASSET_ENTRY(asset_transmission_40_1),
-    ASSET_ENTRY(asset_transmission_40_2)
+    ASSET_ENTRY(asset_transmission_40_2),
+    ASSET_ENTRY(asset_zero_indicator)
 };
 
 uint8_t display_asset_get(asset_info_t *asset_info, asset_name_t asset_name)

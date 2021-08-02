@@ -14,6 +14,7 @@ typedef struct {
     display_mode_t mode;
     uint8_t frame;
     int16_t density100;
+    bool zero_indicator;
 } display_main_elements_t;
 
 HAL_StatusTypeDef display_init(SPI_HandleTypeDef *hspi);
