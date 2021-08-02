@@ -13,6 +13,7 @@
 #include <tusb.h>
 
 #include "settings.h"
+#include "display.h"
 #include "light.h"
 #include "sensor.h"
 #include "tsl2591.h"
@@ -33,6 +34,7 @@ static void cdc_command_cal_time(const char *cmd, size_t len);
 static void cdc_command_cal_reflection(const char *cmd, size_t len);
 static void cdc_command_cal_transmission(const char *cmd, size_t len);
 static void cdc_command_diag_system(const char *cmd, size_t len);
+static void cdc_command_diag_display(const char *cmd, size_t len);
 static void cdc_command_diag_light(const char *cmd, size_t len);
 static void cdc_command_diag_sensor(const char *cmd, size_t len);
 static void cdc_send_response(const char *str);
@@ -128,6 +130,8 @@ void cdc_process_command(const char *cmd, size_t len)
         char diag_prefix = toupper(cmd[1]);
         if (diag_prefix == 'A') {
             cdc_command_diag_system(cmd, len);
+        } else if (diag_prefix == 'D') {
+            cdc_command_diag_display(cmd, len);
         } else if (diag_prefix == 'L') {
             cdc_command_diag_light(cmd, len);
         } else if (diag_prefix == 'S') {
@@ -489,6 +493,24 @@ void cdc_command_diag_system(const char *cmd, size_t len)
     }
 }
 
+void cdc_command_diag_display(const char *cmd, size_t len)
+{
+    /*
+     * "DD" : Diagnostic Display
+     * "DDS" -> Capture display screenshot
+     */
+
+    if (len < 3) {
+        return;
+    }
+
+    char prefix = toupper(cmd[2]);
+
+    if (prefix == 'S') {
+        display_capture_screenshot();
+    }
+}
+
 void cdc_command_diag_light(const char *cmd, size_t len)
 {
     /*
@@ -627,7 +649,12 @@ void cdc_command_diag_sensor(const char *cmd, size_t len)
 void cdc_send_response(const char *str)
 {
     size_t len = strlen(str);
-    tud_cdc_write(str, len);
+    cdc_write(str, len);
+}
+
+void cdc_write(const char *buf, size_t len)
+{
+    tud_cdc_write(buf, len);
     tud_cdc_write_flush();
     tud_task();
 }

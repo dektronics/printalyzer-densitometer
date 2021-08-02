@@ -1,12 +1,14 @@
 #include "display.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "u8g2_stm32_hal.h"
 #include "u8g2.h"
 #include "display_segments.h"
 #include "display_assets.h"
 #include "keypad.h"
+#include "cdc_handler.h"
 
 static u8g2_t u8g2;
 static uint8_t display_contrast = 0x9F;
@@ -91,6 +93,19 @@ void display_set_brightness(uint8_t value)
 uint8_t display_get_brightness()
 {
     return display_brightness;
+}
+
+static void display_capture_screenshot_callback(const char *s)
+{
+    size_t len = strlen(s);
+    if (s > 0) {
+        cdc_write(s, len);
+    }
+}
+
+void display_capture_screenshot()
+{
+    u8g2_WriteBufferXBM(&u8g2, display_capture_screenshot_callback);
 }
 
 void display_draw_test_pattern(bool mode)

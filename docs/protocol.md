@@ -52,6 +52,9 @@ Diagnostic Commands
   * `DAI` - Print device information (HAL version, MCU Rev ID, MCU Dev ID, SysClock)
   * `DAU` - Print device unique ID
 
+* Display Diagnostics
+  * `DDS` - Capture a screenshot of the current display image in XBM format
+
 * Light Source Diagnostics
   * `DLRnnn` - Set reflection light duty cycle (nnn/127)
   * `DLTnnn` - Set transmission light duty cycle (nnn/127)
