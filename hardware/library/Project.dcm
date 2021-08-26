@@ -24,6 +24,12 @@ K usb esd protection suppression transient
 F https://www.diodes.com/assets/Datasheets/DT2636-04S.pdf
 $ENDCMP
 #
+$CMP ESDALC6V1-1M2
+D Single-line low capacitance TVS diode for ESD protection, SOD-882
+K ESD protection suppression transient
+F https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf
+$ENDCMP
+#
 $CMP ESDALC6V1-1U2
 D Single-line low capacitance TVS diode for ESD protection, 0201
 K ESD protection suppression transient

@@ -65,6 +65,10 @@ this directory's `.gitignore` file.
 * Status: Included
 * Source: Digi-Key / UltraLibrarian download
 
+### SOD882_STM.step
+* Status: Included
+* Source: Digi-Key / UltraLibrarian download
+
 ### SunLike_LED_S1S0
 * Status: Included (Same license as project)
 * Source: Created for project using Autodesk Fusion 360
