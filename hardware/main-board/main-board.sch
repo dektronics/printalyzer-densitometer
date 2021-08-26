@@ -765,22 +765,6 @@ Wire Wire Line
 Wire Wire Line
 	575  3000 925  3000
 $Comp
-L Project:ESDALC6V1-1U2 D5
-U 1 1 605CB7E3
-P 9325 1275
-F 0 "D5" V 9279 1353 50  0000 L CNN
-F 1 "ESDALC6V1-1U2" V 9370 1353 50  0000 L CNN
-F 2 "lib_fp:ST0201" H 9325 1075 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/90/b1/aa/a3/9f/73/4d/1e/CD00212838.pdf/files/CD00212838.pdf/jcr:content/translations/en.CD00212838.pdf" H 9325 1325 50  0001 C CNN
-F 4 "TVS DIODE 3V ST0201" H 9325 1275 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 9325 1275 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1-1U2" H 9325 1275 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 9325 1275 50  0001 C CNN "Supplier"
-F 8 "497-8752-1-ND" H 9325 1275 50  0001 C CNN "Supplier PN"
-	1    9325 1275
-	0    1    1    0   
-$EndComp
-$Comp
 L Device:R_Small R3
 U 1 1 605D1A9B
 P 9000 1275
@@ -904,22 +888,6 @@ F 7 "Digi-Key" H 9000 1975 50  0001 C CNN "Supplier"
 F 8 "541-100KGCT-ND" H 9000 1975 50  0001 C CNN "Supplier PN"
 	1    9000 1975
 	1    0    0    -1  
-$EndComp
-$Comp
-L Project:ESDALC6V1-1U2 D6
-U 1 1 60605E37
-P 9325 1975
-F 0 "D6" V 9279 2053 50  0000 L CNN
-F 1 "ESDALC6V1-1U2" V 9370 2053 50  0000 L CNN
-F 2 "lib_fp:ST0201" H 9325 1775 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/90/b1/aa/a3/9f/73/4d/1e/CD00212838.pdf/files/CD00212838.pdf/jcr:content/translations/en.CD00212838.pdf" H 9325 2025 50  0001 C CNN
-F 4 "TVS DIODE 3V ST0201" H 9325 1975 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 9325 1975 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1-1U2" H 9325 1975 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 9325 1975 50  0001 C CNN "Supplier"
-F 8 "497-8752-1-ND" H 9325 1975 50  0001 C CNN "Supplier PN"
-	1    9325 1975
-	0    1    1    0   
 $EndComp
 $Comp
 L Device:C_Small C9
@@ -1279,22 +1247,6 @@ F 8 "541-100KGCT-ND" H 9000 2675 50  0001 C CNN "Supplier PN"
 	1    0    0    -1  
 $EndComp
 $Comp
-L Project:ESDALC6V1-1U2 D9
-U 1 1 60C508D5
-P 9325 2675
-F 0 "D9" V 9279 2753 50  0000 L CNN
-F 1 "ESDALC6V1-1U2" V 9370 2753 50  0000 L CNN
-F 2 "lib_fp:ST0201" H 9325 2475 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/90/b1/aa/a3/9f/73/4d/1e/CD00212838.pdf/files/CD00212838.pdf/jcr:content/translations/en.CD00212838.pdf" H 9325 2725 50  0001 C CNN
-F 4 "TVS DIODE 3V ST0201" H 9325 2675 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 9325 2675 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1-1U2" H 9325 2675 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 9325 2675 50  0001 C CNN "Supplier"
-F 8 "497-8752-1-ND" H 9325 2675 50  0001 C CNN "Supplier PN"
-	1    9325 2675
-	0    1    1    0   
-$EndComp
-$Comp
 L Device:C_Small C18
 U 1 1 60C508E4
 P 10125 2675
@@ -1411,22 +1363,6 @@ F 7 "Digi-Key" H 9000 3375 50  0001 C CNN "Supplier"
 F 8 "541-100KGCT-ND" H 9000 3375 50  0001 C CNN "Supplier PN"
 	1    9000 3375
 	1    0    0    -1  
-$EndComp
-$Comp
-L Project:ESDALC6V1-1U2 D10
-U 1 1 60C6F291
-P 9325 3375
-F 0 "D10" V 9279 3453 50  0000 L CNN
-F 1 "ESDALC6V1-1U2" V 9370 3453 50  0000 L CNN
-F 2 "lib_fp:ST0201" H 9325 3175 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/90/b1/aa/a3/9f/73/4d/1e/CD00212838.pdf/files/CD00212838.pdf/jcr:content/translations/en.CD00212838.pdf" H 9325 3425 50  0001 C CNN
-F 4 "TVS DIODE 3V ST0201" H 9325 3375 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 9325 3375 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1-1U2" H 9325 3375 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 9325 3375 50  0001 C CNN "Supplier"
-F 8 "497-8752-1-ND" H 9325 3375 50  0001 C CNN "Supplier PN"
-	1    9325 3375
-	0    1    1    0   
 $EndComp
 $Comp
 L Device:C_Small C21
@@ -1551,22 +1487,6 @@ F 8 "541-100KGCT-ND" H 9000 4600 50  0001 C CNN "Supplier PN"
 	1    0    0    -1  
 $EndComp
 $Comp
-L Project:ESDALC6V1-1U2 D11
-U 1 1 60CA641F
-P 9325 4600
-F 0 "D11" V 9279 4678 50  0000 L CNN
-F 1 "ESDALC6V1-1U2" V 9370 4678 50  0000 L CNN
-F 2 "lib_fp:ST0201" H 9325 4400 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/90/b1/aa/a3/9f/73/4d/1e/CD00212838.pdf/files/CD00212838.pdf/jcr:content/translations/en.CD00212838.pdf" H 9325 4650 50  0001 C CNN
-F 4 "TVS DIODE 3V ST0201" H 9325 4600 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 9325 4600 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1-1U2" H 9325 4600 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 9325 4600 50  0001 C CNN "Supplier"
-F 8 "497-8752-1-ND" H 9325 4600 50  0001 C CNN "Supplier PN"
-	1    9325 4600
-	0    1    1    0   
-$EndComp
-$Comp
 L Device:C_Small C23
 U 1 1 60CA642E
 P 10125 4600
@@ -1615,9 +1535,6 @@ Wire Wire Line
 	8425 4400 8500 4400
 Wire Wire Line
 	8900 4400 9000 4400
-Connection ~ 9325 4400
-Wire Wire Line
-	9325 4400 9650 4400
 Wire Wire Line
 	9850 4400 10125 4400
 Wire Wire Line
@@ -1628,8 +1545,6 @@ Wire Wire Line
 Wire Wire Line
 	9000 4500 9000 4400
 Connection ~ 9000 4400
-Wire Wire Line
-	9000 4400 9325 4400
 $Comp
 L power:GND #PWR021
 U 1 1 60CA645D
@@ -1644,12 +1559,7 @@ $EndComp
 Wire Wire Line
 	9000 4700 9000 4800
 Wire Wire Line
-	9000 4800 9325 4800
-Wire Wire Line
-	9325 4800 10125 4800
-Wire Wire Line
 	10125 4800 10125 4700
-Connection ~ 9325 4800
 Connection ~ 9000 4800
 Text Notes 8325 4025 0    50   ~ 0
 Hinge Button
@@ -2308,22 +2218,6 @@ F 3 "" H 7450 4675 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	6025 4275 7450 4275
-$Comp
-L Project:ESDALC6V1-1U2 D7
-U 1 1 605C5670
-P 7450 4475
-F 0 "D7" V 7404 4553 50  0000 L CNN
-F 1 "ESDALC6V1-1U2" V 7495 4553 50  0000 L CNN
-F 2 "lib_fp:ST0201" H 7450 4275 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/90/b1/aa/a3/9f/73/4d/1e/CD00212838.pdf/files/CD00212838.pdf/jcr:content/translations/en.CD00212838.pdf" H 7450 4525 50  0001 C CNN
-F 4 "TVS DIODE 3V ST0201" H 7450 4475 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 7450 4475 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1-1U2" H 7450 4475 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 7450 4475 50  0001 C CNN "Supplier"
-F 8 "497-8752-1-ND" H 7450 4475 50  0001 C CNN "Supplier PN"
-	1    7450 4475
-	0    1    1    0   
-$EndComp
 Text Label 6175 4275 0    50   ~ 0
 RESET
 NoConn ~ 6025 4975
@@ -2514,10 +2408,10 @@ F 3 "" H 9450 6000 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:+3.3V #PWR?
+L power:+3.3V #PWR0133
 U 1 1 60C839C0
 P 5525 4075
-F 0 "#PWR?" H 5525 3925 50  0001 C CNN
+F 0 "#PWR0133" H 5525 3925 50  0001 C CNN
 F 1 "+3.3V" H 5540 4248 50  0000 C CNN
 F 2 "" H 5525 4075 50  0001 C CNN
 F 3 "" H 5525 4075 50  0001 C CNN
@@ -2536,4 +2430,110 @@ Wire Notes Line
 	10450 6250 8275 6250
 Wire Notes Line
 	8275 6250 8275 5125
+$Comp
+L Project:ESDALC6V1-1M2 D7
+U 1 1 612C1089
+P 7450 4475
+F 0 "D7" V 7404 4553 50  0000 L CNN
+F 1 "ESDALC6V1-1M2" V 7495 4553 50  0000 L CNN
+F 2 "lib_fp:D_SOD-882" H 7450 4275 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 7450 4525 50  0001 C CNN
+F 4 "TVS DIODE 3VWM SOD882" H 7450 4475 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 7450 4475 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1M2" H 7450 4475 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 7450 4475 50  0001 C CNN "Supplier"
+F 8 "497-5238-1-ND" H 7450 4475 50  0001 C CNN "Supplier PN"
+	1    7450 4475
+	0    1    1    0   
+$EndComp
+$Comp
+L Project:ESDALC6V1-1M2 D11
+U 1 1 612E2F92
+P 9325 4600
+F 0 "D11" V 9279 4678 50  0000 L CNN
+F 1 "ESDALC6V1-1M2" V 9370 4678 50  0000 L CNN
+F 2 "lib_fp:D_SOD-882" H 9325 4400 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 9325 4650 50  0001 C CNN
+F 4 "TVS DIODE 3VWM SOD882" H 9325 4600 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 9325 4600 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1M2" H 9325 4600 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9325 4600 50  0001 C CNN "Supplier"
+F 8 "497-5238-1-ND" H 9325 4600 50  0001 C CNN "Supplier PN"
+	1    9325 4600
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	9000 4400 9325 4400
+Wire Wire Line
+	9325 4400 9650 4400
+Connection ~ 9325 4400
+Wire Wire Line
+	9325 4800 10125 4800
+Wire Wire Line
+	9000 4800 9325 4800
+Connection ~ 9325 4800
+$Comp
+L Project:ESDALC6V1-1M2 D10
+U 1 1 6131EFCD
+P 9325 3375
+F 0 "D10" V 9279 3453 50  0000 L CNN
+F 1 "ESDALC6V1-1M2" V 9370 3453 50  0000 L CNN
+F 2 "lib_fp:D_SOD-882" H 9325 3175 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 9325 3425 50  0001 C CNN
+F 4 "TVS DIODE 3VWM SOD882" H 9325 3375 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 9325 3375 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1M2" H 9325 3375 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9325 3375 50  0001 C CNN "Supplier"
+F 8 "497-5238-1-ND" H 9325 3375 50  0001 C CNN "Supplier PN"
+	1    9325 3375
+	0    1    1    0   
+$EndComp
+$Comp
+L Project:ESDALC6V1-1M2 D9
+U 1 1 61320B14
+P 9325 2675
+F 0 "D9" V 9279 2753 50  0000 L CNN
+F 1 "ESDALC6V1-1M2" V 9370 2753 50  0000 L CNN
+F 2 "lib_fp:D_SOD-882" H 9325 2475 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 9325 2725 50  0001 C CNN
+F 4 "TVS DIODE 3VWM SOD882" H 9325 2675 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 9325 2675 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1M2" H 9325 2675 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9325 2675 50  0001 C CNN "Supplier"
+F 8 "497-5238-1-ND" H 9325 2675 50  0001 C CNN "Supplier PN"
+	1    9325 2675
+	0    1    1    0   
+$EndComp
+$Comp
+L Project:ESDALC6V1-1M2 D6
+U 1 1 61321B9F
+P 9325 1975
+F 0 "D6" V 9279 2053 50  0000 L CNN
+F 1 "ESDALC6V1-1M2" V 9370 2053 50  0000 L CNN
+F 2 "lib_fp:D_SOD-882" H 9325 1775 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 9325 2025 50  0001 C CNN
+F 4 "TVS DIODE 3VWM SOD882" H 9325 1975 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 9325 1975 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1M2" H 9325 1975 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9325 1975 50  0001 C CNN "Supplier"
+F 8 "497-5238-1-ND" H 9325 1975 50  0001 C CNN "Supplier PN"
+	1    9325 1975
+	0    1    1    0   
+$EndComp
+$Comp
+L Project:ESDALC6V1-1M2 D5
+U 1 1 61322092
+P 9325 1275
+F 0 "D5" V 9279 1353 50  0000 L CNN
+F 1 "ESDALC6V1-1M2" V 9370 1353 50  0000 L CNN
+F 2 "lib_fp:D_SOD-882" H 9325 1075 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 9325 1325 50  0001 C CNN
+F 4 "TVS DIODE 3VWM SOD882" H 9325 1275 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 9325 1275 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1M2" H 9325 1275 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9325 1275 50  0001 C CNN "Supplier"
+F 8 "497-5238-1-ND" H 9325 1275 50  0001 C CNN "Supplier PN"
+	1    9325 1275
+	0    1    1    0   
+$EndComp
 $EndSCHEMATC
