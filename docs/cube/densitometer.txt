@@ -1,7 +1,7 @@
 Configuration	densitometer
-STM32CubeMX 	6.2.1
-Date	06/24/2021
-MCU	STM32L052K8Ux
+STM32CubeMX 	6.3.0
+Date	08/27/2021
+MCU	STM32L072KBUx
 
 
 
@@ -10,10 +10,9 @@ I2C1	I2C	I2C1_SCL	PB6
 I2C1	I2C	I2C1_SDA	PB7
 SPI1	Transmit Only Master	SPI1_MOSI	PA7
 SPI1	Transmit Only Master	SPI1_SCK	PA5
-SPI1	Hardware NSS Output Signal	SPI1_NSS	PA4
 SYS	Serial_Wire	SYS_SWCLK	PA14
 SYS	Serial_Wire	SYS_SWDIO	PA13
-SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+SYS	TIM6	SYS_VS_tim6	VP_SYS_VS_tim6
 TIM2	Internal Clock	TIM2_VS_ClockSourceINT	VP_TIM2_VS_ClockSourceINT
 TIM2	PWM Generation CH3	TIM2_CH3	PA2
 TIM2	PWM Generation CH4	TIM2_CH4	PA3
@@ -25,9 +24,11 @@ USB	Device (FS)	USB_DP	PA12
 
 
 Pin Nb	PINs	FUNCTIONs	LABELs
+1	PC14-OSC32_IN	GPIO_EXTI14	BTN2
+2	PC15-OSC32_OUT	GPIO_EXTI15	BTN1
 8	PA2	TIM2_CH3	RLED_EN
 9	PA3	TIM2_CH4	TLED_EN
-10	PA4	SPI1_NSS	DISP_CS
+10	PA4	GPIO_Output	DISP_CS
 11	PA5	SPI1_SCK	DISP_SCK
 12	PA6	GPIO_Output	DISP_DC
 13	PA7	SPI1_MOSI	DISP_MOSI
@@ -38,22 +39,19 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 21	PA11	USB_DM	
 22	PA12	USB_DP	
 23	PA13	SYS_SWDIO	
-24	PA14	SYS_SWCLK	
-25	PA15	GPIO_EXTI15	BTN4
-26	PB3	GPIO_EXTI3	BTN3
-27	PB4	GPIO_EXTI4	BTN2
-28	PB5	GPIO_EXTI5	BTN1
-29	PB6	I2C1_SCL	
-30	PB7	I2C1_SDA	
+25	PA14	SYS_SWCLK	
+26	PB4	GPIO_EXTI4	BTN4
+27	PB5	GPIO_EXTI5	BTN3
+28	PB6	I2C1_SCL	
+29	PB7	I2C1_SDA	
 PERIPHERALS	MODES	FUNCTIONS	PINS
 I2C1	I2C	I2C1_SCL	PB6
 I2C1	I2C	I2C1_SDA	PB7
 SPI1	Transmit Only Master	SPI1_MOSI	PA7
 SPI1	Transmit Only Master	SPI1_SCK	PA5
-SPI1	Hardware NSS Output Signal	SPI1_NSS	PA4
 SYS	Serial_Wire	SYS_SWCLK	PA14
 SYS	Serial_Wire	SYS_SWDIO	PA13
-SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+SYS	TIM6	SYS_VS_tim6	VP_SYS_VS_tim6
 TIM2	Internal Clock	TIM2_VS_ClockSourceINT	VP_TIM2_VS_ClockSourceINT
 TIM2	PWM Generation CH3	TIM2_CH3	PA2
 TIM2	PWM Generation CH4	TIM2_CH4	PA3
@@ -65,9 +63,11 @@ USB	Device (FS)	USB_DP	PA12
 
 
 Pin Nb	PINs	FUNCTIONs	LABELs
+1	PC14-OSC32_IN	GPIO_EXTI14	BTN2
+2	PC15-OSC32_OUT	GPIO_EXTI15	BTN1
 8	PA2	TIM2_CH3	RLED_EN
 9	PA3	TIM2_CH4	TLED_EN
-10	PA4	SPI1_NSS	DISP_CS
+10	PA4	GPIO_Output	DISP_CS
 11	PA5	SPI1_SCK	DISP_SCK
 12	PA6	GPIO_Output	DISP_DC
 13	PA7	SPI1_MOSI	DISP_MOSI
@@ -78,13 +78,11 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 21	PA11	USB_DM	
 22	PA12	USB_DP	
 23	PA13	SYS_SWDIO	
-24	PA14	SYS_SWCLK	
-25	PA15	GPIO_EXTI15	BTN4
-26	PB3	GPIO_EXTI3	BTN3
-27	PB4	GPIO_EXTI4	BTN2
-28	PB5	GPIO_EXTI5	BTN1
-29	PB6	I2C1_SCL	
-30	PB7	I2C1_SDA	
+25	PA14	SYS_SWCLK	
+26	PB4	GPIO_EXTI4	BTN4
+27	PB5	GPIO_EXTI5	BTN3
+28	PB6	I2C1_SCL	
+29	PB7	I2C1_SDA	
 
 
 
@@ -94,7 +92,7 @@ Project Settings :
 Project Name : densitometer
 Project Folder : /home/octo/devel/densitometer/docs/cube
 Toolchain / IDE : STM32CubeIDE
-Firmware Package Name and Version : STM32Cube FW_L0 V1.12.0
+Firmware Package Name and Version : STM32Cube FW_L0 V1.12.1
 
 
 Code Generation Settings : 
@@ -102,7 +100,7 @@ STM32Cube MCU packages and embedded software packs : Copy only the necessary lib
 Generate peripheral initialization as a pair of '.c/.h' files per peripheral : No
 Backup previously generated files when re-generating : No
 Delete previously generated files when not re-generated : Yes
-Set all free pins as analog (to optimize the power consumption) : No
+Set all free pins as analog (to optimize the power consumption) : Yes
 
 
 Toolchains Settings : 
