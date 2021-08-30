@@ -144,67 +144,67 @@ $EndComp
 $Comp
 L Mechanical:MountingHole H1
 U 1 1 60572EAB
-P 8450 5400
-F 0 "H1" H 8550 5446 50  0000 L CNN
-F 1 "MountingHole" H 8550 5355 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 8450 5400 50  0001 C CNN
-F 3 "~" H 8450 5400 50  0001 C CNN
-	1    8450 5400
+P 6675 4075
+F 0 "H1" H 6775 4121 50  0000 L CNN
+F 1 "MountingHole" H 6775 4030 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 6675 4075 50  0001 C CNN
+F 3 "~" H 6675 4075 50  0001 C CNN
+	1    6675 4075
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole H2
 U 1 1 60573343
-P 8450 5625
-F 0 "H2" H 8550 5671 50  0000 L CNN
-F 1 "MountingHole" H 8550 5580 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 8450 5625 50  0001 C CNN
-F 3 "~" H 8450 5625 50  0001 C CNN
-	1    8450 5625
+P 6675 4300
+F 0 "H2" H 6775 4346 50  0000 L CNN
+F 1 "MountingHole" H 6775 4255 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 6675 4300 50  0001 C CNN
+F 3 "~" H 6675 4300 50  0001 C CNN
+	1    6675 4300
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole H3
 U 1 1 605736BA
-P 8450 5850
-F 0 "H3" H 8550 5896 50  0000 L CNN
-F 1 "MountingHole" H 8550 5805 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 8450 5850 50  0001 C CNN
-F 3 "~" H 8450 5850 50  0001 C CNN
-	1    8450 5850
+P 6675 4525
+F 0 "H3" H 6775 4571 50  0000 L CNN
+F 1 "MountingHole" H 6775 4480 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 6675 4525 50  0001 C CNN
+F 3 "~" H 6675 4525 50  0001 C CNN
+	1    6675 4525
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole H4
 U 1 1 605739B5
-P 8450 6075
-F 0 "H4" H 8550 6121 50  0000 L CNN
-F 1 "MountingHole" H 8550 6030 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2" H 8450 6075 50  0001 C CNN
-F 3 "~" H 8450 6075 50  0001 C CNN
-	1    8450 6075
+P 6675 4750
+F 0 "H4" H 6775 4796 50  0000 L CNN
+F 1 "MountingHole" H 6775 4705 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2" H 6675 4750 50  0001 C CNN
+F 3 "~" H 6675 4750 50  0001 C CNN
+	1    6675 4750
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole_Pad H5
 U 1 1 60573BE2
-P 9450 5450
-F 0 "H5" H 9550 5550 50  0000 L CNN
-F 1 "MountingHole" H 9550 5450 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 9450 5450 50  0001 C CNN
-F 3 "~" H 9450 5450 50  0001 C CNN
-	1    9450 5450
+P 7500 4125
+F 0 "H5" H 7600 4225 50  0000 L CNN
+F 1 "MountingHole" H 7600 4125 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 7500 4125 50  0001 C CNN
+F 3 "~" H 7500 4125 50  0001 C CNN
+	1    7500 4125
 	1    0    0    -1  
 $EndComp
 $Comp
 L Mechanical:MountingHole_Pad H6
 U 1 1 60573EB9
-P 9450 5900
-F 0 "H6" H 9550 6000 50  0000 L CNN
-F 1 "MountingHole" H 9550 5900 50  0000 L CNN
-F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 9450 5900 50  0001 C CNN
-F 3 "~" H 9450 5900 50  0001 C CNN
-	1    9450 5900
+P 7500 4575
+F 0 "H6" H 7600 4675 50  0000 L CNN
+F 1 "MountingHole" H 7600 4575 50  0000 L CNN
+F 2 "MountingHole:MountingHole_2.2mm_M2_Pad_Via" H 7500 4575 50  0001 C CNN
+F 3 "~" H 7500 4575 50  0001 C CNN
+	1    7500 4575
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -334,17 +334,6 @@ F 8 "541-2.0KGCT-ND" H 2750 2200 50  0001 C CNN "Supplier PN"
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GND #PWR0112
-U 1 1 6057594F
-P 3125 1575
-F 0 "#PWR0112" H 3125 1325 50  0001 C CNN
-F 1 "GND" H 3125 1425 50  0000 C CNN
-F 2 "" H 3125 1575 50  0001 C CNN
-F 3 "" H 3125 1575 50  0001 C CNN
-	1    3125 1575
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR0113
 U 1 1 60575ED8
 P 4175 2825
@@ -355,44 +344,41 @@ F 3 "" H 4175 2825 50  0001 C CNN
 	1    4175 2825
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	3125 1350 3125 1375
 $Comp
 L Device:C_Small C8
 U 1 1 605806B5
-P 2775 1300
-F 0 "C8" H 2867 1346 50  0000 L CNN
-F 1 "0.1uF" H 2867 1255 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0603_1608Metric" H 2775 1300 50  0001 C CNN
-F 3 "https://media.digikey.com/pdf/Data%20Sheets/Samsung%20PDFs/CL_Series_MLCC_ds.pdf" H 2775 1300 50  0001 C CNN
-F 4 "CAP CER 0.1UF 25V X7R 0603" H 2775 1300 50  0001 C CNN "Description"
-F 5 "Samsung Electro-Mechanics" H 2775 1300 50  0001 C CNN "Manufacturer"
-F 6 "CL10B104KA8NNNC" H 2775 1300 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 2775 1300 50  0001 C CNN "Supplier"
-F 8 "1276-1006-1-ND" H 2775 1300 50  0001 C CNN "Supplier PN"
-	1    2775 1300
+P 2900 1300
+F 0 "C8" H 2992 1346 50  0000 L CNN
+F 1 "0.1uF" H 2992 1255 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 2900 1300 50  0001 C CNN
+F 3 "https://media.digikey.com/pdf/Data%20Sheets/Samsung%20PDFs/CL_Series_MLCC_ds.pdf" H 2900 1300 50  0001 C CNN
+F 4 "CAP CER 0.1UF 25V X7R 0603" H 2900 1300 50  0001 C CNN "Description"
+F 5 "Samsung Electro-Mechanics" H 2900 1300 50  0001 C CNN "Manufacturer"
+F 6 "CL10B104KA8NNNC" H 2900 1300 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 2900 1300 50  0001 C CNN "Supplier"
+F 8 "1276-1006-1-ND" H 2900 1300 50  0001 C CNN "Supplier PN"
+	1    2900 1300
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0118
 U 1 1 60593A28
-P 2775 1400
-F 0 "#PWR0118" H 2775 1150 50  0001 C CNN
-F 1 "GND" H 2780 1227 50  0000 C CNN
-F 2 "" H 2775 1400 50  0001 C CNN
-F 3 "" H 2775 1400 50  0001 C CNN
-	1    2775 1400
+P 2900 1400
+F 0 "#PWR0118" H 2900 1150 50  0001 C CNN
+F 1 "GND" H 2905 1227 50  0000 C CNN
+F 2 "" H 2900 1400 50  0001 C CNN
+F 3 "" H 2900 1400 50  0001 C CNN
+	1    2900 1400
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3675 1150 2775 1150
+	3675 1150 2900 1150
 Wire Wire Line
-	2775 1150 2775 1200
-Text Label 2525 1150 0    50   ~ 0
+	2900 1150 2900 1200
+Text Label 2650 1150 0    50   ~ 0
 RESET
 Wire Wire Line
-	2525 1150 2775 1150
-Connection ~ 2775 1150
+	2650 1150 2900 1150
 Text Label 5325 2350 2    50   ~ 0
 USB_D+
 Text Label 5325 2250 2    50   ~ 0
@@ -462,17 +448,17 @@ Connection ~ 2500 2050
 $Comp
 L Device:R_Small R6
 U 1 1 605AAD1E
-P 3125 1475
-F 0 "R6" H 3184 1521 50  0000 L CNN
-F 1 "10K" H 3184 1430 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 3125 1475 50  0001 C CNN
-F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 3125 1475 50  0001 C CNN
-F 4 "RES SMD 10K OHM 5% 1/10W 0603" H 3125 1475 50  0001 C CNN "Description"
-F 5 "Vishay Dale" H 3125 1475 50  0001 C CNN "Manufacturer"
-F 6 "CRCW060310K0JNEA" H 3125 1475 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 3125 1475 50  0001 C CNN "Supplier"
-F 8 "541-10KGCT-ND" H 3125 1475 50  0001 C CNN "Supplier PN"
-	1    3125 1475
+P 9000 5825
+F 0 "R6" H 9059 5871 50  0000 L CNN
+F 1 "10K" H 9059 5780 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 9000 5825 50  0001 C CNN
+F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 9000 5825 50  0001 C CNN
+F 4 "RES SMD 10K OHM 5% 1/10W 0603" H 9000 5825 50  0001 C CNN "Description"
+F 5 "Vishay Dale" H 9000 5825 50  0001 C CNN "Manufacturer"
+F 6 "CRCW060310K0JNEA" H 9000 5825 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9000 5825 50  0001 C CNN "Supplier"
+F 8 "541-10KGCT-ND" H 9000 5825 50  0001 C CNN "Supplier PN"
+	1    9000 5825
 	1    0    0    -1  
 $EndComp
 Text Label 5325 2450 2    50   ~ 0
@@ -1579,11 +1565,11 @@ $EndComp
 Text Notes 5675 675  0    50   ~ 0
 Display Interface
 Wire Notes Line
-	8200 550  8200 3625
+	8200 550  8200 3725
 Wire Notes Line
-	8200 3625 5625 3625
+	8200 3725 5625 3725
 Wire Notes Line
-	5625 3625 5625 550 
+	5625 3725 5625 550 
 Wire Wire Line
 	6350 975  6050 975 
 Wire Wire Line
@@ -1976,108 +1962,108 @@ F 8 "1028-1014-1-ND" H 5000 7400 50  0001 C CNN "Supplier PN"
 	1    5000 7400
 	1    0    0    -1  
 $EndComp
-Text Notes 4775 4350 0    50   ~ 0
+Text Notes 3000 3925 0    50   ~ 0
 Debug Connector
 Wire Notes Line
-	4725 4225 8200 4225
+	2950 3800 6425 3800
 Wire Notes Line
-	4725 6250 4725 4225
+	2950 5825 2950 3800
 Wire Notes Line
-	8200 6250 4725 6250
+	6425 5825 2950 5825
 Wire Notes Line
-	8200 4225 8200 6250
+	6425 3800 6425 5825
 $Comp
 L power:GND #PWR0127
 U 1 1 605CA9D5
-P 7450 5175
-F 0 "#PWR0127" H 7450 4925 50  0001 C CNN
-F 1 "GND" H 7455 5002 50  0000 C CNN
-F 2 "" H 7450 5175 50  0001 C CNN
-F 3 "" H 7450 5175 50  0001 C CNN
-	1    7450 5175
+P 5675 4750
+F 0 "#PWR0127" H 5675 4500 50  0001 C CNN
+F 1 "GND" H 5680 4577 50  0000 C CNN
+F 2 "" H 5675 4750 50  0001 C CNN
+F 3 "" H 5675 4750 50  0001 C CNN
+	1    5675 4750
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6025 4775 7450 4775
-Text Label 6175 4775 0    50   ~ 0
+	4250 4350 5675 4350
+Text Label 4400 4350 0    50   ~ 0
 RESET
-NoConn ~ 6025 5475
-NoConn ~ 6025 5275
-NoConn ~ 6025 5175
-Connection ~ 5425 5975
+NoConn ~ 4250 5050
+NoConn ~ 4250 4850
+NoConn ~ 4250 4750
+Connection ~ 3650 5550
 Wire Wire Line
-	5525 5975 5425 5975
+	3750 5550 3650 5550
 Wire Wire Line
-	7175 5125 7175 5175
+	5400 4700 5400 4750
 Wire Wire Line
-	7125 5125 7175 5125
+	5350 4700 5400 4700
 $Comp
 L power:GND #PWR0122
 U 1 1 605BDA4D
-P 7175 5175
-F 0 "#PWR0122" H 7175 4925 50  0001 C CNN
-F 1 "GND" H 7180 5002 50  0000 C CNN
-F 2 "" H 7175 5175 50  0001 C CNN
-F 3 "" H 7175 5175 50  0001 C CNN
-	1    7175 5175
+P 5400 4750
+F 0 "#PWR0122" H 5400 4500 50  0001 C CNN
+F 1 "GND" H 5405 4577 50  0000 C CNN
+F 2 "" H 5400 4750 50  0001 C CNN
+F 3 "" H 5400 4750 50  0001 C CNN
+	1    5400 4750
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0121
 U 1 1 605BCFA5
-P 5425 5975
-F 0 "#PWR0121" H 5425 5725 50  0001 C CNN
-F 1 "GND" H 5430 5802 50  0000 C CNN
-F 2 "" H 5425 5975 50  0001 C CNN
-F 3 "" H 5425 5975 50  0001 C CNN
-	1    5425 5975
+P 3650 5550
+F 0 "#PWR0121" H 3650 5300 50  0001 C CNN
+F 1 "GND" H 3655 5377 50  0000 C CNN
+F 2 "" H 3650 5550 50  0001 C CNN
+F 3 "" H 3650 5550 50  0001 C CNN
+	1    3650 5550
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6025 5775 6650 5775
+	4250 5350 4875 5350
 Wire Wire Line
-	6025 5675 6600 5675
+	4250 5250 4825 5250
 Wire Wire Line
-	6025 5075 6725 5075
+	4250 4650 4950 4650
 Wire Wire Line
-	6025 4975 6725 4975
-Text Label 6150 5675 0    50   ~ 0
+	4250 4550 4950 4550
+Text Label 4375 5250 0    50   ~ 0
 USART1_RX
-Text Label 6150 5775 0    50   ~ 0
+Text Label 4375 5350 0    50   ~ 0
 USART1_TX
-Text Label 6150 4975 0    50   ~ 0
+Text Label 4375 4550 0    50   ~ 0
 SWCLK
-Text Label 6150 5075 0    50   ~ 0
+Text Label 4375 4650 0    50   ~ 0
 SWDIO
-NoConn ~ 5275 5975
+NoConn ~ 3500 5550
 $Comp
 L Project:ESDALC6V1W5 D8
 U 1 1 605AC89E
-P 6925 5125
-F 0 "D8" H 6925 5400 50  0000 C CNN
-F 1 "ESDALC6V1W5" H 6925 4825 50  0000 C CNN
-F 2 "lib_fp:SOT323-5L" H 6925 4750 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/32/30/02/e6/ac/0f/46/c2/CD00002946.pdf/files/CD00002946.pdf/jcr:content/translations/en.CD00002946.pdf" H 6925 5175 50  0001 C CNN
-F 4 "TVS DIODE 3V SOT323-5" H 6925 5125 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 6925 5125 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1W5" H 6925 5125 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 6925 5125 50  0001 C CNN "Supplier"
-F 8 "497-7231-1-ND" H 6925 5125 50  0001 C CNN "Supplier PN"
-	1    6925 5125
+P 5150 4700
+F 0 "D8" H 5150 4975 50  0000 C CNN
+F 1 "ESDALC6V1W5" H 5150 4400 50  0000 C CNN
+F 2 "lib_fp:SOT323-5L" H 5150 4325 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/32/30/02/e6/ac/0f/46/c2/CD00002946.pdf/files/CD00002946.pdf/jcr:content/translations/en.CD00002946.pdf" H 5150 4750 50  0001 C CNN
+F 4 "TVS DIODE 3V SOT323-5" H 5150 4700 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 5150 4700 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1W5" H 5150 4700 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 5150 4700 50  0001 C CNN "Supplier"
+F 8 "497-7231-1-ND" H 5150 4700 50  0001 C CNN "Supplier PN"
+	1    5150 4700
 	1    0    0    -1  
 $EndComp
 $Comp
 L Project:Conn_ST_STDC14 J2
 U 1 1 60586F63
-P 5525 5275
-F 0 "J2" H 5082 5321 50  0000 R CNN
-F 1 "DNI" H 5075 5125 50  0000 R CNN
-F 2 "Connector:Tag-Connect_TC2070-IDC-FP_2x07_P1.27mm_Vertical" H 5525 4175 50  0001 C CNN
-F 3 "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/TC2070-IDC_Datasheet_11.pdf" V 5175 4025 50  0001 C CNN
-F 4 "Tag-Connect" H 5525 5275 50  0001 C CNN "Manufacturer"
-F 5 "TC2070-IDC-050" H 5525 5275 50  0001 C CNN "Manufacturer PN"
-F 6 "STDC14" H 4950 5225 50  0000 C CNN "User Label"
-	1    5525 5275
+P 3750 4850
+F 0 "J2" H 3307 4896 50  0000 R CNN
+F 1 "DNI" H 3300 4700 50  0000 R CNN
+F 2 "Connector:Tag-Connect_TC2070-IDC-FP_2x07_P1.27mm_Vertical" H 3750 3750 50  0001 C CNN
+F 3 "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/TC2070-IDC_Datasheet_11.pdf" V 3400 3600 50  0001 C CNN
+F 4 "Tag-Connect" H 3750 4850 50  0001 C CNN "Manufacturer"
+F 5 "TC2070-IDC-050" H 3750 4850 50  0001 C CNN "Manufacturer PN"
+F 6 "STDC14" H 3175 4800 50  0000 C CNN "User Label"
+	1    3750 4850
 	1    0    0    -1  
 $EndComp
 Wire Notes Line
@@ -2159,72 +2145,72 @@ Connection ~ 3775 6725
 Wire Wire Line
 	1125 7075 1525 7075
 Wire Wire Line
-	6650 5775 6650 5275
+	4875 5350 4875 4850
 Wire Wire Line
-	6650 5275 6725 5275
+	4875 4850 4950 4850
 Wire Wire Line
-	6600 5675 6600 5175
+	4825 5250 4825 4750
 Wire Wire Line
-	6600 5175 6725 5175
+	4825 4750 4950 4750
 $Comp
 L power:GND #PWR0124
 U 1 1 60CBE3DA
-P 9450 5550
-F 0 "#PWR0124" H 9450 5300 50  0001 C CNN
-F 1 "GND" H 9450 5400 50  0000 C CNN
-F 2 "" H 9450 5550 50  0001 C CNN
-F 3 "" H 9450 5550 50  0001 C CNN
-	1    9450 5550
+P 7500 4225
+F 0 "#PWR0124" H 7500 3975 50  0001 C CNN
+F 1 "GND" H 7500 4075 50  0000 C CNN
+F 2 "" H 7500 4225 50  0001 C CNN
+F 3 "" H 7500 4225 50  0001 C CNN
+	1    7500 4225
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0132
 U 1 1 60CBE6B6
-P 9450 6000
-F 0 "#PWR0132" H 9450 5750 50  0001 C CNN
-F 1 "GND" H 9450 5850 50  0000 C CNN
-F 2 "" H 9450 6000 50  0001 C CNN
-F 3 "" H 9450 6000 50  0001 C CNN
-	1    9450 6000
+P 7500 4675
+F 0 "#PWR0132" H 7500 4425 50  0001 C CNN
+F 1 "GND" H 7500 4525 50  0000 C CNN
+F 2 "" H 7500 4675 50  0001 C CNN
+F 3 "" H 7500 4675 50  0001 C CNN
+	1    7500 4675
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:+3.3V #PWR0133
 U 1 1 60C839C0
-P 5525 4575
-F 0 "#PWR0133" H 5525 4425 50  0001 C CNN
-F 1 "+3.3V" H 5540 4748 50  0000 C CNN
-F 2 "" H 5525 4575 50  0001 C CNN
-F 3 "" H 5525 4575 50  0001 C CNN
-	1    5525 4575
+P 3750 4150
+F 0 "#PWR0133" H 3750 4000 50  0001 C CNN
+F 1 "+3.3V" H 3765 4323 50  0000 C CNN
+F 2 "" H 3750 4150 50  0001 C CNN
+F 3 "" H 3750 4150 50  0001 C CNN
+	1    3750 4150
 	1    0    0    -1  
 $EndComp
-Text Notes 5675 6200 0    50   ~ 0
+Text Notes 3900 5775 0    50   ~ 0
 Tag-Connect 14-pin footprint is used for the debug connection
-Text Notes 8325 5250 0    50   ~ 0
+Text Notes 6550 3925 0    50   ~ 0
 Board Mounting
 Wire Notes Line
-	8275 5125 10450 5125
+	6500 3800 8200 3800
 Wire Notes Line
-	10450 5125 10450 6250
+	8200 3800 8200 4925
 Wire Notes Line
-	10450 6250 8275 6250
+	8200 4925 6500 4925
 Wire Notes Line
-	8275 6250 8275 5125
+	6500 4925 6500 3800
 $Comp
 L Project:ESDALC6V1-1M2 D7
 U 1 1 612C1089
-P 7450 4975
-F 0 "D7" V 7404 5053 50  0000 L CNN
-F 1 "ESDALC6V1-1M2" V 7495 5053 50  0000 L CNN
-F 2 "lib_fp:D_SOD-882" H 7450 4775 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 7450 5025 50  0001 C CNN
-F 4 "TVS DIODE 3VWM SOD882" H 7450 4975 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 7450 4975 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1-1M2" H 7450 4975 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 7450 4975 50  0001 C CNN "Supplier"
-F 8 "497-5238-1-ND" H 7450 4975 50  0001 C CNN "Supplier PN"
-	1    7450 4975
+P 5675 4550
+F 0 "D7" V 5629 4628 50  0000 L CNN
+F 1 "ESDALC6V1-1M2" V 5720 4628 50  0000 L CNN
+F 2 "lib_fp:D_SOD-882" H 5675 4350 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 5675 4600 50  0001 C CNN
+F 4 "TVS DIODE 3VWM SOD882" H 5675 4550 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 5675 4550 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1M2" H 5675 4550 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 5675 4550 50  0001 C CNN "Supplier"
+F 8 "497-5238-1-ND" H 5675 4550 50  0001 C CNN "Supplier PN"
+	1    5675 4550
 	0    1    1    0   
 $EndComp
 $Comp
@@ -2340,7 +2326,7 @@ Wire Wire Line
 Wire Wire Line
 	5325 1150 4875 1150
 Wire Wire Line
-	3675 1350 3125 1350
+	3675 1350 3275 1350
 Wire Wire Line
 	4175 2750 4175 2800
 Wire Wire Line
@@ -2642,6 +2628,110 @@ Wire Wire Line
 Connection ~ 2750 2050
 Wire Wire Line
 	3000 2350 3000 2300
-Text Label 3125 1350 0    50   ~ 0
+Text Label 3275 1350 0    50   ~ 0
 BOOT0
+$Comp
+L Switch:SW_Push SW6
+U 1 1 613104EF
+P 8700 5625
+F 0 "SW6" H 8700 5800 50  0000 C CNN
+F 1 "SW_Boot" H 8700 5550 50  0000 C CNN
+F 2 "lib_fp:Panasonic_EVQP7C_EVQP7L" H 8700 5825 50  0001 C CNN
+F 3 "https://industrial.panasonic.com/cdbs/www-data/pdf/ATK0000/ATK0000C378.pdf" H 8700 5825 50  0001 C CNN
+F 4 "SWITCH TACTILE SPST-NO 0.05A 12V" H 8700 5625 50  0001 C CNN "Description"
+F 5 "Panasonic Electronic Components" H 8700 5625 50  0001 C CNN "Manufacturer"
+F 6 "EVQ-P7L01P" H 8700 5625 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 8700 5625 50  0001 C CNN "Supplier"
+F 8 "P16769CT-ND" H 8700 5625 50  0001 C CNN "Supplier PN"
+	1    8700 5625
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R_Small R17
+U 1 1 6132643F
+P 9575 5625
+F 0 "R17" H 9634 5671 50  0000 L CNN
+F 1 "330R" H 9634 5580 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 9575 5625 50  0001 C CNN
+F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 9575 5625 50  0001 C CNN
+F 4 "RES SMD 330 OHM 5% 1/10W 0603" H 9575 5625 50  0001 C CNN "Description"
+F 5 "Vishay Dale" H 9575 5625 50  0001 C CNN "Manufacturer"
+F 6 "CRCW0603330RJNEA" H 9575 5625 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9575 5625 50  0001 C CNN "Supplier"
+F 8 "541-330GCT-ND" H 9575 5625 50  0001 C CNN "Supplier PN"
+	1    9575 5625
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:+3.3V #PWR08
+U 1 1 61326449
+P 8425 5500
+F 0 "#PWR08" H 8425 5350 50  0001 C CNN
+F 1 "+3.3V" H 8440 5673 50  0000 C CNN
+F 2 "" H 8425 5500 50  0001 C CNN
+F 3 "" H 8425 5500 50  0001 C CNN
+	1    8425 5500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8425 5500 8425 5625
+Wire Wire Line
+	8425 5625 8500 5625
+Wire Wire Line
+	8900 5625 9000 5625
+Wire Wire Line
+	9000 5725 9000 5625
+Connection ~ 9000 5625
+$Comp
+L power:GND #PWR022
+U 1 1 6132645C
+P 9000 6025
+F 0 "#PWR022" H 9000 5775 50  0001 C CNN
+F 1 "GND" H 9005 5852 50  0000 C CNN
+F 2 "" H 9000 6025 50  0001 C CNN
+F 3 "" H 9000 6025 50  0001 C CNN
+	1    9000 6025
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9000 5925 9000 6025
+Connection ~ 9000 6025
+$Comp
+L Project:ESDALC6V1-1M2 D12
+U 1 1 6132646E
+P 9325 5825
+F 0 "D12" V 9279 5903 50  0000 L CNN
+F 1 "ESDALC6V1-1M2" V 9370 5903 50  0000 L CNN
+F 2 "lib_fp:D_SOD-882" H 9325 5625 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 9325 5875 50  0001 C CNN
+F 4 "TVS DIODE 3VWM SOD882" H 9325 5825 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 9325 5825 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1M2" H 9325 5825 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9325 5825 50  0001 C CNN "Supplier"
+F 8 "497-5238-1-ND" H 9325 5825 50  0001 C CNN "Supplier PN"
+	1    9325 5825
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	9000 5625 9325 5625
+Wire Wire Line
+	9000 6025 9325 6025
+Wire Wire Line
+	9675 5625 10025 5625
+Connection ~ 2900 1150
+Text Label 10025 5625 2    50   ~ 0
+BOOT0
+Wire Wire Line
+	9325 5625 9475 5625
+Connection ~ 9325 5625
+Text Notes 8325 5250 0    50   ~ 0
+Bootloader Button
+Wire Notes Line
+	8275 5125 10450 5125
+Wire Notes Line
+	10450 5125 10450 6275
+Wire Notes Line
+	10450 6275 8275 6275
+Wire Notes Line
+	8275 6275 8275 5125
 $EndSCHEMATC
