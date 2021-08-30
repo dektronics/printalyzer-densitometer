@@ -106,3 +106,7 @@ this directory's `.gitignore` file.
 ### SM02B-SRSS-TB
 * Status: Not included (Not redistributable)
 * Source: https://www.jst-mfg.com/product/detail_e.php?series=231
+
+### EVQP7-LC-01P
+* Status: Not included (Download requires registration, terms of use restrictive)
+* Source: Manufacturer <https://www3.panasonic.biz/ac/ae/search_num/index.jsp?c=detail&part_no=EVQP7L01P>
