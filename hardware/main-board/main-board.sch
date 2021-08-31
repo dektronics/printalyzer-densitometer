@@ -2192,11 +2192,11 @@ Board Mounting
 Wire Notes Line
 	6500 3800 8200 3800
 Wire Notes Line
-	8200 3800 8200 4925
+	8200 3750 8200 5550
 Wire Notes Line
-	8200 4925 6500 4925
+	8200 5550 6500 5550
 Wire Notes Line
-	6500 4925 6500 3800
+	6500 5550 6500 3800
 $Comp
 L Project:ESDALC6V1-1M2 D7
 U 1 1 612C1089
@@ -2734,4 +2734,37 @@ Wire Notes Line
 	10450 6275 8275 6275
 Wire Notes Line
 	8275 6275 8275 5125
+$Comp
+L Mechanical:Fiducial FID1
+U 1 1 612FE793
+P 6675 5000
+F 0 "FID1" H 6760 5046 50  0000 L CNN
+F 1 "Fiducial" H 6760 4955 50  0000 L CNN
+F 2 "Fiducial:Fiducial_1mm_Mask2mm" H 6675 5000 50  0001 C CNN
+F 3 "~" H 6675 5000 50  0001 C CNN
+	1    6675 5000
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Fiducial FID2
+U 1 1 612FF4C0
+P 6675 5200
+F 0 "FID2" H 6760 5246 50  0000 L CNN
+F 1 "Fiducial" H 6760 5155 50  0000 L CNN
+F 2 "Fiducial:Fiducial_1mm_Mask2mm" H 6675 5200 50  0001 C CNN
+F 3 "~" H 6675 5200 50  0001 C CNN
+	1    6675 5200
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Fiducial FID3
+U 1 1 61300036
+P 6675 5400
+F 0 "FID3" H 6760 5446 50  0000 L CNN
+F 1 "Fiducial" H 6760 5355 50  0000 L CNN
+F 2 "Fiducial:Fiducial_1mm_Mask2mm" H 6675 5400 50  0001 C CNN
+F 3 "~" H 6675 5400 50  0001 C CNN
+	1    6675 5400
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
