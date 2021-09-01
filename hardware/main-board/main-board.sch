@@ -448,17 +448,17 @@ Connection ~ 2500 2050
 $Comp
 L Device:R_Small R6
 U 1 1 605AAD1E
-P 9000 5825
-F 0 "R6" H 9059 5871 50  0000 L CNN
-F 1 "10K" H 9059 5780 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 9000 5825 50  0001 C CNN
-F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 9000 5825 50  0001 C CNN
-F 4 "RES SMD 10K OHM 5% 1/10W 0603" H 9000 5825 50  0001 C CNN "Description"
-F 5 "Vishay Dale" H 9000 5825 50  0001 C CNN "Manufacturer"
-F 6 "CRCW060310K0JNEA" H 9000 5825 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 9000 5825 50  0001 C CNN "Supplier"
-F 8 "541-10KGCT-ND" H 9000 5825 50  0001 C CNN "Supplier PN"
-	1    9000 5825
+P 9775 5825
+F 0 "R6" H 9834 5871 50  0000 L CNN
+F 1 "10K" H 9834 5780 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 9775 5825 50  0001 C CNN
+F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 9775 5825 50  0001 C CNN
+F 4 "RES SMD 10K OHM 5% 1/10W 0603" H 9775 5825 50  0001 C CNN "Description"
+F 5 "Vishay Dale" H 9775 5825 50  0001 C CNN "Manufacturer"
+F 6 "CRCW060310K0JNEA" H 9775 5825 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9775 5825 50  0001 C CNN "Supplier"
+F 8 "541-10KGCT-ND" H 9775 5825 50  0001 C CNN "Supplier PN"
+	1    9775 5825
 	1    0    0    -1  
 $EndComp
 Text Label 5325 2450 2    50   ~ 0
@@ -2649,17 +2649,17 @@ $EndComp
 $Comp
 L Device:R_Small R17
 U 1 1 6132643F
-P 9575 5625
-F 0 "R17" H 9634 5671 50  0000 L CNN
-F 1 "330R" H 9634 5580 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 9575 5625 50  0001 C CNN
-F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 9575 5625 50  0001 C CNN
-F 4 "RES SMD 330 OHM 5% 1/10W 0603" H 9575 5625 50  0001 C CNN "Description"
-F 5 "Vishay Dale" H 9575 5625 50  0001 C CNN "Manufacturer"
-F 6 "CRCW0603330RJNEA" H 9575 5625 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 9575 5625 50  0001 C CNN "Supplier"
-F 8 "541-330GCT-ND" H 9575 5625 50  0001 C CNN "Supplier PN"
-	1    9575 5625
+P 9950 5625
+F 0 "R17" H 10009 5671 50  0000 L CNN
+F 1 "330R" H 10009 5580 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 9950 5625 50  0001 C CNN
+F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 9950 5625 50  0001 C CNN
+F 4 "RES SMD 330 OHM 5% 1/10W 0603" H 9950 5625 50  0001 C CNN "Description"
+F 5 "Vishay Dale" H 9950 5625 50  0001 C CNN "Manufacturer"
+F 6 "CRCW0603330RJNEA" H 9950 5625 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9950 5625 50  0001 C CNN "Supplier"
+F 8 "541-330GCT-ND" H 9950 5625 50  0001 C CNN "Supplier PN"
+	1    9950 5625
 	0    -1   -1   0   
 $EndComp
 $Comp
@@ -2677,11 +2677,6 @@ Wire Wire Line
 	8425 5500 8425 5625
 Wire Wire Line
 	8425 5625 8500 5625
-Wire Wire Line
-	8900 5625 9000 5625
-Wire Wire Line
-	9000 5725 9000 5625
-Connection ~ 9000 5625
 $Comp
 L power:GND #PWR022
 U 1 1 6132645C
@@ -2693,37 +2688,27 @@ F 3 "" H 9000 6025 50  0001 C CNN
 	1    9000 6025
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	9000 5925 9000 6025
-Connection ~ 9000 6025
 $Comp
 L Project:ESDALC6V1-1M2 D12
 U 1 1 6132646E
-P 9325 5825
-F 0 "D12" V 9279 5903 50  0000 L CNN
-F 1 "ESDALC6V1-1M2" V 9370 5903 50  0000 L CNN
-F 2 "lib_fp:D_SOD-882" H 9325 5625 50  0001 C CNN
-F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 9325 5875 50  0001 C CNN
-F 4 "TVS DIODE 3VWM SOD882" H 9325 5825 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 9325 5825 50  0001 C CNN "Manufacturer"
-F 6 "ESDALC6V1-1M2" H 9325 5825 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 9325 5825 50  0001 C CNN "Supplier"
-F 8 "497-5238-1-ND" H 9325 5825 50  0001 C CNN "Supplier PN"
-	1    9325 5825
+P 9000 5825
+F 0 "D12" V 8954 5903 50  0000 L CNN
+F 1 "ESDALC6V1-1M2" V 9045 5903 50  0000 L CNN
+F 2 "lib_fp:D_SOD-882" H 9000 5625 50  0001 C CNN
+F 3 "https://www.st.com/content/ccc/resource/technical/document/datasheet/a7/45/14/0d/75/ec/42/b9/CD00110945.pdf/files/CD00110945.pdf/jcr:content/translations/en.CD00110945.pdf" H 9000 5875 50  0001 C CNN
+F 4 "TVS DIODE 3VWM SOD882" H 9000 5825 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 9000 5825 50  0001 C CNN "Manufacturer"
+F 6 "ESDALC6V1-1M2" H 9000 5825 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 9000 5825 50  0001 C CNN "Supplier"
+F 8 "497-5238-1-ND" H 9000 5825 50  0001 C CNN "Supplier PN"
+	1    9000 5825
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	9000 5625 9325 5625
-Wire Wire Line
-	9000 6025 9325 6025
-Wire Wire Line
-	9675 5625 10025 5625
+	10050 5625 10400 5625
 Connection ~ 2900 1150
-Text Label 10025 5625 2    50   ~ 0
+Text Label 10400 5625 2    50   ~ 0
 BOOT0
-Wire Wire Line
-	9325 5625 9475 5625
-Connection ~ 9325 5625
 Text Notes 8325 5250 0    50   ~ 0
 Bootloader Button
 Wire Notes Line
@@ -2765,6 +2750,29 @@ F 1 "Fiducial" H 6760 5355 50  0000 L CNN
 F 2 "Fiducial:Fiducial_1mm_Mask2mm" H 6675 5400 50  0001 C CNN
 F 3 "~" H 6675 5400 50  0001 C CNN
 	1    6675 5400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8900 5625 9000 5625
+Connection ~ 9000 5625
+Wire Wire Line
+	9000 5625 9775 5625
+Wire Wire Line
+	9775 5725 9775 5625
+Connection ~ 9775 5625
+Wire Wire Line
+	9775 5625 9850 5625
+Wire Wire Line
+	9775 5925 9775 6025
+$Comp
+L power:GND #PWR?
+U 1 1 61375218
+P 9775 6025
+F 0 "#PWR?" H 9775 5775 50  0001 C CNN
+F 1 "GND" H 9780 5852 50  0000 C CNN
+F 2 "" H 9775 6025 50  0001 C CNN
+F 3 "" H 9775 6025 50  0001 C CNN
+	1    9775 6025
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC
