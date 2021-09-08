@@ -2,7 +2,7 @@
 
   (general
     (thickness 1.6)
-    (drawings 65)
+    (drawings 66)
     (tracks 727)
     (zones 0)
     (modules 86)
@@ -4399,6 +4399,7 @@
     )
   )
 
+  (gr_poly (pts (xy 140.5 45.5) (xy 133.25 45.5) (xy 133.25 42.5) (xy 140.5 42.5)) (layer B.SilkS) (width 0.1) (tstamp 61365984))
   (dimension 15 (width 0.15) (layer Cmts.User)
     (gr_text "15.000 mm" (at 138.5 85.3) (layer Cmts.User)
       (effects (font (size 1 1) (thickness 0.15)))
