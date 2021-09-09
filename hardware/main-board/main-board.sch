@@ -7,7 +7,7 @@ Sheet 1 1
 Title "Printalyzer Densitometer - Main Board"
 Date "2021-??-??"
 Rev "?"
-Comp "LogicProbe.org"
+Comp "Dektronics"
 Comment1 "Derek Konigsberg"
 Comment2 ""
 Comment3 ""

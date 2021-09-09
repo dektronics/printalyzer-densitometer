@@ -7,7 +7,7 @@ Sheet 1 1
 Title "Printalyzer Densitometer - Transmission LED Board"
 Date "2021-06-15"
 Rev "A"
-Comp "LogicProbe.org"
+Comp "Dektronics"
 Comment1 "Derek Konigsberg"
 Comment2 ""
 Comment3 ""
