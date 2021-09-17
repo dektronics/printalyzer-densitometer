@@ -2105,7 +2105,7 @@ L Device:Ferrite_Bead_Small FB1
 U 1 1 60BFE585
 P 3375 6725
 F 0 "FB1" V 3150 6725 50  0000 C CNN
-F 1 "600R @ 100MHz" V 3250 6725 50  0000 C CNN
+F 1 "600R@100MHz" V 3250 6725 50  0000 C CNN
 F 2 "Inductor_SMD:L_0603_1608Metric" V 3305 6725 50  0001 C CNN
 F 3 "https://product.tdk.com/en/system/files?file=dam/doc/product/emc/emc/beads/catalog/beads_commercial_signal_mmz1608_en.pdf" H 3375 6725 50  0001 C CNN
 F 4 "FERRITE BEAD 600 OHM 0603 1LN" H 3375 6725 50  0001 C CNN "Description"
