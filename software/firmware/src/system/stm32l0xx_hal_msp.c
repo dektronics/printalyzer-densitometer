@@ -29,6 +29,9 @@ void HAL_MspInit(void)
 {
     __HAL_RCC_SYSCFG_CLK_ENABLE();
     __HAL_RCC_PWR_CLK_ENABLE();
+    /* System interrupt init*/
+    /* PendSV_IRQn interrupt configuration */
+    HAL_NVIC_SetPriority(PendSV_IRQn, 3, 0);
 }
 
 /**
@@ -191,7 +194,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
         /*
          * USART1 GPIO Configuration
          * PA9     ------> USART1_TX
-         * PA10     ------> USART1_RX
+         * PA10    ------> USART1_RX
          */
         GPIO_InitStruct.Pin = GPIO_PIN_9 | GPIO_PIN_10;
         GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -216,7 +219,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
         /*
          * USART1 GPIO Configuration
          * PA9     ------> USART1_TX
-         * PA10     ------> USART1_RX
+         * PA10    ------> USART1_RX
          */
         HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
     }

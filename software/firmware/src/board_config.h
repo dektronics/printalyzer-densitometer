@@ -4,17 +4,17 @@
 #include "stm32l0xx_hal.h"
 
 /* Pin mapping for input buttons */
-#define BTN1_Pin            GPIO_PIN_5
-#define BTN1_GPIO_Port      GPIOB
-#define BTN1_EXTI_IRQn      EXTI4_15_IRQn
-#define BTN2_Pin            GPIO_PIN_4
-#define BTN2_GPIO_Port      GPIOB
-#define BTN2_EXTI_IRQn      EXTI4_15_IRQn
-#define BTN3_Pin            GPIO_PIN_3
-#define BTN3_GPIO_Port      GPIOB
-#define BTN3_EXTI_IRQn      EXTI2_3_IRQn
-#define BTN4_Pin            GPIO_PIN_15
-#define BTN4_GPIO_Port      GPIOA
+#define BTN1_Pin            GPIO_PIN_1
+#define BTN1_GPIO_Port      GPIOA
+#define BTN1_EXTI_IRQn      EXTI0_1_IRQn
+#define BTN2_Pin            GPIO_PIN_0
+#define BTN2_GPIO_Port      GPIOA
+#define BTN2_EXTI_IRQn      EXTI0_1_IRQn
+#define BTN3_Pin            GPIO_PIN_15
+#define BTN3_GPIO_Port      GPIOC
+#define BTN3_EXTI_IRQn      EXTI4_15_IRQn
+#define BTN4_Pin            GPIO_PIN_14
+#define BTN4_GPIO_Port      GPIOC
 #define BTN4_EXTI_IRQn      EXTI4_15_IRQn
 #define BTN5_Pin            GPIO_PIN_8
 #define BTN5_GPIO_Port      GPIOA
@@ -37,5 +37,10 @@
 #define DISP_MOSI_GPIO_Port GPIOA
 #define DISP_RES_Pin        GPIO_PIN_0
 #define DISP_RES_GPIO_Port  GPIOB
+
+/* Pin mapping for sensor interrupt */
+#define SENSOR_INT_Pin       GPIO_PIN_5
+#define SENSOR_INT_GPIO_Port GPIOB
+#define SENSOR_INT_EXTI_IRQn EXTI4_15_IRQn
 
 #endif /* BOARD_CONFIG_H */

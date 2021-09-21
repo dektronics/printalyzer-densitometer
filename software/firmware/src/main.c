@@ -3,6 +3,7 @@
 #define LOG_TAG "main"
 
 #include <stdio.h>
+#include <cmsis_os.h>
 #include <elog.h>
 #include <tusb.h>
 
@@ -21,6 +22,14 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart1;
 
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 static void system_clock_config(void);
 static void usart1_uart_init(void);
 static void logger_init(void);
@@ -31,6 +40,7 @@ static void spi1_init(void);
 static void usb_stack_init(void);
 static void startup_log_messages(void);
 
+void StartDefaultTask(void *argument);
 void error_handler(void);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
@@ -129,15 +139,21 @@ void gpio_init(void)
     HAL_GPIO_WritePin(DISP_DC_GPIO_Port, DISP_DC_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(DISP_RES_GPIO_Port, DISP_RES_Pin, GPIO_PIN_RESET);
 
-    /* Configure unused GPIO pins: PC14 PC15 */
-    GPIO_InitStruct.Pin = GPIO_PIN_14 | GPIO_PIN_15;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    /* Configure GPIO pins: BTN4_Pin BTN3_Pin */
+    GPIO_InitStruct.Pin = BTN4_Pin | BTN3_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    /* Configure unused GPIO pins: PA0 PA1 */
-    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    /* Configure GPIO pins: BTN2_Pin BTN1_Pin */
+    GPIO_InitStruct.Pin = BTN2_Pin | BTN1_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* Configure GPIO pin: BTN5_Pin */
+    GPIO_InitStruct.Pin = BTN5_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -155,34 +171,22 @@ void gpio_init(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(DISP_RES_GPIO_Port, &GPIO_InitStruct);
 
-    /* Configure unused GPIO pins: PB1 PB2 PB8 */
-    GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_8;
+    /* Configure unused GPIO pins: PB1 PB4 */
+    GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    /* Configure GPIO pin: BTN4_Pin */
-    GPIO_InitStruct.Pin = BTN4_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+    /* Configure GPIO pin: SENSOR_INT_Pin */
+    GPIO_InitStruct.Pin = SENSOR_INT_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(SENSOR_INT_GPIO_Port, &GPIO_InitStruct);
 
-    /* Configure GPIO pin: BTN5_Pin */
-    GPIO_InitStruct.Pin = BTN5_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    /* Configure GPIO pins: BTN3_Pin BTN2_Pin BTN1_Pin */
-    GPIO_InitStruct.Pin = BTN3_Pin | BTN2_Pin | BTN1_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-    /* Configure EXTI interrupts */
-    HAL_NVIC_SetPriority(EXTI2_3_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
-    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
+    /* EXTI interrupt init */
+    HAL_NVIC_SetPriority(EXTI0_1_IRQn, 3, 0);
+    HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
+    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 3, 0);
     HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 }
 
@@ -316,6 +320,14 @@ void startup_log_messages(void)
     fflush(stdout);
 }
 
+void StartDefaultTask(void *argument)
+{
+    /* This is currently a placeholder function */
+    for(;;) {
+        osDelay(1);
+    }
+}
+
 int main(void)
 {
     /*
@@ -342,6 +354,9 @@ int main(void)
     tim2_init();
     spi1_init();
 
+    /* Initialize the FreeRTOS scheduler */
+    osKernelInitialize();
+
     /* Initialize the USB stack */
     usb_stack_init();
 
@@ -358,6 +373,9 @@ int main(void)
     /* Load system settings */
     settings_init();
 
+    /* Create the startup tasks */
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
     /* Initialize the state controller */
     state_controller_init();
 
@@ -365,11 +383,29 @@ int main(void)
 
     /* Run the infinite main loop */
     state_controller_loop();
+
+    /* Start scheduler */
+    //osKernelStart();
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     keypad_int_handler(GPIO_Pin);
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM6) {
+        HAL_IncTick();
+    }
 }
 
 void error_handler(void)

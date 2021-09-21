@@ -20,6 +20,9 @@
 #include "stm32l0xx_it.h"
 #include <tusb.h>
 
+extern PCD_HandleTypeDef hpcd_USB_FS;
+extern TIM_HandleTypeDef htim6;
+
 /******************************************************************************/
 /*           Cortex-M0+ Processor Interruption and Exception Handlers          */
 /******************************************************************************/
@@ -42,28 +45,6 @@ void HardFault_Handler(void)
     while (1) { }
 }
 
-/**
- * Handles the system service call via SWI instruction.
- */
-void SVC_Handler(void)
-{
-}
-
-/**
- * Handles the pendable request for system service.
- */
-void PendSV_Handler(void)
-{
-}
-
-/**
- * Handles the system tick timer.
- */
-void SysTick_Handler(void)
-{
-    HAL_IncTick();
-}
-
 /******************************************************************************/
 /* STM32L0xx Peripheral Interrupt Handlers                                    */
 /* Add here the Interrupt Handlers for the used peripherals.                  */
@@ -72,11 +53,12 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
- * Handles the EXTI line 2 and line 3 interrupts.
+ * Handles the EXTI line 0 and line 1 interrupts.
  */
-void EXTI2_3_IRQHandler(void)
+void EXTI0_1_IRQHandler(void)
 {
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
 }
 
 /**
@@ -84,10 +66,18 @@ void EXTI2_3_IRQHandler(void)
  */
 void EXTI4_15_IRQHandler(void)
 {
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+}
+
+/**
+ * Handles the TIM6 global interrupt and DAC1/DAC2 underrun error interrupts.
+ */
+void TIM6_DAC_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&htim6);
 }
 
 /**

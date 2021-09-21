@@ -49,10 +49,11 @@ cp "${CUBEDIR}/"*.ld "${PROJDIR}/"
 # Project core sources
 #
 mkdir -p "${PROJDIR}/src/system"
-cp "${CUBEDIR}/Core/Startup/"startup_stm32l052k8ux.s "${PROJDIR}/src/system/"
+cp "${CUBEDIR}/Core/Startup/"startup_stm32l072kbux.s "${PROJDIR}/src/system/"
 cp "${CUBEDIR}/Core/Inc/"stm32l0xx*.h "${PROJDIR}/src/system/"
 cp "${CUBEDIR}/Core/Src/"stm32l0xx*.c "${PROJDIR}/src/system/"
 cp "${CUBEDIR}/Core/Src/"sys*.c "${PROJDIR}/src/system/"
+cp "${CUBEDIR}/Core/ThreadSafe/"* "${PROJDIR}/src/system/"
 
 #
 # External driver code
@@ -66,3 +67,9 @@ cp -r "${CUBEDIR}/Drivers/STM32L0xx_HAL_Driver/Inc/"* "${PROJDIR}/external/drive
 mkdir -p "${PROJDIR}/external/drivers/cmsis/include"
 cp -r "${CUBEDIR}/Drivers/CMSIS/Device/ST/STM32L0xx/Include/"* "${PROJDIR}/external/drivers/cmsis/include/"
 cp -r "${CUBEDIR}/Drivers/CMSIS/Include/"* "${PROJDIR}/external/drivers/cmsis/include/"
+
+#
+# External FreeRTOS code
+#
+mkdir -p "${PROJDIR}/external/freertos"
+cp -r "${CUBEDIR}/Middlewares/Third_Party/FreeRTOS/Source/"* "${PROJDIR}/external/freertos/"
