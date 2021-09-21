@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # This script helps with importing framework source files from an STM32CubeMX
