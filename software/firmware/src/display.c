@@ -163,9 +163,9 @@ uint8_t u8x8_GetMenuEvent(u8x8_t *u8x8)
         case KEYPAD_BUTTON_1:
             return U8X8_MSG_GPIO_MENU_SELECT;
         case KEYPAD_BUTTON_2:
-            return U8X8_MSG_GPIO_MENU_DOWN;
-        case KEYPAD_BUTTON_3:
             return U8X8_MSG_GPIO_MENU_UP;
+        case KEYPAD_BUTTON_3:
+            return U8X8_MSG_GPIO_MENU_DOWN;
         case KEYPAD_BUTTON_4:
             return U8X8_MSG_GPIO_MENU_HOME;
         default:
