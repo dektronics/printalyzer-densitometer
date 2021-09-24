@@ -1,6 +1,7 @@
 #include "cdc_handler.h"
 
-#define LOG_TAG "main"
+#define LOG_TAG "cdc_handler"
+#include <elog.h>
 
 #include "stm32l0xx_hal.h"
 
@@ -9,7 +10,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <elog.h>
 #include <tusb.h>
 #include <cmsis_os.h>
 #include <FreeRTOS.h>
