@@ -4,6 +4,6 @@
 #include <stddef.h>
 
 void cdc_write(const char *buf, size_t len);
-void cdc_task();
+void task_cdc_run(void *argument);
 
 #endif /* CDC_TASK_H */

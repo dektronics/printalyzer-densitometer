@@ -4,9 +4,7 @@
 
 #include <stdio.h>
 #include <elog.h>
-#include <tusb.h>
 
-#include "cdc_handler.h"
 #include "state_display.h"
 #include "state_measure.h"
 #include "state_main_menu.h"
@@ -75,10 +73,6 @@ void state_controller_loop()
                 state->state_exit(state, &state_controller, state_controller.next_state);
             }
         }
-
-        /* Common background tasks that should happen on each iteration */
-        tud_task();
-        cdc_task();
     }
 }
 

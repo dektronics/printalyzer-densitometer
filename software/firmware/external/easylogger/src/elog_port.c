@@ -28,7 +28,17 @@
 
 #include <elog.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <cmsis_os.h>
 #include "stm32l0xx_hal.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
+
+static osMutexId_t elog_mutex = NULL;
+static const osMutexAttr_t elog_mutex_attributes = {
+    .name = "elog_mutex",
+    .attr_bits = osMutexRecursive
+};
 
 /**
  * EasyLogger port initialize
@@ -38,6 +48,7 @@
 ElogErrCode elog_port_init(void)
 {
     ElogErrCode result = ELOG_NO_ERR;
+    elog_mutex = osMutexNew(&elog_mutex_attributes);
     return result;
 }
 
@@ -57,7 +68,7 @@ void elog_port_deinit(void)
  */
 void elog_port_output(const char *log, size_t size)
 {
-    printf("%.*s", size, log);
+    write(1, log, size);
 }
 
 /**
@@ -65,7 +76,11 @@ void elog_port_output(const char *log, size_t size)
  */
 void elog_port_output_lock(void)
 {
-    __disable_irq();
+    if (osKernelGetState() == osKernelRunning) {
+        osMutexAcquire(elog_mutex, portMAX_DELAY);
+    } else {
+        __disable_irq();
+    }
 }
 
 /**
@@ -73,7 +88,11 @@ void elog_port_output_lock(void)
  */
 void elog_port_output_unlock(void)
 {
-    __enable_irq();
+    if (osKernelGetState() == osKernelRunning) {
+        osMutexRelease(elog_mutex);
+    } else {
+        __enable_irq();
+    }
 }
 
 /**
@@ -84,7 +103,13 @@ void elog_port_output_unlock(void)
 const char *elog_port_get_time(void)
 {
     static char tick_count[16] = {0};
-    snprintf(tick_count, 16, "%10lu", HAL_GetTick());
+    uint32_t tick_val;
+    if (osKernelGetState() == osKernelRunning) {
+        tick_val = osKernelGetTickCount();
+    } else {
+        tick_val = HAL_GetTick();
+    }
+    snprintf(tick_count, 16, "%10lu", tick_val);
     return tick_count;
 }
 
@@ -95,7 +120,7 @@ const char *elog_port_get_time(void)
  */
 const char *elog_port_get_p_info(void)
 {
-    /* No PID because we're not using an OS */
+    /* No PID */
     return "";
 }
 
@@ -106,6 +131,11 @@ const char *elog_port_get_p_info(void)
  */
 const char *elog_port_get_t_info(void)
 {
-    /* No TID because we're not using an OS */
-    return "";
+    static char t_info[16] = {0};
+    if (osKernelGetState() == osKernelRunning) {
+        snprintf(t_info, 16, "%s", osThreadGetName(osThreadGetId()));
+    } else {
+        t_info[0] = '\0';
+    }
+    return t_info;
 }

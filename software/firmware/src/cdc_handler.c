@@ -11,6 +11,8 @@
 #include <math.h>
 #include <elog.h>
 #include <tusb.h>
+#include <cmsis_os.h>
+#include <FreeRTOS.h>
 
 #include "settings.h"
 #include "display.h"
@@ -25,6 +27,7 @@
 static uint8_t cmd_buffer[CMD_DATA_SIZE];
 static size_t cmd_buffer_len = 0;
 
+static void cdc_task_loop();
 static void cdc_process_command(const char *cmd, size_t len);
 static void cdc_command_version(const char *cmd, size_t len);
 static void cdc_command_measure_reflection(const char *cmd, size_t len);
@@ -46,7 +49,28 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
     log_d("cdc_line_state: itf=%d, dtr=%d, rts=%d", itf, dtr, rts);
 }
 
-void cdc_task()
+void task_cdc_run(void *argument)
+{
+    osSemaphoreId_t task_start_semaphore = argument;
+
+    log_d("cdc_task start");
+
+    /* Release the startup semaphore */
+    if (osSemaphoreRelease(task_start_semaphore) != osOK) {
+        log_e("Unable to release task_start_semaphore");
+        return;
+    }
+
+    while (1) {
+        /* Process data */
+        cdc_task_loop();
+
+        /* Wait a bit */
+        osDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+void cdc_task_loop()
 {
     /*
      * Notes from example:
@@ -455,6 +479,7 @@ void cdc_command_diag_system(const char *cmd, size_t len)
      * "DA" : Diagnostic About System
      * "DAI" -> Device information (HAL version, MCU Rev ID, MCU Dev ID, SysClock)
      * "DAU" -> Device unique ID (MCU unique ID)
+     * "DAF" -> FreeRTOS runtime information
      */
 
     if (len < 3) {
@@ -472,7 +497,7 @@ void cdc_command_diag_system(const char *cmd, size_t len)
          * HAL Version, MCU Revision ID, MCU Device ID, SysClock Frequency
          */
 
-        sprintf(buf, "%d.%d.%d%c,%ld,0x%lX,%ldMHz\r\n",
+        sprintf(buf, "%d.%d.%d%c,0x%lX,0x%lX,%ldMHz\r\n",
             ((uint8_t)(hal_ver >> 24)) & 0x0F,
             ((uint8_t)(hal_ver >> 16)) & 0x0F,
             ((uint8_t)(hal_ver >> 8)) & 0x0F,
@@ -490,6 +515,28 @@ void cdc_command_diag_system(const char *cmd, size_t len)
             uniqueId[5], uniqueId[6], uniqueId[7], uniqueId[8], uniqueId[9],
             uniqueId[10], uniqueId[11]);
         cdc_send_response(buf);
+    } else if (prefix == 'F') {
+        sprintf(buf, "FreeRTOS,%s\r\n", tskKERNEL_VERSION_NUMBER);
+        cdc_send_response(buf);
+
+        sprintf(buf, "HEAP,%d,%d\r\n", xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
+        cdc_send_response(buf);
+
+        TaskStatus_t *pxTaskStatusArray;
+        volatile UBaseType_t uxArraySize, x;
+        uxArraySize = uxTaskGetNumberOfTasks();
+        pxTaskStatusArray = pvPortMalloc(uxArraySize * sizeof(TaskStatus_t));
+        if (pxTaskStatusArray != NULL) {
+            uxArraySize = uxTaskGetSystemState(pxTaskStatusArray, uxArraySize, NULL);
+            for (x = 0; x < uxArraySize; x++) {
+                sprintf(buf, "TASK,\"%s\",%d\r\n",
+                    pxTaskStatusArray[x].pcTaskName,
+                    pxTaskStatusArray[x].usStackHighWaterMark * 4);
+                cdc_send_response(buf);
+            }
+            vPortFree(pxTaskStatusArray);
+        }
+        cdc_send_response("OK\r\n");
     }
 }
 
@@ -656,5 +703,5 @@ void cdc_write(const char *buf, size_t len)
 {
     tud_cdc_write(buf, len);
     tud_cdc_write_flush();
-    tud_task();
+    //tud_task(); //FIXME probably shouldn't do it this way anymore
 }

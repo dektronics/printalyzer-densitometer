@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <elog.h>
+#include <cmsis_os.h>
 
 #include "stm32l0xx_hal.h"
 #include "board_config.h"
@@ -59,7 +60,7 @@ uint8_t u8g2_stm32_gpio_and_delay_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
          * pin init for DC, RESET, CS.
          * These are all initialized elsewhere.
          */
-        HAL_Delay(1);
+        osDelay(1);
         break;
     case U8X8_MSG_DELAY_MILLI:
         /* Delay for the number of milliseconds passed in through arg_int */

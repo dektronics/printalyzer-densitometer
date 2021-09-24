@@ -5,30 +5,15 @@
 #include <stdio.h>
 #include <cmsis_os.h>
 #include <elog.h>
-#include <tusb.h>
 
 #include "board_config.h"
-#include "cdc_handler.h"
-#include "settings.h"
 #include "keypad.h"
-#include "display.h"
-#include "tsl2591.h"
-#include "light.h"
-#include "sensor.h"
-#include "state_controller.h"
+#include "task_main.h"
 
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart1;
-
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 
 static void system_clock_config(void);
 static void usart1_uart_init(void);
@@ -37,10 +22,12 @@ static void gpio_init(void);
 static void i2c1_init(void);
 static void tim2_init(void);
 static void spi1_init(void);
-static void usb_stack_init(void);
+static void usb_init(void);
 static void startup_log_messages(void);
 
-void StartDefaultTask(void *argument);
+void usb_device_task(void *argument);
+void cdc_task_func(void *argument);
+
 void error_handler(void);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
@@ -114,10 +101,10 @@ void logger_init(void)
 
     /* Set log format */
     elog_set_fmt(ELOG_LVL_ASSERT, ELOG_FMT_ALL);
-    elog_set_fmt(ELOG_LVL_ERROR, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
-    elog_set_fmt(ELOG_LVL_WARN, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
-    elog_set_fmt(ELOG_LVL_INFO, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
-    elog_set_fmt(ELOG_LVL_DEBUG, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME);
+    elog_set_fmt(ELOG_LVL_ERROR, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME | ELOG_FMT_T_INFO);
+    elog_set_fmt(ELOG_LVL_WARN, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME | ELOG_FMT_T_INFO);
+    elog_set_fmt(ELOG_LVL_INFO, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME | ELOG_FMT_T_INFO);
+    elog_set_fmt(ELOG_LVL_DEBUG, ELOG_FMT_LVL | ELOG_FMT_TAG | ELOG_FMT_TIME | ELOG_FMT_T_INFO);
     elog_set_fmt(ELOG_LVL_VERBOSE, ELOG_FMT_ALL & ~(ELOG_FMT_FUNC | ELOG_FMT_T_INFO | ELOG_FMT_P_INFO));
     elog_set_text_color_enabled(true);
 
@@ -281,19 +268,13 @@ void spi1_init(void)
     }
 }
 
-void usb_stack_init(void)
+void usb_init(void)
 {
     /* Peripheral clock enable */
     __HAL_RCC_USB_CLK_ENABLE();
 
     /* Peripheral interrupt init */
-    HAL_NVIC_SetPriority(USB_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(USB_IRQn);
-
-    /* Initialize the TinyUSB stack */
-    if (!tusb_init()) {
-        error_handler();
-    }
+    HAL_NVIC_SetPriority(USB_IRQn, 3, 0);
 }
 
 void startup_log_messages(void)
@@ -302,30 +283,22 @@ void startup_log_messages(void)
     uint8_t hal_ver_code = ((uint8_t)(hal_ver)) & 0x0F;
     uint8_t *uniqueId = (uint8_t*)UID_BASE;
 
-    printf("\033[0m");
-    printf("---- Printalyzer Densitometer Startup ----\r\n");
-    printf("HAL Version: %d.%d.%d%c\r\n",
+    log_i("\033[0m");
+    log_i("---- Printalyzer Densitometer Startup ----");
+    log_i("HAL Version: %d.%d.%d%c",
         ((uint8_t)(hal_ver >> 24)) & 0x0F,
         ((uint8_t)(hal_ver >> 16)) & 0x0F,
         ((uint8_t)(hal_ver >> 8)) & 0x0F,
         hal_ver_code > 0 ? (char)hal_ver_code : ' ');
-    printf("Revision ID: %ld\r\n", HAL_GetREVID());
-    printf("Device ID: 0x%lX\r\n", HAL_GetDEVID());
-    printf("SysClock: %ldMHz\r\n", HAL_RCC_GetSysClockFreq() / 1000000);
-    printf("Unique ID: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\r\n",
+    log_i("FreeRTOS: %s", tskKERNEL_VERSION_NUMBER);
+    log_i("Revision ID: 0x%lX", HAL_GetREVID());
+    log_i("Device ID: 0x%lX", HAL_GetDEVID());
+    log_i("SysClock: %ldMHz", HAL_RCC_GetSysClockFreq() / 1000000);
+    log_i("Unique ID: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
         uniqueId[0], uniqueId[1], uniqueId[2], uniqueId[3], uniqueId[4],
         uniqueId[5], uniqueId[6], uniqueId[7], uniqueId[8], uniqueId[9],
         uniqueId[10], uniqueId[11]);
-    printf("-----------------------\r\n");
-    fflush(stdout);
-}
-
-void StartDefaultTask(void *argument)
-{
-    /* This is currently a placeholder function */
-    for(;;) {
-        osDelay(1);
-    }
+    log_i("-----------------------");
 }
 
 int main(void)
@@ -342,50 +315,36 @@ int main(void)
     /* Initialize the debug UART */
     usart1_uart_init();
 
-    /* Print the initial startup messages */
-    startup_log_messages();
-
-    /* Initialize the logger */
-    logger_init();
-
     /* Initialize the rest of the configured peripherals */
     gpio_init();
     i2c1_init();
     tim2_init();
     spi1_init();
+    usb_init();
 
     /* Initialize the FreeRTOS scheduler */
     osKernelInitialize();
 
-    /* Initialize the USB stack */
-    usb_stack_init();
+    /*
+     * Note: Initialization code from this point forward may call FreeRTOS
+     * functions that have a side-effect of disabling all interrupts, including
+     * the one necessary for the HAL tick timer to function.
+     * Starting the FreeRTOS scheduler at the end of this function should
+     * make things return to normal behavior.
+     */
 
-    /* Initialize the display */
-    display_init(&hspi1);
-    display_clear();
+    /* Initialize the logger */
+    logger_init();
 
-    /* Initialize the light sensor */
-    sensor_init(&hi2c1);
+    /* Print the initial startup messages */
+    startup_log_messages();
 
-    /* Initialize the light source */
-    light_init(&htim2, TIM_CHANNEL_3, TIM_CHANNEL_4);
-
-    /* Load system settings */
-    settings_init();
-
-    /* Create the startup tasks */
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
-    /* Initialize the state controller */
-    state_controller_init();
-
-    log_i("Startup complete");
-
-    /* Run the infinite main loop */
-    state_controller_loop();
+    /* Create the main task */
+    task_main_init();
 
     /* Start scheduler */
-    //osKernelStart();
+    log_i("Starting scheduler");
+    osKernelStart();
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
@@ -425,6 +384,6 @@ void error_handler(void)
  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
-    printf("Assert failed: file %s on line %ld\r\n", file, line);
+    printf("Assert failed: file %s on line %ld", file, line);
 }
 #endif /* USE_FULL_ASSERT */
