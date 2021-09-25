@@ -73,13 +73,13 @@ void state_reflection_measure_process(state_t *state_base, state_controller_t *c
             display_static_list("Reflection",
                 "Invalid\n"
                 "calibration");
-            HAL_Delay(2000);
+            osDelay(2000);
             state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
         } else if (result == DENSITOMETER_SENSOR_ERROR) {
             display_static_list("Reflection",
                 "Sensor\n"
                 "read error");
-            HAL_Delay(2000);
+            osDelay(2000);
             state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
         } else {
             uint8_t key_state = keypad_get_state(0);
@@ -151,13 +151,13 @@ void state_transmission_measure_process(state_t *state_base, state_controller_t 
             display_static_list("Transmission",
                 "Invalid\n"
                 "calibration");
-            HAL_Delay(2000);
+            osDelay(2000);
             state_controller_set_next_state(controller, STATE_TRANSMISSION_DISPLAY);
         } else if (result == DENSITOMETER_SENSOR_ERROR) {
             display_static_list("Transmission",
                 "Sensor\n"
                 "read error");
-            HAL_Delay(2000);
+            osDelay(2000);
             state_controller_set_next_state(controller, STATE_TRANSMISSION_DISPLAY);
         } else {
             uint8_t key_state = keypad_get_state(0);

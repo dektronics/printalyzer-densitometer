@@ -4,6 +4,7 @@
 
 #include <elog.h>
 #include <math.h>
+#include <cmsis_os.h>
 
 #include "stm32l0xx_hal.h"
 #include "settings.h"
@@ -96,7 +97,7 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
         if (ret != HAL_OK) { break; }
 
         /* Wait for things to stabilize */
-        HAL_Delay(1000);
+        osDelay(1000);
 
         /* Calibrate the value for medium gain */
         log_i("Medium gain calibration");
@@ -208,7 +209,7 @@ HAL_StatusTypeDef sensor_time_calibration(sensor_time_calibration_callback_t cal
         if (ret != HAL_OK) { break; }
 
         /* Wait for things to stabilize */
-        HAL_Delay(1000);
+        osDelay(1000);
 
         /* Loop over each integration time and collect the average measurement on CH0 */
         for (tsl2591_time_t time = TSL2591_TIME_100MS; time <= TSL2591_TIME_600MS; time++) {

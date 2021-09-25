@@ -64,7 +64,7 @@ uint8_t u8g2_stm32_gpio_and_delay_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
         break;
     case U8X8_MSG_DELAY_MILLI:
         /* Delay for the number of milliseconds passed in through arg_int */
-        HAL_Delay(arg_int);
+        osDelay(arg_int);
         break;
     case U8X8_MSG_GPIO_CS:
         /* Set the GPIO chip select pin to the value passed in through arg_int */
