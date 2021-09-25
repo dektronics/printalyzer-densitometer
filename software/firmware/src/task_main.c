@@ -34,12 +34,22 @@ static const osSemaphoreAttr_t task_start_semaphore_attributes = {
     .name = "task_start_semaphore"
 };
 
+#define TASK_MAIN_STACK_SIZE (2048U)
+#define TASK_USBD_STACK_SIZE (1536U)
+#define TASK_CDC_STACK_SIZE (1024U)
+
+#ifdef KEYPAD_DEBUG
+#define TASK_KEYPAD_STACK_SIZE (768U)
+#else
+#define TASK_KEYPAD_STACK_SIZE (256U)
+#endif
+
 static task_params_t task_list[] = {
     {
         .task_func = task_main_run,
         .task_attrs = {
             .name = "main",
-            .stack_size = 4096,
+            .stack_size = TASK_MAIN_STACK_SIZE,
             .priority = osPriorityNormal
         }
     },
@@ -47,7 +57,7 @@ static task_params_t task_list[] = {
         .task_func = task_usbd_run,
         .task_attrs = {
             .name = "usbd",
-            .stack_size = 1536,
+            .stack_size = TASK_USBD_STACK_SIZE,
             .priority = osPriorityNormal2 // example uses max-1
         }
     },
@@ -55,11 +65,18 @@ static task_params_t task_list[] = {
         .task_func = task_cdc_run,
         .task_attrs = {
             .name = "cdc",
-            .stack_size = 1024,
+            .stack_size = TASK_CDC_STACK_SIZE,
             .priority = osPriorityNormal1 // example uses max-2
         }
+    },
+    {
+        .task_func = task_keypad_run,
+        .task_attrs = {
+            .name = "keypad",
+            .stack_size = TASK_KEYPAD_STACK_SIZE,
+            .priority = osPriorityNormal
+        }
     }
-    //TODO task_keypad
     //TODO task_sensor
 };
 

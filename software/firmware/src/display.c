@@ -14,7 +14,6 @@
 static u8g2_t u8g2;
 static uint8_t display_contrast = 0x9F;
 static uint8_t display_brightness = 0x0F;
-static uint32_t menu_last_event_time = 0;
 static bool menu_event_timeout = false;
 
 #define MENU_TIMEOUT_MS 30000
@@ -149,28 +148,26 @@ uint8_t u8x8_GetMenuEvent(u8x8_t *u8x8)
      * same name, due to its declaration with the "weak" pragma.
      */
 
-    /* Check for timeout */
-    if (menu_last_event_time > 0 && (HAL_GetTick() - menu_last_event_time) > MENU_TIMEOUT_MS) {
+    keypad_event_t keypad_event;
+    osStatus_t ret = keypad_wait_for_event(&keypad_event, MENU_TIMEOUT_MS);
+    if (ret == osOK) {
+        if (keypad_event.pressed) {
+            switch (keypad_event.key) {
+            case KEYPAD_BUTTON_ACTION:
+                return U8X8_MSG_GPIO_MENU_SELECT;
+            case KEYPAD_BUTTON_UP:
+                return U8X8_MSG_GPIO_MENU_UP;
+            case KEYPAD_BUTTON_DOWN:
+                return U8X8_MSG_GPIO_MENU_DOWN;
+            case KEYPAD_BUTTON_MENU:
+                return U8X8_MSG_GPIO_MENU_HOME;
+            default:
+                break;
+            }
+        }
+    } else if (ret == osErrorTimeout) {
         menu_event_timeout = true;
         return U8X8_MSG_GPIO_MENU_HOME;
-    }
-
-    bool key_changed = false;
-    uint8_t key_state = keypad_get_state(&key_changed);
-    if (key_changed) {
-        menu_last_event_time = HAL_GetTick();
-        switch (key_state) {
-        case KEYPAD_BUTTON_1:
-            return U8X8_MSG_GPIO_MENU_SELECT;
-        case KEYPAD_BUTTON_2:
-            return U8X8_MSG_GPIO_MENU_UP;
-        case KEYPAD_BUTTON_3:
-            return U8X8_MSG_GPIO_MENU_DOWN;
-        case KEYPAD_BUTTON_4:
-            return U8X8_MSG_GPIO_MENU_HOME;
-        default:
-            break;
-        }
     }
 
     return 0;
@@ -224,8 +221,8 @@ void display_static_list(const char *title, const char *list)
 uint8_t display_selection_list(const char *title, uint8_t start_pos, const char *list)
 {
     display_prepare_menu_font();
+    keypad_clear_events();
     menu_event_timeout = false;
-    menu_last_event_time = HAL_GetTick();
 
     uint8_t option = u8g2_UserInterfaceSelectionList(&u8g2, title, start_pos, list);
 
@@ -235,8 +232,8 @@ uint8_t display_selection_list(const char *title, uint8_t start_pos, const char 
 uint8_t display_message(const char *title1, const char *title2, const char *title3, const char *buttons)
 {
     display_prepare_menu_font();
+    keypad_clear_events();
     menu_event_timeout = false;
-    menu_last_event_time = HAL_GetTick();
 
     uint8_t option = u8g2_UserInterfaceMessage(&u8g2, title1, title2, title3, buttons);
 
@@ -265,8 +262,8 @@ uint8_t display_input_value_f1_2(const char *title, const char *pre, uint16_t *v
 
     /* Do initial state setup */
     display_prepare_menu_font();
+    keypad_clear_events();
     menu_event_timeout = false;
-    menu_last_event_time = HAL_GetTick();
 
     uint8_t line_height;
     uint8_t height;

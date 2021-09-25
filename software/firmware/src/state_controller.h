@@ -1,6 +1,8 @@
 #ifndef STATE_CONTROLLER_H
 #define STATE_CONTROLLER_H
 
+#define STATE_KEYPAD_WAIT 200
+
 typedef enum {
     STATE_HOME = 0,
     STATE_REFLECTION_DISPLAY,

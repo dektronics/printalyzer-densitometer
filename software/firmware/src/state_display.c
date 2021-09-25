@@ -56,8 +56,6 @@ void state_reflection_display_entry(state_t *state_base, state_controller_t *con
 void state_reflection_display_process(state_t *state_base, state_controller_t *controller)
 {
     state_display_t *state = (state_display_t *)state_base;
-    bool key_changed = false;
-    uint8_t key_state = keypad_get_state(&key_changed);
     bool is_detect = keypad_is_detect();
 
     if (is_detect) {
@@ -68,20 +66,21 @@ void state_reflection_display_process(state_t *state_base, state_controller_t *c
         light_set_transmission(0);
     }
 
-    if (key_changed) {
+    keypad_event_t keypad_event;
+    if (keypad_wait_for_event(&keypad_event, STATE_KEYPAD_WAIT) == osOK) {
         state->display_dirty = true;
 
         if (state->menu_pending) {
-            if ((key_state & (KEYPAD_BUTTON_2 | KEYPAD_BUTTON_3)) == 0) {
+            if ((keypad_event.keypad_state & (KEYPAD_BUTTON_UP | KEYPAD_BUTTON_DOWN)) == 0) {
                 state->menu_pending = false;
                 state_controller_set_next_state(controller, STATE_MAIN_MENU);
             }
         } else {
-            if (is_detect && (key_state & KEYPAD_BUTTON_1)) {
+            if (is_detect && keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
                 state_controller_set_next_state(controller, STATE_REFLECTION_MEASURE);
-            } else if ((key_state & KEYPAD_BUTTON_2) && (key_state & KEYPAD_BUTTON_3)) {
+            } else if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_UP, KEYPAD_BUTTON_DOWN)) {
                 state->menu_pending = true;
-            } else if (key_state & KEYPAD_BUTTON_4) {
+            } else if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
                 state_controller_set_next_state(controller, STATE_TRANSMISSION_DISPLAY);
             }
         }
@@ -115,8 +114,6 @@ void state_transmission_display_entry(state_t *state_base, state_controller_t *c
 void state_transmission_display_process(state_t *state_base, state_controller_t *controller)
 {
     state_display_t *state = (state_display_t *)state_base;
-    bool key_changed = false;
-    uint8_t key_state = keypad_get_state(&key_changed);
     bool is_detect = keypad_is_detect();
 
     if (is_detect) {
@@ -127,20 +124,21 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
         light_set_transmission(0);
     }
 
-    if (key_changed) {
+    keypad_event_t keypad_event;
+    if (keypad_wait_for_event(&keypad_event, STATE_KEYPAD_WAIT) == osOK) {
         state->display_dirty = true;
 
         if (state->menu_pending) {
-            if ((key_state & (KEYPAD_BUTTON_2 | KEYPAD_BUTTON_3)) == 0) {
+            if ((keypad_event.keypad_state & (KEYPAD_BUTTON_UP | KEYPAD_BUTTON_DOWN)) == 0) {
                 state->menu_pending = false;
                 state_controller_set_next_state(controller, STATE_MAIN_MENU);
             }
         } else {
-            if (is_detect && (key_state & KEYPAD_BUTTON_1)) {
+            if (is_detect && keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
                 state_controller_set_next_state(controller, STATE_TRANSMISSION_MEASURE);
-            } else if ((key_state & KEYPAD_BUTTON_2) && (key_state & KEYPAD_BUTTON_3)) {
+            } else if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_UP, KEYPAD_BUTTON_DOWN)) {
                 state->menu_pending = true;
-            } else if (key_state & KEYPAD_BUTTON_4) {
+            } else if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
                 state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
             }
         }

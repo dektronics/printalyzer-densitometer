@@ -1,9 +1,10 @@
 #include "state_controller.h"
 
 #define LOG_TAG "state_controller"
+#include <elog.h>
 
 #include <stdio.h>
-#include <elog.h>
+#include <cmsis_os.h>
 
 #include "state_display.h"
 #include "state_measure.h"

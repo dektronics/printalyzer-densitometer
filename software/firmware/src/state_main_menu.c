@@ -520,20 +520,22 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
         return;
     }
 
+    keypad_event_t keypad_event;
+    bool key_changed = false;
     do {
-        bool key_changed = false;
-        uint8_t key_state = keypad_get_state(&key_changed);
         if (key_changed) {
-            if ((key_state & KEYPAD_BUTTON_1) && (key_state & KEYPAD_BUTTON_2)) {
+            key_changed = false;
+
+            if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_ACTION, KEYPAD_BUTTON_UP)) {
                 display_mode = !display_mode;
-            } else if (key_state & KEYPAD_BUTTON_1) {
+            } else if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION) && !keypad_event.repeated) {
                 if (gain < TSL2591_GAIN_MAXIMUM) {
                     gain++;
                 } else {
                     gain = TSL2591_GAIN_LOW;
                 }
                 config_changed = true;
-            } else if (key_state & KEYPAD_BUTTON_2) {
+            } else if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_UP) && !keypad_event.repeated) {
                 if (time < TSL2591_TIME_600MS) {
                     time++;
                 } else {
@@ -542,7 +544,7 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
                 config_changed = true;
             }
 
-            if (key_state & KEYPAD_BUTTON_3) {
+            if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_DOWN) && !keypad_event.repeated) {
                 if (light_mode < 2) {
                     light_mode++;
                 } else {
@@ -551,7 +553,7 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
                 settings_changed = true;
             }
 
-            if (key_state & KEYPAD_BUTTON_4) {
+            if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
                 break;
             }
         }
@@ -629,7 +631,9 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
             display_static_list("Diagnostics", buf);
         }
 
-        HAL_Delay(100);
+        if (keypad_wait_for_event(&keypad_event, 100) == osOK) {
+            key_changed = true;
+        }
     } while (1);
 
     state->menu_state = MAIN_MENU_SETTINGS;
