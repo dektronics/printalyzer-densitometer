@@ -11,12 +11,10 @@
 #include "settings.h"
 #include "keypad.h"
 #include "display.h"
-#include "tsl2591.h"
 #include "light.h"
 #include "sensor.h"
 #include "state_controller.h"
 
-extern I2C_HandleTypeDef hi2c1;
 extern SPI_HandleTypeDef hspi1;
 extern TIM_HandleTypeDef htim2;
 
@@ -43,6 +41,8 @@ static const osSemaphoreAttr_t task_start_semaphore_attributes = {
 #else
 #define TASK_KEYPAD_STACK_SIZE (256U)
 #endif
+
+#define TASK_SENSOR_STACK_SIZE (1024U)
 
 static task_params_t task_list[] = {
     {
@@ -76,8 +76,15 @@ static task_params_t task_list[] = {
             .stack_size = TASK_KEYPAD_STACK_SIZE,
             .priority = osPriorityNormal
         }
+    },
+    {
+        .task_func = task_sensor_run,
+        .task_attrs = {
+            .name = "sensor",
+            .stack_size = TASK_SENSOR_STACK_SIZE,
+            .priority = osPriorityNormal
+        }
     }
-    //TODO task_sensor
 };
 
 
@@ -108,9 +115,6 @@ void task_main_run(void *argument)
     /* Initialize the display */
     display_init(&hspi1);
     display_clear();
-
-    /* Initialize the light sensor */
-    sensor_init(&hi2c1);
 
     /* Initialize the light source */
     light_init(&htim2, TIM_CHANNEL_3, TIM_CHANNEL_4);

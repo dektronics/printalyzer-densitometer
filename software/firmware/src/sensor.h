@@ -2,6 +2,7 @@
 #define SENSOR_H
 
 #include <stdbool.h>
+#include <cmsis_os.h>
 
 #include "stm32l0xx_hal.h"
 #include "tsl2591.h"
@@ -15,13 +16,27 @@ typedef enum {
     SENSOR_GAIN_CALIBRATION_STATUS_DONE
 } sensor_gain_calibration_status_t;
 
+typedef struct {
+    uint16_t ch0_val;
+    uint16_t ch1_val;
+    tsl2591_gain_t gain;
+    tsl2591_time_t time;
+} sensor_reading_t;
+
 typedef void (*sensor_gain_calibration_callback_t)(sensor_gain_calibration_status_t status, void *user_data);
 typedef void (*sensor_time_calibration_callback_t)(tsl2591_time_t time, void *user_data);
 typedef void (*sensor_read_callback_t)(void *user_data);
 
-HAL_StatusTypeDef sensor_init(I2C_HandleTypeDef *hi2c);
+void task_sensor_run(void *argument);
 
 bool sensor_is_initialized();
+
+void sensor_start();
+void sensor_stop();
+void sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time);
+osStatus_t sensor_get_next_reading(sensor_reading_t *reading, uint32_t timeout);
+
+void sensor_int_handler();
 
 /**
  * Run the sensor gain calibration process.
@@ -57,6 +72,14 @@ HAL_StatusTypeDef sensor_time_calibration(sensor_time_calibration_callback_t cal
  * @return HAL_OK on success
  */
 HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_result, sensor_read_callback_t callback, void *user_data);
+
+/**
+ * Check the sensor reading to see if the sensor is saturated.
+ *
+ * @param reading Reading to check
+ * @return True if saturated, false otherwise
+ */
+bool sensor_is_reading_saturated(const sensor_reading_t *reading);
 
 /**
  * Convert sensor readings from raw counts to basic counts.

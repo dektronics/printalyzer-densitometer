@@ -8,6 +8,7 @@
 
 #include "board_config.h"
 #include "keypad.h"
+#include "sensor.h"
 #include "task_main.h"
 
 I2C_HandleTypeDef hi2c1;
@@ -343,7 +344,11 @@ int main(void)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    keypad_int_handler(GPIO_Pin);
+    if (GPIO_Pin == SENSOR_INT_Pin) {
+        sensor_int_handler();
+    } else {
+        keypad_int_handler(GPIO_Pin);
+    }
 }
 
 /**

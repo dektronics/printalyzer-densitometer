@@ -255,7 +255,7 @@ void cdc_command_cal_gain(const char *cmd, size_t len)
         } else {
             cdc_send_response("ERR\r\n");
         }
-    } if (prefix == 'P') {
+    } else if (prefix == 'P') {
         char buf[128];
         char numbuf1[16];
         char numbuf2[16];
@@ -301,7 +301,7 @@ void cdc_command_cal_time(const char *cmd, size_t len)
         } else {
             cdc_send_response("ERR\r\n");
         }
-    } if (prefix == 'P') {
+    } else if (prefix == 'P') {
         char buf[128];
         char numbuf[16];
         float time_value;
