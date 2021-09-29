@@ -13,6 +13,7 @@
 #include "display.h"
 #include "light.h"
 #include "sensor.h"
+#include "adc_handler.h"
 #include "state_controller.h"
 
 extern SPI_HandleTypeDef hspi1;
@@ -121,6 +122,9 @@ void task_main_run(void *argument)
 
     /* Load system settings */
     settings_init();
+
+    /* Initialize the ADC handler */
+    adc_handler_init();
 
     /* Initialize the state controller */
     state_controller_init();

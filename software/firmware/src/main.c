@@ -9,8 +9,11 @@
 #include "board_config.h"
 #include "keypad.h"
 #include "sensor.h"
+#include "adc_handler.h"
 #include "task_main.h"
 
+ADC_HandleTypeDef hadc;
+DMA_HandleTypeDef hdma_adc;
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
@@ -23,6 +26,8 @@ static void gpio_init(void);
 static void i2c1_init(void);
 static void tim2_init(void);
 static void spi1_init(void);
+static void dma_init(void);
+static void adc_init(void);
 static void usb_init(void);
 static void startup_log_messages(void);
 
@@ -263,6 +268,71 @@ void spi1_init(void)
     }
 }
 
+void dma_init(void)
+{
+    /* DMA controller clock enable */
+    __HAL_RCC_DMA1_CLK_ENABLE();
+
+    /* DMA interrupt init */
+    /* DMA1_Channel1_IRQn interrupt configuration */
+    HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);
+    HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+}
+
+void adc_init(void)
+{
+    ADC_ChannelConfTypeDef sConfig = {0};
+
+    /*
+     * Configure the global features of the ADC
+     * (Clock, Resolution, Data Alignment and number of conversions)
+     */
+    hadc.Instance = ADC1;
+    hadc.Init.OversamplingMode = DISABLE;
+    hadc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+    hadc.Init.Resolution = ADC_RESOLUTION_12B;
+    hadc.Init.SamplingTime = ADC_SAMPLETIME_160CYCLES_5;
+    hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
+    hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+    hadc.Init.ContinuousConvMode = ENABLE;
+    hadc.Init.DiscontinuousConvMode = DISABLE;
+    hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+    hadc.Init.DMAContinuousRequests = ENABLE;
+    hadc.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+    hadc.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
+    hadc.Init.LowPowerAutoWait = DISABLE;
+    hadc.Init.LowPowerFrequencyMode = DISABLE;
+    hadc.Init.LowPowerAutoPowerOff = DISABLE;
+    if (HAL_ADC_Init(&hadc) != HAL_OK) {
+        error_handler();
+    }
+
+    /*
+     * Configure for the selected ADC regular channel to be converted.
+     */
+    sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+    sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
+    if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK) {
+        error_handler();
+    }
+
+    /*
+     * Configure for the selected ADC regular channel to be converted.
+     */
+    sConfig.Channel = ADC_CHANNEL_VREFINT;
+    if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK) {
+        error_handler();
+    }
+
+    if (HAL_ADCEx_EnableVREFINT() != HAL_OK) {
+        error_handler();
+    }
+    if (HAL_ADCEx_EnableVREFINTTempSensor() != HAL_OK) {
+        error_handler();
+    }
+}
+
 void usb_init(void)
 {
     /* Peripheral clock enable */
@@ -315,6 +385,8 @@ int main(void)
     i2c1_init();
     tim2_init();
     spi1_init();
+    dma_init();
+    adc_init();
     usb_init();
 
     /* Initialize the FreeRTOS scheduler */
@@ -349,6 +421,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     } else {
         keypad_int_handler(GPIO_Pin);
     }
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    UNUSED(hadc);
+    adc_completion_callback();
 }
 
 /**

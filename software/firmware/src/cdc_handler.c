@@ -18,6 +18,7 @@
 #include "display.h"
 #include "light.h"
 #include "sensor.h"
+#include "adc_handler.h"
 #include "tsl2591.h"
 #include "densitometer.h"
 #include "util.h"
@@ -480,6 +481,7 @@ void cdc_command_diag_system(const char *cmd, size_t len)
      * "DAI" -> Device information (HAL version, MCU Rev ID, MCU Dev ID, SysClock)
      * "DAU" -> Device unique ID (MCU unique ID)
      * "DAF" -> FreeRTOS runtime information
+     * "DAS" -> Internal sensor readings
      */
 
     if (len < 3) {
@@ -537,6 +539,19 @@ void cdc_command_diag_system(const char *cmd, size_t len)
             vPortFree(pxTaskStatusArray);
         }
         cdc_send_response("OK\r\n");
+    } else if (prefix == 'S') {
+        adc_readings_t readings;
+        if (adc_read(&readings) == osOK) {
+            sprintf(buf, "VDDA,%dmV\r\n", readings.vdda_mv);
+            cdc_send_response(buf);
+
+            sprintf(buf, "TEMP,%dC\r\n", readings.temp_c);
+            cdc_send_response(buf);
+
+            cdc_send_response("OK\r\n");
+        } else {
+            cdc_send_response("ERR\r\n");
+        }
     }
 }
 
@@ -703,5 +718,4 @@ void cdc_write(const char *buf, size_t len)
 {
     tud_cdc_write(buf, len);
     tud_cdc_write_flush();
-    //tud_task(); //FIXME probably shouldn't do it this way anymore
 }

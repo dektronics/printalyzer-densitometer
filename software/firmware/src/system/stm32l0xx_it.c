@@ -20,6 +20,7 @@
 #include "stm32l0xx_it.h"
 #include <tusb.h>
 
+extern DMA_HandleTypeDef hdma_adc;
 extern TIM_HandleTypeDef htim6;
 
 /******************************************************************************/
@@ -148,6 +149,14 @@ void EXTI4_15_IRQHandler(void)
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+}
+
+/**
+ * Handles the DMA1 channel 1 interrupt.
+ */
+void DMA1_Channel1_IRQHandler(void)
+{
+    HAL_DMA_IRQHandler(&hdma_adc);
 }
 
 /**

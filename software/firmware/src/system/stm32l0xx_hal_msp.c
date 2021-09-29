@@ -20,6 +20,9 @@
 #include "stm32l0xx_hal.h"
 #include "board_config.h"
 
+extern DMA_HandleTypeDef hdma_adc;
+
+extern void error_handler(void);
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /**
@@ -33,6 +36,52 @@ void HAL_MspInit(void)
     /* System interrupt init*/
     /* PendSV_IRQn interrupt configuration */
     HAL_NVIC_SetPriority(PendSV_IRQn, 3, 0);
+}
+
+/**
+ * ADC MSP Initialization
+ *
+ * @param hadc: ADC handle pointer
+ */
+void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
+{
+    if (hadc->Instance == ADC1) {
+        /* Peripheral clock enable */
+        __HAL_RCC_ADC1_CLK_ENABLE();
+
+        /* ADC1 DMA Init */
+        /* ADC Init */
+        hdma_adc.Instance = DMA1_Channel1;
+        hdma_adc.Init.Request = DMA_REQUEST_0;
+        hdma_adc.Init.Direction = DMA_PERIPH_TO_MEMORY;
+        hdma_adc.Init.PeriphInc = DMA_PINC_DISABLE;
+        hdma_adc.Init.MemInc = DMA_MINC_ENABLE;
+        hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+        hdma_adc.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+        hdma_adc.Init.Mode = DMA_NORMAL;
+        hdma_adc.Init.Priority = DMA_PRIORITY_LOW;
+        if (HAL_DMA_Init(&hdma_adc) != HAL_OK) {
+            error_handler();
+        }
+
+        __HAL_LINKDMA(hadc, DMA_Handle, hdma_adc);
+    }
+}
+
+/**
+ * ADC MSP De-Initialization
+ *
+ * @param hadc: ADC handle pointer
+ */
+void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
+{
+    if (hadc->Instance == ADC1) {
+        /* Peripheral clock disable */
+        __HAL_RCC_ADC1_CLK_DISABLE();
+
+        /* ADC1 DMA DeInit */
+        HAL_DMA_DeInit(hadc->DMA_Handle);
+    }
 }
 
 /**
