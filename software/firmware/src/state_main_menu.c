@@ -14,6 +14,7 @@
 #include "util.h"
 #include "keypad.h"
 #include "tsl2591.h"
+#include "sensor.h"
 
 extern I2C_HandleTypeDef hi2c1;
 
@@ -479,11 +480,10 @@ void main_menu_settings(state_main_menu_t *state, state_controller_t *controller
 
 void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t *controller)
 {
-    HAL_StatusTypeDef ret = HAL_OK;
-    tsl2591_gain_t gain;
-    tsl2591_time_t time;
-    uint16_t ch0_val = 0;
-    uint16_t ch1_val = 0;
+    osStatus_t ret = osOK;
+    tsl2591_gain_t gain = TSL2591_GAIN_LOW;
+    tsl2591_time_t time = TSL2591_TIME_100MS;
+    sensor_reading_t reading;
     float ch0_basic = NAN;
     float ch1_basic = NAN;
     uint8_t light_mode = 0;
@@ -496,22 +496,11 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
     char numbuf1[16];
     char numbuf2[16];
 
-    do {
-        bool valid = false;
+    sensor_set_config(gain, time);
+    sensor_start();
 
-        ret = tsl2591_enable(&hi2c1);
-        if (ret != HAL_OK) { break; }
-
-        ret = tsl2591_get_config(&hi2c1, &gain, &time);
-        if (ret != HAL_OK) { break; }
-
-        do {
-            ret = tsl2591_get_status_valid(&hi2c1, &valid);
-        } while (!valid && ret == HAL_OK);
-        if (ret != HAL_OK) { break; }
-    } while (0);
-
-    if (ret != HAL_OK) {
+    ret = sensor_get_next_reading(&reading, 2000);
+    if (ret != osOK || reading.gain != gain || reading.time != time) {
         display_message(
             "Sensor", NULL,
             "initialization\n"
@@ -559,8 +548,7 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
         }
 
         if (config_changed) {
-            ret = tsl2591_set_config(&hi2c1, gain, time);
-            if (ret != HAL_OK) { break; }
+            sensor_set_config(gain, time);
             config_changed = false;
             settings_changed = true;
         }
@@ -606,10 +594,10 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
             settings_changed = false;
         }
 
-        if (tsl2591_get_full_channel_data(&hi2c1, &ch0_val, &ch1_val) == HAL_OK) {
+        if (sensor_get_next_reading(&reading, 1000) == osOK) {
             bool is_detect = keypad_is_detect();
             if (display_mode) {
-                sensor_convert_to_basic_counts(gain, time, ch0_val, ch1_val, &ch0_basic, &ch1_basic);
+                sensor_convert_to_basic_counts(reading.gain, reading.time, reading.ch0_val, reading.ch1_val, &ch0_basic, &ch1_basic);
                 float_to_str(ch0_basic, numbuf1, 5);
                 float_to_str(ch1_basic, numbuf2, 5);
                 sprintf(buf,
@@ -624,7 +612,7 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
                     "CH0=%5d\n"
                     "CH1=%5d\n"
                     "[%c][%d][%c][%c]",
-                    ch0_val, ch1_val,
+                    reading.ch0_val, reading.ch1_val,
                     gain_ch, tsl2591_get_time_value_ms(time), light_ch,
                     (is_detect ? '*' : ' '));
             }
@@ -635,6 +623,8 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
             key_changed = true;
         }
     } while (1);
+
+    sensor_stop();
 
     state->menu_state = MAIN_MENU_SETTINGS;
 }
