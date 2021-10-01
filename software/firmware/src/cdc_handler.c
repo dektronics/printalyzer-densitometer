@@ -18,6 +18,7 @@
 #include "display.h"
 #include "light.h"
 #include "sensor.h"
+#include "task_sensor.h"
 #include "adc_handler.h"
 #include "tsl2591.h"
 #include "densitometer.h"
@@ -34,7 +35,6 @@ static void cdc_command_version(const char *cmd, size_t len);
 static void cdc_command_measure_reflection(const char *cmd, size_t len);
 static void cdc_command_measure_transmission(const char *cmd, size_t len);
 static void cdc_command_cal_gain(const char *cmd, size_t len);
-static void cdc_command_cal_time(const char *cmd, size_t len);
 static void cdc_command_cal_reflection(const char *cmd, size_t len);
 static void cdc_command_cal_transmission(const char *cmd, size_t len);
 static void cdc_command_diag_system(const char *cmd, size_t len);
@@ -143,8 +143,6 @@ void cdc_process_command(const char *cmd, size_t len)
         char cal_prefix = toupper(cmd[1]);
         if (cal_prefix == 'G') {
             cdc_command_cal_gain(cmd, len);
-        } else if (cal_prefix == 'I') {
-            cdc_command_cal_time(cmd, len);
         } else if (cal_prefix == 'R') {
             cdc_command_cal_reflection(cmd, len);
         } else if (cal_prefix == 'T') {
@@ -251,7 +249,7 @@ void cdc_command_cal_gain(const char *cmd, size_t len)
     char prefix = toupper(cmd[2]);
 
     if (prefix == 'M') {
-        if (sensor_gain_calibration(NULL, NULL) == HAL_OK) {
+        if (sensor_gain_calibration(NULL, NULL) == osOK) {
             cdc_send_response("OK\r\n");
         } else {
             cdc_send_response("ERR\r\n");
@@ -279,40 +277,6 @@ void cdc_command_cal_gain(const char *cmd, size_t len)
         float_to_str(ch1_gain, numbuf2, 2);
         sprintf(buf, "TSL2591,MAXIMUM,%s,%s\r\n", numbuf1, numbuf2);
         cdc_send_response(buf);
-    }
-}
-
-void cdc_command_cal_time(const char *cmd, size_t len)
-{
-    /*
-     * "CI" : Calibration Integration Time
-     * "CIM" -> Measure actual sensor relative integration time and save as calibration values
-     * "CIP" -> Return currently saved integration time calibration values
-     */
-
-    if (len < 3) {
-        return;
-    }
-
-    char prefix = toupper(cmd[2]);
-
-    if (prefix == 'M') {
-        if (sensor_time_calibration(NULL, NULL) == HAL_OK) {
-            cdc_send_response("OK\r\n");
-        } else {
-            cdc_send_response("ERR\r\n");
-        }
-    } else if (prefix == 'P') {
-        char buf[128];
-        char numbuf[16];
-        float time_value;
-
-        for (tsl2591_time_t time = TSL2591_TIME_100MS; time <= TSL2591_TIME_600MS; time++) {
-            settings_get_cal_time(time, &time_value);
-            float_to_str(time_value, numbuf, 2);
-            sprintf(buf, "TSL2591,%dms,%s\r\n", tsl2591_get_time_value_ms(time), numbuf);
-            cdc_send_response(buf);
-        }
     }
 }
 
@@ -372,7 +336,7 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
             cdc_send_response("ERR\r\n");
         }
 
-        light_set_reflection(0);
+        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
 
     } else if (prefix == 'P') {
         char buf[128];
@@ -446,7 +410,7 @@ void cdc_command_cal_transmission(const char *cmd, size_t len)
             cdc_send_response("ERR\r\n");
         }
 
-        light_set_transmission(0);
+        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
 
     } else if (prefix == 'P') {
         char buf[128];

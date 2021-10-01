@@ -11,6 +11,7 @@
 #include "sensor.h"
 #include "adc_handler.h"
 #include "task_main.h"
+#include "task_sensor.h"
 
 ADC_HandleTypeDef hadc;
 DMA_HandleTypeDef hdma_adc;

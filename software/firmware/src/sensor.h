@@ -1,3 +1,7 @@
+/*
+ * Functions for performing various higher level operations with the
+ * light sensor, and data types for interacting with sensor data.
+ */
 #ifndef SENSOR_H
 #define SENSOR_H
 
@@ -7,36 +11,41 @@
 #include "stm32l0xx_hal.h"
 #include "tsl2591.h"
 
+/**
+ * Sensor read light selection.
+ */
+typedef enum {
+    SENSOR_LIGHT_OFF = 0,
+    SENSOR_LIGHT_REFLECTION,
+    SENSOR_LIGHT_TRANSMISSION
+} sensor_light_t;
+
 typedef enum {
     SENSOR_GAIN_CALIBRATION_STATUS_INIT = 0,
     SENSOR_GAIN_CALIBRATION_STATUS_MEDIUM,
     SENSOR_GAIN_CALIBRATION_STATUS_HIGH,
     SENSOR_GAIN_CALIBRATION_STATUS_MAXIMUM,
     SENSOR_GAIN_CALIBRATION_STATUS_FAILED,
+    SENSOR_GAIN_CALIBRATION_STATUS_COOLDOWN,
     SENSOR_GAIN_CALIBRATION_STATUS_DONE
 } sensor_gain_calibration_status_t;
 
+/**
+ * Sensor reading data structure.
+ */
 typedef struct {
-    uint16_t ch0_val;
-    uint16_t ch1_val;
-    tsl2591_gain_t gain;
-    tsl2591_time_t time;
+    uint16_t ch0_val;       /*!< CH0 light reading */
+    uint16_t ch1_val;       /*!< CH1 light reading */
+    tsl2591_gain_t gain;    /*!< Sensor ADC gain */
+    tsl2591_time_t time;    /*!< Sensor ADC integration time */
+    uint32_t reading_ticks; /*!< Tick time when the integration cycle finished */
+    uint32_t light_ticks;   /*!< Tick time when the light state last changed */
 } sensor_reading_t;
 
-typedef void (*sensor_gain_calibration_callback_t)(sensor_gain_calibration_status_t status, void *user_data);
-typedef void (*sensor_time_calibration_callback_t)(tsl2591_time_t time, void *user_data);
+typedef bool (*sensor_gain_calibration_callback_t)(sensor_gain_calibration_status_t status, void *user_data);
+typedef bool (*sensor_time_calibration_callback_t)(tsl2591_time_t time, void *user_data);
+typedef bool (*sensor_light_calibration_callback_t)(uint8_t progress, void *user_data);
 typedef void (*sensor_read_callback_t)(void *user_data);
-
-void task_sensor_run(void *argument);
-
-bool sensor_is_initialized();
-
-void sensor_start();
-void sensor_stop();
-void sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time);
-osStatus_t sensor_get_next_reading(sensor_reading_t *reading, uint32_t timeout);
-
-void sensor_int_handler();
 
 /**
  * Run the sensor gain calibration process.
@@ -47,21 +56,22 @@ void sensor_int_handler();
  * sensor data calculations.
  *
  * @param callback Callback to monitor progress of the calibration
- * @return HAL_OK on success
+ * @return osOK on success
  */
-HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data);
+osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data);
 
 /**
- * Run the sensor integration time calibration process.
+ * Run the sensor light source calibration process.
  *
- * This function will turn on the transmission LED and keep the sensor at a
- * constant gain setting, while running it through the full list of available
- * integration time settings. The results will be saved to allow sensor data
- * calculations to be normalized across different integration times.
+ * This function will turn on the selected LED and keep the sensor at constant
+ * settings. It will then measure the intensity of the light over time, run a
+ * logarithmic regression on the results, and save the resulting drop factor.
  *
- * @return HAL_OK on success
+ * @param light_source Light source to calibrate
+ * @param callback Callback to monitor progress of the calibration
+ * @return osOK on success
  */
-HAL_StatusTypeDef sensor_time_calibration(sensor_time_calibration_callback_t callback, void *user_data);
+osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_calibration_callback_t callback, void *user_data);
 
 /**
  * Perform a reading with the sensor.

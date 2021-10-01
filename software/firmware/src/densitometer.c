@@ -7,6 +7,7 @@
 
 #include "settings.h"
 #include "sensor.h"
+#include "task_sensor.h"
 #include "light.h"
 #include "util.h"
 
@@ -48,15 +49,14 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     }
 
     /* Set light intensity for reading */
-    light_set_reflection(128);
-    light_set_transmission(0);
+    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, /*next_cycle*/true, 128);
 
     /* Perform sensor read */
     float ch0_basic;
     float ch1_basic;
     if (sensor_read(2, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
-        light_set_reflection(LIGHT_REFLECTION_IDLE);
+        sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -86,7 +86,7 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     densitometer_reflection_d = meas_d;
 
     /* Set light back to idle */
-    light_set_reflection(LIGHT_REFLECTION_IDLE);
+    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
 
     return DENSITOMETER_OK;
 }
@@ -146,15 +146,14 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     }
 
     /* Set light intensity for reading */
-    light_set_reflection(0);
-    light_set_transmission(128);
+    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, /*next_cycle*/true, 128);
 
     /* Perform sensor read */
     float ch0_basic;
     float ch1_basic;
     if (sensor_read(2, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
-        light_set_transmission(LIGHT_TRANSMISSION_IDLE);
+        sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -184,7 +183,7 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     densitometer_transmission_d = corr_d;
 
     /* Set light back to idle */
-    light_set_transmission(LIGHT_TRANSMISSION_IDLE);
+    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
 
     return DENSITOMETER_OK;
 }
@@ -226,13 +225,12 @@ densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d, senso
     }
 
     /* Set light intensity for reading */
-    light_set_reflection(128);
-    light_set_transmission(0);
+    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, /*next_cycle*/true, 128);
 
     /* Perform sensor read */
     if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
-        light_set_reflection(LIGHT_REFLECTION_IDLE);
+        sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -247,7 +245,7 @@ densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d, senso
     settings_set_cal_reflection_lo(cal_lo_d, meas_value);
 
     /* Set light back to idle */
-    light_set_reflection(LIGHT_REFLECTION_IDLE);
+    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
 
     return DENSITOMETER_OK;
 }
@@ -263,13 +261,12 @@ densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d, senso
     }
 
     /* Set light intensity for reading */
-    light_set_reflection(128);
-    light_set_transmission(0);
+    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, /*next_cycle*/true, 128);
 
     /* Perform sensor read */
     if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
-        light_set_reflection(LIGHT_REFLECTION_IDLE);
+        sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -284,7 +281,7 @@ densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d, senso
     settings_set_cal_reflection_hi(cal_hi_d, meas_value);
 
     /* Set light back to idle */
-    light_set_reflection(LIGHT_REFLECTION_IDLE);
+    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
 
     return DENSITOMETER_OK;
 }
@@ -295,13 +292,12 @@ densitometer_result_t densitometer_calibrate_transmission_zero(sensor_read_callb
     float ch1_basic;
 
     /* Set light intensity for reading */
-    light_set_reflection(0);
-    light_set_transmission(128);
+    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, /*next_cycle*/true, 128);
 
     /* Perform sensor read */
     if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
-        light_set_transmission(LIGHT_TRANSMISSION_IDLE);
+        sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -316,7 +312,7 @@ densitometer_result_t densitometer_calibrate_transmission_zero(sensor_read_callb
     settings_set_cal_transmission_zero(meas_value);
 
     /* Set light back to idle */
-    light_set_transmission(LIGHT_TRANSMISSION_IDLE);
+    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
 
     return DENSITOMETER_OK;
 }
@@ -332,13 +328,12 @@ densitometer_result_t densitometer_calibrate_transmission_hi(float cal_hi_d, sen
     }
 
     /* Set light intensity for reading */
-    light_set_reflection(0);
-    light_set_transmission(128);
+    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, /*next_cycle*/true, 128);
 
     /* Perform sensor read */
     if (sensor_read(CAL_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != HAL_OK) {
         log_w("Sensor read error");
-        light_set_transmission(LIGHT_TRANSMISSION_IDLE);
+        sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -353,7 +348,7 @@ densitometer_result_t densitometer_calibrate_transmission_hi(float cal_hi_d, sen
     settings_set_cal_transmission_hi(cal_hi_d, meas_value);
 
     /* Set light back to idle */
-    light_set_transmission(LIGHT_TRANSMISSION_IDLE);
+    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
 
     return DENSITOMETER_OK;
 }

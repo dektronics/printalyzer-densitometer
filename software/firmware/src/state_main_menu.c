@@ -14,6 +14,7 @@
 #include "util.h"
 #include "keypad.h"
 #include "tsl2591.h"
+#include "task_sensor.h"
 #include "sensor.h"
 
 extern I2C_HandleTypeDef hi2c1;
@@ -24,6 +25,7 @@ typedef enum {
     MAIN_MENU_CALIBRATION_REFLECTION,
     MAIN_MENU_CALIBRATION_TRANSMISSION,
     MAIN_MENU_CALIBRATION_SENSOR,
+    MAIN_MENU_CALIBRATION_LIGHT,
     MAIN_MENU_SETTINGS,
     MAIN_MENU_SETTINGS_DIAGNOSTICS,
     MAIN_MENU_ABOUT
@@ -58,8 +60,10 @@ static void main_menu_calibration(state_main_menu_t *state, state_controller_t *
 static void main_menu_calibration_reflection(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_transmission(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_sensor(state_main_menu_t *state, state_controller_t *controller);
-static void sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data);
-static void sensor_time_calibration_callback(tsl2591_time_t time, void *user_data);
+static bool sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data);
+static void main_menu_calibration_light(state_main_menu_t *state, state_controller_t *controller);
+static bool sensor_light_calibration_callback(uint8_t progress, void *user_data);
+static bool sensor_calibration_should_abort();
 static void main_menu_settings(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_about(state_main_menu_t *state, state_controller_t *controller);
@@ -86,8 +90,7 @@ void state_main_menu_process(state_t *state_base, state_controller_t *controller
 {
     state_main_menu_t *state = (state_main_menu_t *)state_base;
 
-    light_set_reflection(0);
-    light_set_transmission(0);
+    sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
 
     if (state->menu_state == MAIN_MENU_HOME) {
         main_menu_home(state, controller);
@@ -99,6 +102,8 @@ void state_main_menu_process(state_t *state_base, state_controller_t *controller
         main_menu_calibration_transmission(state, controller);
     } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR) {
         main_menu_calibration_sensor(state, controller);
+    } else if (state->menu_state == MAIN_MENU_CALIBRATION_LIGHT) {
+        main_menu_calibration_light(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS) {
         main_menu_settings(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS_DIAGNOSTICS) {
@@ -134,7 +139,8 @@ void main_menu_calibration(state_main_menu_t *state, state_controller_t *control
         "Calibration", state->cal_option,
         "Reflection\n"
         "Transmission\n"
-        "Sensor");
+        "Sensor\n"
+        "Light Source");
 
     if (state->cal_option == 1) {
         state->menu_state = MAIN_MENU_CALIBRATION_REFLECTION;
@@ -142,6 +148,8 @@ void main_menu_calibration(state_main_menu_t *state, state_controller_t *control
         state->menu_state = MAIN_MENU_CALIBRATION_TRANSMISSION;
     } else if (state->cal_option == 3) {
         state->menu_state = MAIN_MENU_CALIBRATION_SENSOR;
+    } else if (state->cal_option == 4) {
+        state->menu_state = MAIN_MENU_CALIBRATION_LIGHT;
     } else if (state->cal_option == UINT8_MAX) {
         state_controller_set_next_state(controller, state->last_display_state);
     } else {
@@ -159,8 +167,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
     float cal_hi_d;
     uint8_t option = 1;
 
-    light_set_reflection(LIGHT_REFLECTION_IDLE);
-    light_set_transmission(0);
+    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
 
     settings_get_cal_reflection_lo(&cal_lo_d, NULL);
     settings_get_cal_reflection_hi(&cal_hi_d, NULL);
@@ -287,8 +294,7 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
     float cal_hi_d;
     uint8_t option = 1;
 
-    light_set_reflection(0);
-    light_set_transmission(LIGHT_TRANSMISSION_IDLE);
+    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
 
     settings_get_cal_transmission_hi(&cal_hi_d, NULL);
 
@@ -400,16 +406,15 @@ void main_menu_calibration_sensor(state_main_menu_t *state, state_controller_t *
         "firmly closed\n"
         "with no film", NULL, NULL, " Measure ");
     if (option == 1) {
-        HAL_StatusTypeDef ret = HAL_OK;
+        osStatus_t ret = osOK;
+        if (!keypad_is_detect()) { return; }
         do {
             display_static_list("Sensor Gain", "\nStarting...");
             ret = sensor_gain_calibration(sensor_gain_calibration_callback, NULL);
-
-            display_static_list("Int Time", "\nStarting...");
-            ret = sensor_time_calibration(sensor_time_calibration_callback, NULL);
+            if (ret != osOK) { break; }
         } while (0);
 
-        if (ret == HAL_OK) {
+        if (ret == osOK) {
             display_message(
                 "Sensor", NULL,
                 "calibration\n"
@@ -429,9 +434,10 @@ void main_menu_calibration_sensor(state_main_menu_t *state, state_controller_t *
     }
 }
 
-void sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data)
+bool sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data)
 {
     char buf[128];
+    bool update_display = true;
     if (status == SENSOR_GAIN_CALIBRATION_STATUS_MEDIUM) {
         sprintf(buf, "\n"
             "Measuring\n"
@@ -444,24 +450,91 @@ void sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, v
         sprintf(buf, "\n"
             "Measuring\n"
             "maximum gain");
+    } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_COOLDOWN) {
+        sprintf(buf,
+            "Waiting\n"
+            "between\n"
+            "measurements");
     } else {
-        return;
+        update_display = false;
     }
 
-    display_static_list("Sensor Gain", buf);
+    if (update_display) {
+        display_static_list("Sensor Gain", buf);
+    }
+
+    return !sensor_calibration_should_abort();
 }
 
-void sensor_time_calibration_callback(tsl2591_time_t time, void *user_data)
+void main_menu_calibration_light(state_main_menu_t *state, state_controller_t *controller)
 {
-    char buf[128];
-    uint16_t time_ms = tsl2591_get_time_value_ms(time);
-    if (time_ms > 0) {
-        sprintf(buf,
-            "Measuring\n"
-            "%dms\n"
-            "integration", time_ms);
-        display_static_list("Int Time", buf);
+    uint8_t option = display_message(
+        "Hold device\n"
+        "firmly closed\n"
+        "with no film", NULL, NULL, " Measure ");
+    if (option == 1) {
+        osStatus_t ret = osOK;
+        const char *title;
+
+        if (!keypad_is_detect()) { return; }
+
+        do {
+            title = "Reflection\nLight";
+            display_static_list(title, "\nStarting...");
+            ret = sensor_light_calibration(SENSOR_LIGHT_REFLECTION, sensor_light_calibration_callback, (void *)title);
+            if (ret != osOK) { break; }
+
+            title = "Transmission\nLight";
+            display_static_list(title, "\nStarting...");
+            ret = sensor_light_calibration(SENSOR_LIGHT_TRANSMISSION, sensor_light_calibration_callback, (void *)title);
+            if (ret != osOK) { break; }
+        } while (0);
+
+        if (ret == osOK) {
+            display_message(
+                "Light", NULL,
+                "calibration\n"
+                "complete", " OK ");
+        } else {
+            display_message(
+                "Light", NULL,
+                "calibration\n"
+                "failed", " OK ");
+        }
+        state->menu_state = MAIN_MENU_CALIBRATION;
+
+    } else if (option == UINT8_MAX) {
+        state_controller_set_next_state(controller, state->last_display_state);
+    } else {
+        state->menu_state = MAIN_MENU_CALIBRATION;
     }
+}
+
+bool sensor_light_calibration_callback(uint8_t progress, void *user_data)
+{
+    char buf[8];
+    const char *title = user_data;
+    sprintf(buf,
+        "\n%3d%%", progress);
+    display_static_list(title, buf);
+
+    return !sensor_calibration_should_abort();
+}
+
+bool sensor_calibration_should_abort()
+{
+    keypad_event_t keypad_event;
+    if (keypad_wait_for_event(&keypad_event, 0) == osOK) {
+        if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
+            return true;
+        } else if(keypad_event.key == KEYPAD_BUTTON_DETECT && !keypad_event.pressed) {
+            return true;
+        }
+    }
+    if (!keypad_is_detect()) {
+        return true;
+    }
+    return false;
 }
 
 void main_menu_settings(state_main_menu_t *state, state_controller_t *controller)
@@ -571,23 +644,19 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
 
             switch (light_mode) {
             case 0:
-                light_set_reflection(0);
-                light_set_transmission(0);
+                sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
                 light_ch = '-';
                 break;
             case 1:
-                light_set_reflection(128);
-                light_set_transmission(0);
+                sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, 128);
                 light_ch = 'R';
                 break;
             case 2:
-                light_set_reflection(0);
-                light_set_transmission(128);
+                sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, 128);
                 light_ch = 'T';
                 break;
             default:
-                light_set_reflection(0);
-                light_set_transmission(0);
+                sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
                 light_ch = ' ';
                 break;
             }

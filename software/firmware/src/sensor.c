@@ -1,8 +1,9 @@
 #include "sensor.h"
 
 #define LOG_TAG "sensor"
-
+#define LOG_LVL  4
 #include <elog.h>
+
 #include <math.h>
 #include <cmsis_os.h>
 #include <FreeRTOS.h>
@@ -10,325 +11,37 @@
 
 #include "stm32l0xx_hal.h"
 #include "settings.h"
+#include "task_sensor.h"
 #include "tsl2591.h"
 #include "light.h"
 #include "util.h"
 
 #define SENSOR_DEFAULT_READ_TIME (TSL2591_TIME_200MS)
 
-extern I2C_HandleTypeDef hi2c1;
+/* These constants are for the opal stage plate */
+//#define GAIN_CAL_BRIGHTNESS_LOW_MED   128
+//#define GAIN_CAL_BRIGHTNESS_MED_HIGH  35
+//#define GAIN_CAL_BRIGHTNESS_HIGH_MAX  5
 
-typedef enum {
-    SENSOR_CONTROL_STOP = 0,
-    SENSOR_CONTROL_START,
-    SENSOR_CONTROL_SET_CONFIG,
-    SENSOR_CONTROL_INTERRUPT
-} sensor_control_event_type_t;
+/* These constants are for the matte white stage plate */
+#define GAIN_CAL_BRIGHTNESS_LOW_MED   128
+#define GAIN_CAL_BRIGHTNESS_MED_HIGH  128
+#define GAIN_CAL_BRIGHTNESS_HIGH_MAX  8
 
-typedef struct {
-    sensor_control_event_type_t event_type;
-    uint8_t param1;
-    uint8_t param2;
-} sensor_control_event_t;
-
-static volatile bool sensor_initialized = false;
-
-static bool sensor_running = false;
-static tsl2591_gain_t sensor_gain = TSL2591_GAIN_LOW;
-static tsl2591_time_t sensor_time = TSL2591_TIME_100MS;
-static bool sensor_discard_next_reading = false;
-
-/* Queue for low level sensor control events */
-static osMessageQueueId_t sensor_control_queue = NULL;
-static const osMessageQueueAttr_t sensor_control_queue_attrs = {
-    .name = "sensor_control_queue"
-};
-
-/* Queue to hold the latest sensor reading */
-static osMessageQueueId_t sensor_reading_queue = NULL;
-static const osMessageQueueAttr_t sensor_reading_queue_attrs = {
-    .name = "sensor_reading_queue"
-};
-
-/* Semaphore to synchronize sensor control calls */
-static osSemaphoreId_t sensor_control_semaphore = NULL;
-static const osSemaphoreAttr_t sensor_control_semaphore_attrs = {
-    .name = "sensor_control_semaphore"
-};
-
-static void sensor_control_start();
-static void sensor_control_stop();
-static void sensor_control_set_config(uint8_t param1, uint8_t param2);
-static void sensor_control_interrupt();
+/* Number of iterations to use for light source calibration */
+#define LIGHT_CAL_ITERATIONS 600
 
 static osStatus_t sensor_gain_calibration_loop(
     tsl2591_gain_t gain0, tsl2591_gain_t gain1, tsl2591_time_t time,
-    float *gain_ch0, float *gain_ch1);
+    uint8_t led_brightness,
+    float *gain_ch0, float *gain_ch1,
+    sensor_gain_calibration_status_t callback_status,
+    sensor_gain_calibration_callback_t callback, void *user_data);
+static bool sensor_gain_calibration_cooldown(sensor_gain_calibration_callback_t callback, void *user_data);
 static osStatus_t sensor_read_loop(uint8_t count, float *ch0_avg, float *ch1_avg,
     sensor_read_callback_t callback, void *user_data);
 
-void task_sensor_run(void *argument)
-{
-    osSemaphoreId_t task_start_semaphore = argument;
-    HAL_StatusTypeDef ret;
-    sensor_control_event_t control_event;
-
-    log_d("sensor_task start");
-
-    /* Create the queue for sensor control events */
-    sensor_control_queue = osMessageQueueNew(20, sizeof(sensor_control_event_t), &sensor_control_queue_attrs);
-    if (!sensor_control_queue) {
-        log_e("Unable to create control queue");
-        return;
-    }
-
-    /* Create the one-element queue to hold the latest sensor reading */
-    sensor_reading_queue = osMessageQueueNew(1, sizeof(sensor_reading_t), &sensor_reading_queue_attrs);
-    if (!sensor_reading_queue) {
-        log_e("Unable to create reading queue");
-        return;
-    }
-
-    /* Create the semaphore used to synchronize sensor control */
-    sensor_control_semaphore = osSemaphoreNew(1, 0, &sensor_control_semaphore_attrs);
-    if (!sensor_control_semaphore) {
-        log_e("sensor_control_semaphore create error");
-        return;
-    }
-
-    ret = tsl2591_init(&hi2c1);
-    if (ret != HAL_OK) {
-        log_e("Sensor initialization failed");
-        return;
-    }
-
-    /* Set the initialized flag */
-    sensor_initialized = true;
-
-    /* Release the startup semaphore */
-    if (osSemaphoreRelease(task_start_semaphore) != osOK) {
-        log_e("Unable to release task_start_semaphore");
-        return;
-    }
-
-    /* Start the main control event loop */
-    for (;;) {
-        if(osMessageQueueGet(sensor_control_queue, &control_event, NULL, portMAX_DELAY) == osOK) {
-            switch (control_event.event_type) {
-            case SENSOR_CONTROL_STOP:
-                sensor_control_stop();
-                break;
-            case SENSOR_CONTROL_START:
-                sensor_control_start();
-                break;
-            case SENSOR_CONTROL_SET_CONFIG:
-                sensor_control_set_config(control_event.param1, control_event.param2);
-                break;
-            case SENSOR_CONTROL_INTERRUPT:
-                sensor_control_interrupt();
-                break;
-            default:
-                break;
-            }
-        }
-    }
-}
-
-void sensor_start()
-{
-    sensor_control_event_t control_event = {
-        .event_type = SENSOR_CONTROL_START
-    };
-    osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
-
-    if (osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY) != osOK) {
-        log_e("Unable to acquire sensor_control_semaphore");
-    }
-}
-
-void sensor_stop()
-{
-    sensor_control_event_t control_event = {
-        .event_type = SENSOR_CONTROL_STOP
-    };
-    osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
-
-    if (osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY) != osOK) {
-        log_e("Unable to acquire sensor_control_semaphore");
-    }
-}
-
-void sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time)
-{
-    sensor_control_event_t control_event = {
-        .event_type = SENSOR_CONTROL_SET_CONFIG,
-        .param1 = gain,
-        .param2 = time
-    };
-    osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
-
-    if (osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY) != osOK) {
-        log_e("Unable to acquire sensor_control_semaphore");
-    }
-}
-
-osStatus_t sensor_get_next_reading(sensor_reading_t *reading, uint32_t timeout)
-{
-    if (!reading) {
-        return osErrorParameter;
-    }
-
-    return osMessageQueueGet(sensor_reading_queue, reading, NULL, timeout);
-}
-
-void sensor_control_start()
-{
-    HAL_StatusTypeDef ret = HAL_OK;
-
-    log_d("sensor_control_start");
-
-    do {
-        /* Put the sensor into a known initial state */
-        ret = tsl2591_set_enable(&hi2c1, 0x00);
-        if (ret != HAL_OK) { break; }
-
-        sensor_running = false;
-
-        /* Clear any pending interrupt flags */
-        tsl2591_clear_als_int(&hi2c1);
-        if (ret != HAL_OK) { break; }
-
-        /* Power on the sensor */
-        ret = tsl2591_set_enable(&hi2c1, TSL2591_ENABLE_PON);
-        if (ret != HAL_OK) { break; }
-
-        /* Set the maximum gain and minimum integration time */
-        ret = tsl2591_set_config(&hi2c1, sensor_gain, sensor_time);
-        if (ret != HAL_OK) { break; }
-
-        /* Interrupt after every integration cycle */
-        ret = tsl2591_set_persist(&hi2c1, TSL2591_PERSIST_EVERY);
-        if (ret != HAL_OK) { break; }
-
-        /* Clear out any old sensor readings */
-        osMessageQueueReset(sensor_reading_queue);
-
-        /* Enable ALS with interrupts */
-        ret = tsl2591_set_enable(&hi2c1, TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN | TSL2591_ENABLE_AIEN);
-        if (ret != HAL_OK) { break; }
-
-        sensor_discard_next_reading = true;
-        sensor_running = true;
-    } while (0);
-
-    if (osSemaphoreRelease(sensor_control_semaphore) != osOK) {
-        log_e("Unable to release sensor_control_semaphore");
-    }
-}
-
-void sensor_control_stop()
-{
-    log_d("sensor_control_stop");
-    if (tsl2591_set_enable(&hi2c1, 0x00) == HAL_OK) {
-        sensor_running = false;
-    }
-
-    if (osSemaphoreRelease(sensor_control_semaphore) != osOK) {
-        log_e("Unable to release sensor_control_semaphore");
-    }
-}
-
-void sensor_control_set_config(uint8_t param1, uint8_t param2)
-{
-    tsl2591_gain_t pending_gain = param1;
-    tsl2591_time_t pending_time = param2;
-
-    log_d("sensor_control_set_config: %d, %d", pending_gain, pending_time);
-
-    if (sensor_running) {
-        if (tsl2591_set_config(&hi2c1, param1, param2) == HAL_OK) {
-            sensor_gain = pending_gain;
-            sensor_time = pending_time;
-            sensor_discard_next_reading = true;
-            osMessageQueueReset(sensor_reading_queue);
-        }
-    } else {
-        sensor_gain = pending_gain;
-        sensor_time = pending_time;
-    }
-
-    if (osSemaphoreRelease(sensor_control_semaphore) != osOK) {
-        log_e("Unable to release sensor_control_semaphore");
-    }
-}
-
-void sensor_control_interrupt()
-{
-    HAL_StatusTypeDef ret = HAL_OK;
-    uint8_t status = 0;
-    sensor_reading_t reading = {0};
-    bool has_channel_data = false;
-
-    //log_d("sensor_control_interrupt");
-
-    if (!sensor_running) {
-        log_w("Unexpected sensor interrupt!");
-    }
-
-    do {
-        /* Get the status register */
-        ret = tsl2591_get_status(&hi2c1, &status);
-        if (ret != HAL_OK) { break; }
-
-        /* Make sure we actually triggered the ALS interrupt */
-        if ((status & TSL2591_STATUS_AINT) == 0) {
-            break;
-        }
-
-        /* Clear the ALS interrupt */
-        ret = tsl2591_clear_als_int(&hi2c1);
-        if (ret != HAL_OK) { break; }
-
-        if (sensor_discard_next_reading) {
-            sensor_discard_next_reading = false;
-            break;
-        }
-
-        /* Read full channel data */
-        ret = tsl2591_get_full_channel_data(&hi2c1, &reading.ch0_val, &reading.ch1_val);
-        if (ret != HAL_OK) { break; }
-
-        /* Fill out other reading fields */
-        reading.gain = sensor_gain;
-        reading.time = sensor_time;
-
-        has_channel_data = true;
-    } while (0);
-
-    //TODO need to make sure we can't jam in some of the failure cases
-
-    if (has_channel_data) {
-        log_d("TSL2591: CH0=%d, CH1=%d, Gain=[%d], Time=%dms", reading.ch0_val, reading.ch1_val, sensor_gain, tsl2591_get_time_value_ms(sensor_time));
-
-        QueueHandle_t queue = (QueueHandle_t)sensor_reading_queue;
-        xQueueOverwrite(queue, &reading);
-    }
-}
-
-bool sensor_is_initialized()
-{
-    return sensor_initialized;
-}
-
-void sensor_int_handler()
-{
-    sensor_control_event_t control_event = {
-        .event_type = SENSOR_CONTROL_INTERRUPT
-    };
-    osMessageQueuePut(sensor_control_queue, &control_event, 0, 0);
-}
-
-HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data)
+osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data)
 {
     /*
      * The sensor gain calibration process currently uses hand-picked
@@ -349,12 +62,11 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
     log_i("Starting gain calibration");
 
     if (callback) {
-        callback(SENSOR_GAIN_CALIBRATION_STATUS_INIT, user_data);
+        if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_INIT, user_data)) { return osError; }
     }
 
     /* Set lights to initial state */
-    light_set_reflection(0);
-    light_set_transmission(8);
+    sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
 
     do {
         /* Put the sensor into a known initial state */
@@ -366,11 +78,10 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
 
         /* Calibrate the value for medium gain */
         log_i("Medium gain calibration");
-        if (callback) {
-            callback(SENSOR_GAIN_CALIBRATION_STATUS_MEDIUM, user_data);
-        }
-        light_set_transmission(128);
-        ret = sensor_gain_calibration_loop(TSL2591_GAIN_LOW, TSL2591_GAIN_MEDIUM, TSL2591_TIME_600MS, &gain_med_ch0, &gain_med_ch1);
+        ret = sensor_gain_calibration_loop(
+            TSL2591_GAIN_LOW, TSL2591_GAIN_MEDIUM, TSL2591_TIME_600MS,
+            GAIN_CAL_BRIGHTNESS_LOW_MED, &gain_med_ch0, &gain_med_ch1,
+            SENSOR_GAIN_CALIBRATION_STATUS_MEDIUM, callback, user_data);
         if (ret != osOK) { break; }
 
         log_i("Medium gain: CH0=%dx, CH1=%dx", lroundf(gain_med_ch0), lroundf(gain_med_ch1));
@@ -384,13 +95,18 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
             gain_med_ch1 = TSL2591_GAIN_MEDIUM_TYP;
         }
 
+        /* Wait for LED cool down */
+        if (!sensor_gain_calibration_cooldown(callback, user_data)) {
+            ret = osError;
+            break;
+        }
+
         /* Calibrate the value for high gain */
         log_i("High gain calibration");
-        if (callback) {
-            callback(SENSOR_GAIN_CALIBRATION_STATUS_HIGH, user_data);
-        }
-        light_set_transmission(35);
-        ret = sensor_gain_calibration_loop(TSL2591_GAIN_MEDIUM, TSL2591_GAIN_HIGH, TSL2591_TIME_200MS, &gain_high_ch0, &gain_high_ch1);
+        ret = sensor_gain_calibration_loop(
+            TSL2591_GAIN_MEDIUM, TSL2591_GAIN_HIGH, TSL2591_TIME_200MS,
+            GAIN_CAL_BRIGHTNESS_MED_HIGH, &gain_high_ch0, &gain_high_ch1,
+            SENSOR_GAIN_CALIBRATION_STATUS_HIGH, callback, user_data);
         if (ret != osOK) { break; }
 
         gain_high_ch0 *= gain_med_ch0;
@@ -407,13 +123,18 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
             gain_high_ch1 = TSL2591_GAIN_HIGH_TYP;
         }
 
+        /* Wait for LED cool down */
+        if (!sensor_gain_calibration_cooldown(callback, user_data)) {
+            ret = osError;
+            break;
+        }
+
         /* Calibrate the value for maximum gain */
         log_i("Maximum gain calibration");
-        if (callback) {
-            callback(SENSOR_GAIN_CALIBRATION_STATUS_MAXIMUM, user_data);
-        }
-        light_set_transmission(5);
-        ret = sensor_gain_calibration_loop(TSL2591_GAIN_HIGH, TSL2591_GAIN_MAXIMUM, TSL2591_TIME_200MS, &gain_max_ch0, &gain_max_ch1);
+        ret = sensor_gain_calibration_loop(
+            TSL2591_GAIN_HIGH, TSL2591_GAIN_MAXIMUM, TSL2591_TIME_200MS,
+            GAIN_CAL_BRIGHTNESS_HIGH_MAX, &gain_max_ch0, &gain_max_ch1,
+            SENSOR_GAIN_CALIBRATION_STATUS_MAXIMUM, callback, user_data);
         if (ret != osOK) { break; }
 
         gain_max_ch0 *= gain_high_ch0;
@@ -433,9 +154,9 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
 
     if (callback) {
         if (ret == osOK) {
-            callback(SENSOR_GAIN_CALIBRATION_STATUS_DONE, user_data);
+            if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_DONE, user_data)) { ret = osError; }
         } else {
-            callback(SENSOR_GAIN_CALIBRATION_STATUS_FAILED, user_data);
+            if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_FAILED, user_data)) { ret = osError; }
         }
     }
 
@@ -443,7 +164,7 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
     sensor_stop();
 
     /* Turn off the lights */
-    light_set_transmission(0);
+    sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
 
     if (ret == osOK) {
         log_i("Gain calibration complete");
@@ -472,77 +193,147 @@ HAL_StatusTypeDef sensor_gain_calibration(sensor_gain_calibration_callback_t cal
         log_e("Gain calibration failed");
     }
 
-    return (ret == osOK) ? HAL_OK : HAL_ERROR;
+    return ret;
 }
 
-HAL_StatusTypeDef sensor_time_calibration(sensor_time_calibration_callback_t callback, void *user_data)
+osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_calibration_callback_t callback, void *user_data)
 {
     osStatus_t ret = osOK;
-    float ch0_readings[6];
+    sensor_reading_t reading;
+    uint32_t ticks_start;
 
-    log_i("Starting integration time calibration");
+    /*
+     * Variables used for regression.
+     * This is all being done with doubles so we don't need
+     * to worry about sums on sensor reading calculations
+     * overflowing.
+     */
+    const double n_real = (double)(LIGHT_CAL_ITERATIONS);
+    double sum_x = 0.0;
+    double sum_xx = 0.0;
+    double sum_xy = 0.0;
+    double sum_y = 0.0;
+    double sum_yy = 0.0;
+    double denominator = 0.0;
+    double slope = 0.0;
+    double intercept = 0.0;
+    double drop_factor = 0.0;
 
-    /* Set lights to initial state */
-    light_set_reflection(0);
-    light_set_transmission(128);
+    char numbuf[16];
 
-    do {
-        /* Put the sensor into a known initial state */
-        sensor_set_config(TSL2591_GAIN_MAXIMUM, TSL2591_TIME_100MS);
-        sensor_start();
-
-        /* Wait for things to stabilize */
-        osDelay(1000);
-
-        /* Loop over each integration time and collect the average measurement on CH0 */
-        for (tsl2591_time_t time = TSL2591_TIME_100MS; time <= TSL2591_TIME_600MS; time++) {
-            float ch0_avg;
-
-            log_i("Measuring %dms integration", tsl2591_get_time_value_ms(time));
-            if (callback) { callback(time, user_data); }
-
-            /* Set integration time for measurement */
-            sensor_set_config(TSL2591_GAIN_MEDIUM, time);
-
-            /* Take an average measurement at the specified time */
-            ret = sensor_read_loop(5, &ch0_avg, NULL, NULL, NULL);
-            if (ret != osOK) { break; }
-
-            /* Check for a bad result */
-            if (ch0_avg <= 0.0F || isnanf(ch0_avg)) {
-                ret = osError;
-                break;
-            }
-            ch0_readings[time] = ch0_avg;
-        }
-    } while (0);
-
-    /* Turn off the sensor */
-    sensor_stop();
-
-    /* Turn off the lights */
-    light_set_transmission(0);
-
-    if (ret == osOK) {
-        log_i("Integration time calibration complete");
-        float measured_time[6];
-        char numbuf[16];
-        for (tsl2591_time_t time = TSL2591_TIME_100MS; time <= TSL2591_TIME_600MS; time++) {
-            if (time == TSL2591_TIME_100MS) {
-                measured_time[time] = 100.0F;
-            } else {
-                measured_time[time] = (ch0_readings[time] / ch0_readings[TSL2591_TIME_100MS]) * 100.0F;
-            }
-
-            float_to_str(measured_time[time], numbuf, 6);
-            log_d("%dms -> %s", tsl2591_get_time_value_ms(time), numbuf);
-            settings_set_cal_time(time, measured_time[time]);
-        }
-    } else {
-        log_e("Integration time calibration failed");
+    /* Parameter validation */
+    if (light_source != SENSOR_LIGHT_REFLECTION && light_source != SENSOR_LIGHT_TRANSMISSION) {
+        return osErrorParameter;
     }
 
-    return (ret == osOK) ? HAL_OK : HAL_ERROR;
+    log_i("Starting LED brightness calibration");
+
+    do {
+        /* Set lights to initial off state */
+        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+
+        /* Rough delay for things to settle */
+        osDelay(1000);
+
+        /* Start the sensor */
+        sensor_set_config(TSL2591_GAIN_HIGH, TSL2591_TIME_200MS);
+        sensor_start();
+
+        /* Swallow the first reading */
+        ret = sensor_get_next_reading(&reading, 2000);
+        if (ret != osOK) { break; }
+
+        /* Set LED to full brightness at the next cycle */
+        sensor_set_light_mode(light_source, /*next_cycle*/true, 128);
+
+        /* Wait for another cycle which will trigger the LED on */
+        ret = sensor_get_next_reading(&reading, 2000);
+        if (ret != osOK) { break; }
+
+        ticks_start = reading.reading_ticks;
+
+        if (callback) {
+            if (!callback(0, user_data)) { ret = osError; break; }
+        }
+
+        /* Iterate over 2 minutes of readings and accumulate regression data */
+        log_d("Starting read loop");
+        for (int i = 0; i < LIGHT_CAL_ITERATIONS; i++) {
+            ret = sensor_get_next_reading(&reading, 1000);
+            if (ret != osOK) { break; }
+
+            double x = log((double)(reading.reading_ticks - ticks_start));
+
+            sum_x += x;
+            sum_xx += x * x;
+            sum_xy += x * (double)reading.ch0_val;
+            sum_y += (double)reading.ch0_val;
+            sum_yy += (double)reading.ch0_val * (double)reading.ch0_val;
+
+            uint8_t progress = lroundf((i / n_real) * 100.0F);
+            if (callback) {
+                if (!callback(progress, user_data)) { ret = osError; break; }
+            }
+        }
+        log_d("Finished read loop");
+    } while (0);
+
+    /* Turn LED off */
+    sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+
+    /* Stop the sensor */
+    sensor_stop();
+
+    if (callback) {
+        if (!callback(100, user_data)) { ret = osError; }
+    }
+
+    osDelay(500);
+
+    if (ret != osOK) {
+        log_e("Light source calibration failed: %d", ret);
+        return ret;
+    }
+
+    denominator = n_real * sum_xx - sum_x * sum_x;
+    if (denominator <= 0.0) {
+        float_to_str(denominator, numbuf, 6);
+        log_e("Denominator calculation error: %s", numbuf);
+        return osError;
+    }
+
+    slope = (n_real * sum_xy - sum_x * sum_y) / denominator;
+    intercept = (sum_y - slope * sum_x) / n_real;
+    drop_factor = slope / intercept;
+
+    /* The drop factor is supposed to be negative */
+    if (drop_factor >= 0.0) {
+        float_to_str(drop_factor, numbuf, 6);
+        log_e("Drop factor calculation error: %s", numbuf);
+        return osError;
+    }
+
+    log_i("LED calibration run complete");
+
+    float_to_str(slope, numbuf, 6);
+    log_d("Slope = %s", numbuf);
+    float_to_str(intercept, numbuf, 6);
+    log_d("Intercept = %s", numbuf);
+    float_to_str(drop_factor, numbuf, 6);
+    log_d("Drop factor = %s", numbuf);
+
+    if (light_source == SENSOR_LIGHT_TRANSMISSION) {
+        settings_set_cal_transmission_led_factor(drop_factor);
+    } else {
+        settings_set_cal_reflection_led_factor(drop_factor);
+    }
+
+    /*
+     * Correction formula is:
+     * ch_val - (ch_val * (drop_factor * log(elapsed_ticks)))
+     */
+
+    return os_to_hal_status(ret);
 }
 
 HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_result, sensor_read_callback_t callback, void *user_data)
@@ -668,14 +459,19 @@ osStatus_t sensor_read_loop(uint8_t count, float *ch0_avg, float *ch1_avg,
  * @param gain_low Low gain value
  * @param gain_high High gain value
  * @param time Integration time for measurements
+ * @param led_brightness LED brightness value for measurements
  * @param gain_ch0 Measured gain for Channel 0
  * @param gain_ch0 Measured gain for Channel 1
  */
 osStatus_t sensor_gain_calibration_loop(
     tsl2591_gain_t gain_low, tsl2591_gain_t gain_high, tsl2591_time_t time,
-    float *gain_ch0, float *gain_ch1)
+    uint8_t led_brightness,
+    float *gain_ch0, float *gain_ch1,
+    sensor_gain_calibration_status_t callback_status,
+    sensor_gain_calibration_callback_t callback, void *user_data)
 {
     osStatus_t ret = osOK;
+    sensor_reading_t discard_reading;
     float ch0_avg_high;
     float ch1_avg_high;
     float ch0_avg_low;
@@ -686,8 +482,23 @@ osStatus_t sensor_gain_calibration_loop(
     }
 
     do {
+        if (callback) {
+            if (!callback(callback_status, user_data)) { ret = osError; break; }
+        }
+
         /* Setup for high gain measurement */
         sensor_set_config(gain_high, time);
+
+        /* Wait for the first reading at the new settings to come through */
+        ret = sensor_get_next_reading(&discard_reading, 2000);
+        if (ret != osOK) { break; }
+
+        /* Set the LED to target brightness on the next cycle */
+        sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, /*next_cycle*/true, led_brightness);
+
+        /* Wait for the next cycle which will turn the LED on */
+        ret = sensor_get_next_reading(&discard_reading, 2000);
+        if (ret != osOK) { break; }
 
         /* Do the high gain read loop */
         log_d("Higher gain loop...");
@@ -696,13 +507,38 @@ osStatus_t sensor_gain_calibration_loop(
 
         log_d("TSL2591[Higher]: CH0=%d, CH1=%d", lroundf(ch0_avg_high), lroundf(ch1_avg_high));
 
+        /* Turn off the LED and wait for it to cool down */
+        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+        if (!sensor_gain_calibration_cooldown(callback, user_data)) {
+            ret = osError;
+            break;
+        }
+
+        if (callback) {
+            if (!callback(callback_status, user_data)) { ret = osError; break; }
+        }
+
         /* Setup for low gain measurement */
         sensor_set_config(gain_low, time);
+
+        /* Wait for the first reading at the new settings to come through */
+        ret = sensor_get_next_reading(&discard_reading, 2000);
+        if (ret != osOK) { break; }
+
+        /* Set the LED to target brightness on the next cycle */
+        sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, /*next_cycle*/true, led_brightness);
+
+        /* Wait for the next cycle which will turn the LED on */
+        ret = sensor_get_next_reading(&discard_reading, 2000);
+        if (ret != osOK) { break; }
 
         /* Do the low gain read loop */
         log_d("Lower gain loop...");
         ret = sensor_read_loop(5, &ch0_avg_low, &ch1_avg_low, NULL, NULL);
         if (ret != osOK) { break; }
+
+        /* Turn off the LED */
+        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
 
         log_d("TSL2591[Lower]: CH0=%d, CH1=%d", lroundf(ch0_avg_low), lroundf(ch1_avg_low));
     } while (0);
@@ -725,6 +561,18 @@ osStatus_t sensor_gain_calibration_loop(
     }
 
     return ret;
+}
+
+bool sensor_gain_calibration_cooldown(sensor_gain_calibration_callback_t callback, void *user_data)
+{
+    log_i("Waiting for cool down");
+    for (int i = 0; i < 15; i++) {
+        if (callback) {
+            if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_COOLDOWN, user_data)) { return false; }
+        }
+        osDelay(1000);
+    }
+    return true;
 }
 
 bool sensor_is_reading_saturated(const sensor_reading_t *reading)
@@ -751,8 +599,15 @@ void sensor_convert_to_basic_counts(tsl2591_gain_t gain, tsl2591_time_t time, fl
     float ch0_gain;
     float ch1_gain;
     float atime_ms;
+
+    /* Get the gain value from calibration */
     settings_get_cal_gain(gain, &ch0_gain, &ch1_gain);
-    settings_get_cal_time(time, &atime_ms);
+
+    /*
+     * Integration time is uncalibrated, due to the assumption that all
+     * target measurements will be done at the same setting.
+     */
+    atime_ms = tsl2591_get_time_value_ms(time);
 
     float ch0_cpl = (atime_ms * ch0_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);
     float ch1_cpl = (atime_ms * ch1_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);

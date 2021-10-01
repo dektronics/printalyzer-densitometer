@@ -12,7 +12,7 @@
 #include "keypad.h"
 #include "display.h"
 #include "light.h"
-#include "sensor.h"
+#include "task_sensor.h"
 #include "adc_handler.h"
 #include "state_controller.h"
 

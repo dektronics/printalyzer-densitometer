@@ -9,6 +9,7 @@
 #include "keypad.h"
 #include "display.h"
 #include "light.h"
+#include "task_sensor.h"
 #include "densitometer.h"
 
 typedef struct {
@@ -59,11 +60,9 @@ void state_reflection_display_process(state_t *state_base, state_controller_t *c
     bool is_detect = keypad_is_detect();
 
     if (is_detect) {
-        light_set_reflection(LIGHT_REFLECTION_IDLE);
-        light_set_transmission(0);
+        sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
     } else {
-        light_set_reflection(0);
-        light_set_transmission(0);
+        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
     }
 
     keypad_event_t keypad_event;
@@ -117,11 +116,9 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
     bool is_detect = keypad_is_detect();
 
     if (is_detect) {
-        light_set_reflection(0);
-        light_set_transmission(LIGHT_TRANSMISSION_IDLE);
+        sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
     } else {
-        light_set_reflection(0);
-        light_set_transmission(0);
+        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
     }
 
     keypad_event_t keypad_event;
