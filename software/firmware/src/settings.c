@@ -344,15 +344,15 @@ void settings_get_cal_transmission_hi(float *d, float *value)
 HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len)
 {
     if (!IS_FLASH_DATA_ADDRESS(address)) {
-        printf("Invalid EEPROM address\n");
+        log_e("Invalid EEPROM address\n");
         return HAL_ERROR;
     }
     if (!IS_FLASH_DATA_ADDRESS((address + data_len) - 1)) {
-        printf("Invalid length\n");
+        log_e("Invalid length\n");
         return HAL_ERROR;
     }
     if (!data || data_len == 0) {
-        printf("Invalid buffer\n");
+        log_e("Invalid buffer\n");
         return HAL_ERROR;
     }
 
@@ -367,28 +367,28 @@ HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, s
 {
     HAL_StatusTypeDef ret = HAL_OK;
     if (!IS_FLASH_DATA_ADDRESS(address)) {
-        printf("Invalid EEPROM address\n");
+        log_e("Invalid EEPROM address\n");
         return HAL_ERROR;
     }
     if (!IS_FLASH_DATA_ADDRESS((address + data_len) - 1)) {
-        printf("Invalid length\n");
+        log_e("Invalid length\n");
         return HAL_ERROR;
     }
     if (!data || data_len == 0) {
-        printf("Invalid buffer\n");
+        log_e("Invalid buffer\n");
         return HAL_ERROR;
     }
 
     ret = HAL_FLASHEx_DATAEEPROM_Unlock();
     if (ret != HAL_OK) {
-        printf("Unable to unlock EEPROM\n");
+        log_e("Unable to unlock EEPROM\n");
         return ret;
     }
 
     for (size_t i = 0; i < data_len; i++) {
         ret = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE, address + i, data[i]);
         if (ret != HAL_OK) {
-            printf("EEPROM write error\n");
+            log_e("EEPROM write error\n");
             break;
         }
     }
