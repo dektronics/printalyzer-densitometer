@@ -303,9 +303,6 @@ void sensor_control_set_light_mode(sensor_light_t light, bool next_cycle, uint8_
 {
     //log_d("sensor_set_light_mode: %d, %d, %d", light, next_cycle, value);
 
-    //TODO Handle tracking of on-time/off-time
-    //TODO Implement next_cycle behavior
-
     uint8_t pending_reflection;
     uint8_t pending_transmission;
 
@@ -364,8 +361,9 @@ void sensor_int_handler()
         light_set_reflection(pending_int_light_change & 0x000000FF);
         light_set_transmission((pending_int_light_change & 0x0000FF00) >> 8);
         light_change_ticks = osKernelGetTickCount();
-        control_event.param = light_change_ticks;
+        pending_int_light_change = 0;
     }
+    control_event.param = light_change_ticks;
     taskEXIT_CRITICAL_FROM_ISR(interrupt_status);
 
     osMessageQueuePut(sensor_control_queue, &control_event, 0, 0);

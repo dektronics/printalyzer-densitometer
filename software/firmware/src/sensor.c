@@ -38,7 +38,8 @@ static osStatus_t sensor_gain_calibration_loop(
     sensor_gain_calibration_status_t callback_status,
     sensor_gain_calibration_callback_t callback, void *user_data);
 static bool sensor_gain_calibration_cooldown(sensor_gain_calibration_callback_t callback, void *user_data);
-static osStatus_t sensor_read_loop(uint8_t count, float *ch0_avg, float *ch1_avg,
+static osStatus_t sensor_raw_read_loop(uint8_t count, float *ch0_avg, float *ch1_avg);
+static osStatus_t sensor_read_loop(sensor_light_t light_source, uint8_t count, float *ch0_avg, float *ch1_avg,
     sensor_read_callback_t callback, void *user_data);
 
 osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data)
@@ -336,7 +337,9 @@ osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_ca
     return os_to_hal_status(ret);
 }
 
-HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_result, sensor_read_callback_t callback, void *user_data)
+osStatus_t sensor_read_target(sensor_light_t light_source, uint8_t iterations,
+    float *ch0_result, float *ch1_result,
+    sensor_read_callback_t callback, void *user_data)
 {
     //TODO This is a test function to try and work out the new task-based process
 
@@ -351,10 +354,18 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
     float ch1_avg = NAN;
     bool is_saturated = false;
 
+    if (light_source != SENSOR_LIGHT_REFLECTION && light_source != SENSOR_LIGHT_TRANSMISSION) {
+        return osErrorParameter;
+    }
+    if (iterations == 0) {
+        return osErrorParameter;
+    }
+
     log_i("Starting (task-based) read, %d iterations", iterations);
 
-    /* Put the sensor into a known initial state, with maximum gain */
+    /* Put the sensor and light into a known initial state, with maximum gain */
     sensor_set_config(gain, time);
+    sensor_set_light_mode(light_source, /*next_cycle*/true, 128);
     sensor_start();
 
     do {
@@ -368,7 +379,7 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
         }
 
         /* Run the read loop */
-        ret = sensor_read_loop(iterations, &ch0_avg, &ch1_avg, callback, user_data);
+        ret = sensor_read_loop(light_source, iterations, &ch0_avg, &ch1_avg, callback, user_data);
         if (ret != osOK) { break; }
 
         /* Check for saturation */
@@ -379,32 +390,34 @@ HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_
 
     /* Turn off the sensor */
     sensor_stop();
+    sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
 
     if (!is_saturated && ret == osOK) {
         log_i("Sensor read complete");
-        uint16_t time_ms = tsl2591_get_time_value_ms(time);
-        log_d("TSL2591: CH0=%d, CH1=%d, Gain=[%d], Time=%dms", lroundf(ch0_avg), lroundf(ch1_avg), gain, time_ms);
-        sensor_convert_to_basic_counts(gain, time, ch0_avg, ch1_avg, ch0_result, ch1_result);
+        if (ch0_result) { *ch0_result = ch0_avg; }
+        if (ch1_result) { *ch1_result = ch1_avg; }
     } else {
         log_e("Sensor read failed: is_saturated=%d, ret=%d", is_saturated, ret);
         if (ret == osOK) {
             ret = osError;
         }
     }
-    return (ret == osOK) ? HAL_OK : HAL_ERROR;
+    return ret;
 }
 
 /**
- * Sensor read loop.
+ * Sensor read loop used for internal calibration purposes.
  *
- * Assumes the sensor is already running and configured.
+ * Assumes the sensor is already running and configured, and returns the
+ * geometric mean of a series of raw sensor readings.
+ * No corrections are performed, so the results from this function should
+ * only be compared to results from a similar run under the same conditions.
  *
  * @param count Number of values to average
  * @param ch0_avg Average reading of Channel 0
  * @param ch1_avg Average reading of Channel 1
  */
-osStatus_t sensor_read_loop(uint8_t count, float *ch0_avg, float *ch1_avg,
-    sensor_read_callback_t callback, void *user_data)
+osStatus_t sensor_raw_read_loop(uint8_t count, float *ch0_avg, float *ch1_avg)
 {
     osStatus_t ret = osOK;
     sensor_reading_t reading;
@@ -425,9 +438,6 @@ osStatus_t sensor_read_loop(uint8_t count, float *ch0_avg, float *ch1_avg,
             break;
         }
 
-        /* Invoke the progress callback */
-        if (callback) { callback(user_data); }
-
         /* Accumulate the results */
         log_v("TSL2591[%d]: CH0=%d, CH1=%d", i, reading.ch0_val, reading.ch1_val);
         if (sensor_is_reading_saturated(&reading)) {
@@ -445,6 +455,73 @@ osStatus_t sensor_read_loop(uint8_t count, float *ch0_avg, float *ch1_avg,
         }
         if (ch1_avg) {
             *ch1_avg = saturation ? NAN : expf(ch1_sum / (float)count);
+        }
+    } else {
+        log_e("Sensor error during read loop: %d", ret);
+    }
+
+    return ret;
+}
+
+/**
+ * Sensor read loop.
+ *
+ * Assumes the sensor is already running and configured.
+ *
+ * @param count Number of values to average
+ * @param ch0_avg Average reading of Channel 0
+ * @param ch1_avg Average reading of Channel 1
+ */
+osStatus_t sensor_read_loop(sensor_light_t light_source, uint8_t count, float *ch0_avg, float *ch1_avg,
+    sensor_read_callback_t callback, void *user_data)
+{
+    osStatus_t ret = osOK;
+    sensor_reading_t reading;
+    float ch0_sum = 0;
+    float ch1_sum = 0;
+    bool saturation = false;
+
+    if (count == 0) {
+        return osErrorParameter;
+    }
+
+    /* Loop over measurements */
+    for (uint8_t i = 0; i < count; i++) {
+        float ch0_basic = 0;
+        float ch1_basic = 0;
+
+        /* Wait for the next reading */
+        ret = sensor_get_next_reading(&reading, 2000);
+        if (ret != osOK) {
+            log_e("sensor_get_next_reading error: %d", ret);
+            break;
+        }
+
+        /* Invoke the progress callback */
+        if (callback) { callback(user_data); }
+
+        log_v("TSL2591[%d]: CH0=%d, CH1=%d", i, reading.ch0_val, reading.ch1_val);
+
+        /* Check raw results for saturation */
+        if (sensor_is_reading_saturated(&reading)) {
+            log_w("Sensor value indicates saturation");
+            saturation = true;
+            break;
+        }
+
+        /* Convert to calibrated basic counts */
+        sensor_convert_to_calibrated_basic_counts(light_source, &reading, &ch0_basic, &ch1_basic);
+
+        ch0_sum += ch0_basic;
+        ch1_sum += ch1_basic;
+    }
+
+    if (ret == osOK) {
+        if (ch0_avg) {
+            *ch0_avg = saturation ? NAN : (ch0_sum / (float)count);
+        }
+        if (ch1_avg) {
+            *ch1_avg = saturation ? NAN : (ch1_sum / (float)count);
         }
     } else {
         log_e("Sensor error during read loop: %d", ret);
@@ -502,7 +579,7 @@ osStatus_t sensor_gain_calibration_loop(
 
         /* Do the high gain read loop */
         log_d("Higher gain loop...");
-        ret = sensor_read_loop(5, &ch0_avg_high, &ch1_avg_high, NULL, NULL);
+        ret = sensor_raw_read_loop(5, &ch0_avg_high, &ch1_avg_high);
         if (ret != osOK) { break; }
 
         log_d("TSL2591[Higher]: CH0=%d, CH1=%d", lroundf(ch0_avg_high), lroundf(ch1_avg_high));
@@ -534,7 +611,7 @@ osStatus_t sensor_gain_calibration_loop(
 
         /* Do the low gain read loop */
         log_d("Lower gain loop...");
-        ret = sensor_read_loop(5, &ch0_avg_low, &ch1_avg_low, NULL, NULL);
+        ret = sensor_raw_read_loop(5, &ch0_avg_low, &ch1_avg_low);
         if (ret != osOK) { break; }
 
         /* Turn off the LED */
@@ -617,5 +694,59 @@ void sensor_convert_to_basic_counts(tsl2591_gain_t gain, tsl2591_time_t time, fl
     }
     if (ch1_basic) {
         *ch1_basic = ch1_val / ch1_cpl;
+    }
+}
+
+void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic)
+{
+    float ch0_gain;
+    float ch1_gain;
+    float atime_ms;
+    float light_drop_factor;
+    float ch0_raw;
+    float ch1_raw;
+    float ch0_cpl;
+    float ch1_cpl;
+    uint32_t light_on_ticks;
+
+    if (!reading) { return; }
+
+    /* Get the gain value from calibration */
+    settings_get_cal_gain(reading->gain, &ch0_gain, &ch1_gain);
+
+    /*
+     * Integration time is uncalibrated, due to the assumption that all
+     * target measurements will be done at the same setting.
+     */
+    atime_ms = tsl2591_get_time_value_ms(reading->time);
+
+    /* Get the light source calibration value */
+    if (light_source == SENSOR_LIGHT_REFLECTION) {
+        settings_get_cal_reflection_led_factor(&light_drop_factor);
+    } else if (light_source == SENSOR_LIGHT_TRANSMISSION) {
+        settings_get_cal_transmission_led_factor(&light_drop_factor);
+    } else {
+        light_drop_factor = NAN;
+    }
+
+    /* Get the readings into floating point variables */
+    ch0_raw = reading->ch0_val;
+    ch1_raw = reading->ch1_val;
+
+    /* Apply the light drop factor */
+    light_on_ticks = reading->reading_ticks - reading->light_ticks;
+    if (!isnanf(light_drop_factor) && light_drop_factor < 0.0F && light_on_ticks > 0 && light_on_ticks < 600000) {
+        ch0_raw -= (ch0_raw * (light_drop_factor * logf(light_on_ticks)));
+        ch1_raw -= (ch1_raw * (light_drop_factor * logf(light_on_ticks)));
+    }
+
+    ch0_cpl = (atime_ms * ch0_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);
+    ch1_cpl = (atime_ms * ch1_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);
+
+    if (ch0_basic) {
+        *ch0_basic = ch0_raw / ch0_cpl;
+    }
+    if (ch1_basic) {
+        *ch1_basic = ch1_raw / ch1_cpl;
     }
 }

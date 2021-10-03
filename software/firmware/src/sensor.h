@@ -74,14 +74,21 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
 osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_calibration_callback_t callback, void *user_data);
 
 /**
- * Perform a reading with the sensor.
+ * Perform a target reading with the sensor.
  *
+ * This function will turn on the selected LED and take a series of readings,
+ * using automatic gain adjustment to arrive at a result in basic counts
+ * from which target density can be calculated.
+ *
+ * @param light_source Light source to use for target measurement
  * @param iterations Number of read iterations to average across
  * @param ch0_result Channel 0 result, in basic counts
  * @param ch1_result Channel 1 result, in basic counts
  * @return HAL_OK on success
  */
-HAL_StatusTypeDef sensor_read(uint8_t iterations, float *ch0_result, float *ch1_result, sensor_read_callback_t callback, void *user_data);
+osStatus_t sensor_read_target(sensor_light_t light_source, uint8_t iterations,
+    float *ch0_result, float *ch1_result,
+    sensor_read_callback_t callback, void *user_data);
 
 /**
  * Check the sensor reading to see if the sensor is saturated.
@@ -107,5 +114,20 @@ bool sensor_is_reading_saturated(const sensor_reading_t *reading);
  * @param ch1_basic Basic count output for channel 1
  */
 void sensor_convert_to_basic_counts(tsl2591_gain_t gain, tsl2591_time_t time, float ch0_val, float ch1_val, float *ch0_basic, float *ch1_basic);
+
+/**
+ * Convert sensor readings from raw counts to basic counts.
+ *
+ * Basic counts are normalized based on the sensor gain, integration time,
+ * and various system constants. This allows them to be compared across
+ * multiple readings and different device settings. All actual light
+ * calculations shall be performed in terms of basic counts.
+ *
+ * @param light_source Light source used to take the readings
+ * @param reading Reading structure with all raw values
+ * @param ch0_basic Basic count output for channel 0
+ * @param ch1_basic Basic count output for channel 1
+ */
+void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic);
 
 #endif /* SENSOR_H */
