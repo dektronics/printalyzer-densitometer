@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 typedef struct {
-    uint8_t *bits;
-    uint16_t width;
-    uint16_t height;
+    const uint8_t *bits;
+    const uint16_t width;
+    const uint16_t height;
 } asset_info_t;
 
 typedef enum {

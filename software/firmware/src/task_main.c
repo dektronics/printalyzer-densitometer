@@ -23,8 +23,8 @@ static void task_main_run(void *argument);
 static void task_usbd_run(void *argument);
 
 typedef struct {
-    osThreadFunc_t task_func;
-    osThreadAttr_t task_attrs;
+    const osThreadFunc_t task_func;
+    const osThreadAttr_t task_attrs;
     osThreadId_t task_handle;
 } task_params_t;
 
