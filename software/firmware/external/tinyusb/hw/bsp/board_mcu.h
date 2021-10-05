@@ -46,7 +46,8 @@
   #include "chip.h"
 
 #elif CFG_TUSB_MCU == OPT_MCU_LPC51UXX || CFG_TUSB_MCU == OPT_MCU_LPC54XXX || \
-      CFG_TUSB_MCU == OPT_MCU_LPC55XX  || CFG_TUSB_MCU == OPT_MCU_MKL25ZXX
+      CFG_TUSB_MCU == OPT_MCU_LPC55XX  || CFG_TUSB_MCU == OPT_MCU_MKL25ZXX || \
+      CFG_TUSB_MCU == OPT_MCU_K32L2BXX
   #include "fsl_device_registers.h"
 
 #elif CFG_TUSB_MCU == OPT_MCU_NRF5X
@@ -130,6 +131,11 @@
 #elif CFG_TUSB_MCU == OPT_MCU_RX63X || CFG_TUSB_MCU == OPT_MCU_RX65X
   // no header needed
 
+#elif CFG_TUSB_MCU == OPT_MCU_GD32VF103
+  #include "gd32vf103.h"
+
+#elif CFG_TUSB_MCU == OPT_MCU_MM32F327X
+  #include "mm32_device.h"
 #else
   #error "Missing MCU header"
 #endif
