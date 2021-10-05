@@ -9,7 +9,7 @@
 
 void vApplicationMallocFailedHook(void)
 {
-    log_e("Malloc failed!\r\n");
+    log_e("Malloc failed!");
     taskDISABLE_INTERRUPTS();
     __ASM volatile("BKPT #01");
     while (1) { }
@@ -19,7 +19,7 @@ void vApplicationStackOverflowHook(xTaskHandle pxTask, char *pcTaskName)
 {
     UNUSED(pxTask);
 
-    log_e("Stack overflow! task=\"%s\"\r\n", pcTaskName);
+    log_e("Stack overflow! task=\"%s\"", pcTaskName);
     taskDISABLE_INTERRUPTS();
     __ASM volatile("BKPT #01");
     while (1) { }
