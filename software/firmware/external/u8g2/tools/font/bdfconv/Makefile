@@ -25,8 +25,25 @@ test:	bdfconv
 greek: bdfconv
 	./bdfconv -f 1 -v -m '32-127,$$370-$$3ff' ../bdf/unifont.bdf -n unifont_greek -o unifont_greek.c -d ../bdf/7x13.bdf
 
+cyrillic: bdfconv
+	./bdfconv -f 1 -v -m '$$20-$$7E, $$410-$$44F' ../bdf/unifont.bdf -n unifont_cyrillic_44f -o unifont_cyrillic_44f.c -d ../bdf/7x13.bdf
+	convert bdf.tga unifont_cyrillic_44f.png
+	./bdfconv -f 1 -v -m '$$20-$$7E, $$400-$$4ff' ../bdf/unifont.bdf -n unifont_cyrillic_4ff -o unifont_cyrillic_4ff.c -d ../bdf/7x13.bdf
+	convert bdf.tga unifont_cyrillic_4ff.png
+
+battery19: bdfconv
+	./bdfconv -f 1 -v -m '32-127' ../bdf/battery19.bdf -n battery19 -o battery19.c -d ../bdf/7x13.bdf
+
 10x20greek: bdfconv
 	./bdfconv -f 1 -v -m '32-127,$$370-$$3ff' ../bdf/10x20.bdf -n 10x20_greek -o 10x20_greek.c -d ../bdf/7x13.bdf
+
+5x7: bdfconv
+	./bdfconv -b 4 -f 1 -a -v -m '32-255' ../bdf/5x7.bdf -n 5x7lcd -o 5x7lcd.c -d ../bdf/7x13.bdf
+
+ti83: bdfconv
+	-../otf2bdf/otf2bdf  -n -p 5 -o ../bdf/ti83.bdf ../ttf/ti83.ttf
+	./bdfconv -b 4 -f 1 -a -v -m '32-65000' ../bdf/ti83.bdf -n u8g2_ti83_5x7 -o ti83.c -d ../bdf/7x13.bdf
+
 
 polish: bdfconv
 	./bdfconv -f 1 -v -m '32-127,$$104-$$107,$$118-$$119,$$141-$$144,$$15a-$$15b,$$179-$$17c,$$d3,$$f3' ../bdf/unifont.bdf -n unifont_polish -o unifont_polish.c -d ../bdf/7x13.bdf
@@ -155,8 +172,11 @@ q_pixia: bdfconv
 	./bdfconv -v -f 1 -m '32-65534' tmp.bdf -o u8g2_font_q_pixia.c  -n u8g2_font_q_pixia -d ../bdf/helvB18.bdf 
 
 inr: bdfconv
-	-../otf2bdf/otf2bdf -a -r 72 -p 33 -o tmp.bdf ../ttf/inr.otf
-	./bdfconv -v -b 2 -f 1 -m '32-128,$$400-$$52f' tmp.bdf -o u8g2_font_inr_m.c  -n u8g2_font_inr_m -d ../bdf/helvB18.bdf 
+	-../otf2bdf/otf2bdf -a -r 72 -p 86 -o tmp.bdf ../ttf/inr.otf
+	./bdfconv -v -b 2 -f 1 -m '42-57' tmp.bdf -o u8g2_font_inr64_m.c  -n u8g2_font_inr64_m -d ../bdf/helvB18.bdf 
+	-../otf2bdf/otf2bdf -a -r 72 -p 43 -o tmp.bdf ../ttf/inr.otf
+	./bdfconv -v -b 2 -f 1 -m '42-57' tmp.bdf -o u8g2_font_inr32_m.c  -n u8g2_font_inr32_m -d ../bdf/helvB18.bdf 
+#	./bdfconv -v -b 2 -f 1 -m '32-128,$$400-$$52f' tmp.bdf -o u8g2_font_inr_m.c  -n u8g2_font_inr_m -d ../bdf/helvB18.bdf 
 
 logisoso92x: bdfconv
 	-../otf2bdf/otf2bdf -a -r 72 -p 131 -o tmp.bdf ../ttf/Logisoso.ttf
@@ -237,6 +257,11 @@ lubr24: bdfconv
 
 lurs24: bdfconv
 	./bdfconv -f 1 -m '32-255' -p 10 luRS24.bdf -o luRS24.c -n u8g2_font_luRS24 -d ../bdf/helvB12.bdf 
+
+luBS18: bdfconv
+	./bdfconv -v -f 1 -m '32-34,36-125,176>35,8364>126' -p 10 ../bdf/luBS18.bdf -o luBS18.c -n u8g2_font_luBS18 -d ../bdf/helvB12.bdf 
+
+
 
 
 
@@ -375,3 +400,11 @@ Aurebesh: bdfconv
 aurebesh_small: bdfconv
 	./bdfconv -v -f 1 -m '$$20-$$ff' aurebesh_small.bdf -o u8g2_font_aurebesh_small.c  -n u8g2_font_aurebesh_small -d ../bdf/helvB18.bdf 
 	convert bdf.tga u8g2_font_aurebesh_small.png
+
+issue_1521: bdfconv
+	./bdfconv -v -f 1 -m '$$0000-$$3B97' ../bdf/unifont.bdf -o unifont_custom.c -n unifont_custom  -d ../bdf/helvB18.bdf 
+	convert bdf.tga unifont_custom.png
+
+out: bdfconv
+	./bdfconv -v -f 1 -m '$$0000-$$3B97' out.bdf -o out.c -n out  -d ../bdf/helvR14.bdf 
+	convert bdf.tga out.png
