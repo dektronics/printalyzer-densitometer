@@ -26,8 +26,21 @@
 
 #define CMD_DATA_SIZE 64
 
+static volatile bool cdc_initialized = false;
 static uint8_t cmd_buffer[CMD_DATA_SIZE];
 static size_t cmd_buffer_len = 0;
+
+/* Semaphore used to unblock the task when new data is available */
+static osSemaphoreId_t cdc_rx_semaphore = NULL;
+static const osSemaphoreAttr_t cdc_rx_semaphore_attrs = {
+    .name = "cdc_rx_semaphore"
+};
+
+/* Mutex used to allow CDC writes from different tasks */
+static osMutexId_t cdc_mutex = NULL;
+static const osMutexAttr_t cdc_mutex_attrs = {
+    .name = "cdc_mutex"
+};
 
 static void cdc_task_loop();
 static void cdc_process_command(const char *cmd, size_t len);
@@ -45,16 +58,27 @@ static void cdc_send_response(const char *str);
 
 extern I2C_HandleTypeDef hi2c1;
 
-void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
-{
-    log_d("cdc_line_state: itf=%d, dtr=%d, rts=%d", itf, dtr, rts);
-}
-
 void task_cdc_run(void *argument)
 {
     osSemaphoreId_t task_start_semaphore = argument;
 
     log_d("cdc_task start");
+
+    /* Create the CDC RX semaphore */
+    cdc_rx_semaphore = osSemaphoreNew(1, 0, &cdc_rx_semaphore_attrs);
+    if (!cdc_rx_semaphore) {
+        log_e("cdc_rx_semaphore create error");
+        return;
+    }
+
+    /* Create the CDC write mutex */
+    cdc_mutex = osMutexNew(&cdc_mutex_attrs);
+    if (!cdc_mutex) {
+        log_e("Unable to create cdc_mutex");
+        return;
+    }
+
+    cdc_initialized = true;
 
     /* Release the startup semaphore */
     if (osSemaphoreRelease(task_start_semaphore) != osOK) {
@@ -66,9 +90,28 @@ void task_cdc_run(void *argument)
         /* Process data */
         cdc_task_loop();
 
-        /* Wait a bit */
-        osDelay(pdMS_TO_TICKS(10));
+        /* Block for new data */
+        if (osSemaphoreAcquire(cdc_rx_semaphore, portMAX_DELAY) != osOK) {
+            log_e("Unable to acquire cdc_rx_semaphore");
+        }
     }
+}
+
+void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
+{
+    log_d("cdc_line_state: itf=%d, dtr=%d, rts=%d", itf, dtr, rts);
+}
+
+void tud_cdc_tx_complete_cb(uint8_t itf)
+{
+    /* log_d("tud_cdc_tx_complete_cb: itf=%d", itf); */
+}
+
+void tud_cdc_rx_cb(uint8_t itf)
+{
+    /* log_d("tud_cdc_rx_cb: itf=%d", itf); */
+    if (!cdc_initialized) { return; }
+    osSemaphoreRelease(cdc_rx_semaphore);
 }
 
 void cdc_task_loop()
@@ -86,8 +129,10 @@ void cdc_task_loop()
         uint32_t count = tud_cdc_read(buf, sizeof(buf));
 
         /* Echo back out the device */
+        osMutexAcquire(cdc_mutex, portMAX_DELAY);
         tud_cdc_write(buf, count);
         tud_cdc_write_flush();
+        osMutexRelease(cdc_mutex);
 
         for (size_t i = 0; i < count; i++) {
             /* Fill buffer as long as there is space */
@@ -680,6 +725,8 @@ void cdc_send_response(const char *str)
 
 void cdc_write(const char *buf, size_t len)
 {
+    osMutexAcquire(cdc_mutex, portMAX_DELAY);
     tud_cdc_write(buf, len);
     tud_cdc_write_flush();
+    osMutexRelease(cdc_mutex);
 }
