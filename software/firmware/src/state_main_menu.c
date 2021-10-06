@@ -161,8 +161,6 @@ void main_menu_calibration(state_main_menu_t *state, state_controller_t *control
 void main_menu_calibration_reflection(state_main_menu_t *state, state_controller_t *controller)
 {
     char buf[128];
-    char numbuf1[16];
-    char numbuf2[16];
     float cal_lo_d;
     float cal_hi_d;
     uint8_t option = 1;
@@ -173,14 +171,11 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
     settings_get_cal_reflection_hi(&cal_hi_d, NULL);
 
     do {
-        float_to_str(cal_lo_d, numbuf1, 2);
-        float_to_str(cal_hi_d, numbuf2, 2);
-
-        sprintf(buf,
-            "CAL-LO  [%4s]\n"
-            "CAL-HI  [%4s]\n"
+        sprintf_(buf,
+            "CAL-LO  [%.2f]\n"
+            "CAL-HI  [%.2f]\n"
             "** Measure **",
-            numbuf1, numbuf2);
+            cal_lo_d, cal_hi_d);
 
         option = display_selection_list(
             "Reflection", option, buf);
@@ -290,7 +285,6 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
 void main_menu_calibration_transmission(state_main_menu_t *state, state_controller_t *controller)
 {
     char buf[128];
-    char numbuf[16];
     float cal_hi_d;
     uint8_t option = 1;
 
@@ -299,12 +293,10 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
     settings_get_cal_transmission_hi(&cal_hi_d, NULL);
 
     do {
-        float_to_str(cal_hi_d, numbuf, 2);
-
-        sprintf(buf,
-            "CAL-HI  [%4s]\n"
+        sprintf_(buf,
+            "CAL-HI  [%.2f]\n"
             "** Measure **",
-            numbuf);
+            cal_hi_d);
 
         option = display_selection_list(
             "Transmission", option, buf);
@@ -566,8 +558,6 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
     bool config_changed = true;
     bool settings_changed = true;
     char buf[128];
-    char numbuf1[16];
-    char numbuf2[16];
 
     sensor_set_config(gain, time);
     sensor_start();
@@ -667,13 +657,11 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
             bool is_detect = keypad_is_detect();
             if (display_mode) {
                 sensor_convert_to_basic_counts(reading.gain, reading.time, reading.ch0_val, reading.ch1_val, &ch0_basic, &ch1_basic);
-                float_to_str(ch0_basic, numbuf1, 5);
-                float_to_str(ch1_basic, numbuf2, 5);
-                sprintf(buf,
-                    "CH0=%s\n"
-                    "CH1=%s\n"
+                sprintf_(buf,
+                    "CH0=%.5f\n"
+                    "CH1=%.5f\n"
                     "[%c][%d][%c][%c]",
-                    numbuf1, numbuf2,
+                    ch0_basic, ch1_basic,
                     gain_ch, tsl2591_get_time_value_ms(time), light_ch,
                     (is_detect ? '*' : ' '));
             } else {

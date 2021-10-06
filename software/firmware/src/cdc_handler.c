@@ -264,11 +264,9 @@ void cdc_command_measure_reflection(const char *cmd, size_t len)
     densitometer_result_t result = densitometer_reflection_measure(NULL, NULL);
     if (result == DENSITOMETER_OK) {
         char buf[128];
-        char numbuf[16];
 
         float meas_d = densitometer_reflection_get_last_reading();
-        float_to_str(meas_d, numbuf, 2);
-        sprintf(buf, "MR,D=%s\r\n", numbuf);
+        sprintf_(buf, "MR,D=%.2f\r\n", meas_d);
         cdc_send_response(buf);
 
     } else if (result == DENSITOMETER_CAL_ERROR) {
@@ -295,11 +293,9 @@ void cdc_command_measure_transmission(const char *cmd, size_t len)
     densitometer_result_t result = densitometer_transmission_measure(NULL, NULL);
     if (result == DENSITOMETER_OK) {
         char buf[128];
-        char numbuf[16];
 
         float meas_d = densitometer_transmission_get_last_reading();
-        float_to_str(meas_d, numbuf, 2);
-        sprintf(buf, "MT,D=%s\r\n", numbuf);
+        sprintf_(buf, "MT,D=%.2f\r\n", meas_d);
         cdc_send_response(buf);
 
     } else if (result == DENSITOMETER_CAL_ERROR) {
@@ -336,26 +332,18 @@ void cdc_command_cal_gain(const char *cmd, size_t len)
         }
     } else if (prefix == 'P') {
         char buf[128];
-        char numbuf1[16];
-        char numbuf2[16];
         float ch0_gain, ch1_gain;
 
         settings_get_cal_gain(TSL2591_GAIN_MEDIUM, &ch0_gain, &ch1_gain);
-        float_to_str(ch0_gain, numbuf1, 2);
-        float_to_str(ch1_gain, numbuf2, 2);
-        sprintf(buf, "TSL2591,MEDIUM,%s,%s\r\n", numbuf1, numbuf2);
+        sprintf_(buf, "TSL2591,MEDIUM,%.2f,%.2f\r\n", ch0_gain, ch1_gain);
         cdc_send_response(buf);
 
         settings_get_cal_gain(TSL2591_GAIN_HIGH, &ch0_gain, &ch1_gain);
-        float_to_str(ch0_gain, numbuf1, 2);
-        float_to_str(ch1_gain, numbuf2, 2);
-        sprintf(buf, "TSL2591,HIGH,%s,%s\r\n", numbuf1, numbuf2);
+        sprintf_(buf, "TSL2591,HIGH,%.2f,%.2f\r\n", ch0_gain, ch1_gain);
         cdc_send_response(buf);
 
         settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &ch0_gain, &ch1_gain);
-        float_to_str(ch0_gain, numbuf1, 2);
-        float_to_str(ch1_gain, numbuf2, 2);
-        sprintf(buf, "TSL2591,MAXIMUM,%s,%s\r\n", numbuf1, numbuf2);
+        sprintf_(buf, "TSL2591,MAXIMUM,%.2f,%.2f\r\n", ch0_gain, ch1_gain);
         cdc_send_response(buf);
     }
 }
@@ -405,11 +393,7 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
         }
 
         if (result == DENSITOMETER_OK) {
-            char numbuf1[16];
-            char numbuf2[16];
-            float_to_str(d, numbuf1, 2);
-            float_to_str(meas_value, numbuf2, 6);
-            log_i("CAL, %c, D=%s, VALUE=%s", mode, numbuf1, numbuf2);
+            log_i("CAL, %c, D=%.2f, VALUE=%f", mode, d, meas_value);
 
             cdc_send_response("OK\r\n");
         } else {
@@ -420,8 +404,6 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
 
     } else if (prefix == 'P') {
         char buf[128];
-        char numbuf1[16];
-        char numbuf2[16];
         float d = 0;
         float value = 0;
 
@@ -431,9 +413,7 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
             settings_get_cal_reflection_hi(&d, &value);
         }
 
-        float_to_str(d, numbuf1, 2);
-        float_to_str(value, numbuf2, 6);
-        sprintf(buf, "CAL,%c,%s,%s\r\n", mode, numbuf1, numbuf2);
+        sprintf_(buf, "CAL,%c,%.2f,%f\r\n", mode, d, value);
         cdc_send_response(buf);
     }
 }
@@ -479,11 +459,7 @@ void cdc_command_cal_transmission(const char *cmd, size_t len)
         }
 
         if (result == DENSITOMETER_OK) {
-            char numbuf1[16];
-            char numbuf2[16];
-            float_to_str(d, numbuf1, 2);
-            float_to_str(meas_value, numbuf2, 6);
-            log_i("CAL, %c, D=%s, VALUE=%s", mode, numbuf1, numbuf2);
+            log_i("CAL, %c, D=%.2f, VALUE=%f", mode, d, meas_value);
 
             cdc_send_response("OK\r\n");
         } else {
@@ -494,20 +470,15 @@ void cdc_command_cal_transmission(const char *cmd, size_t len)
 
     } else if (prefix == 'P') {
         char buf[128];
-        char numbuf1[16];
-        char numbuf2[16];
         float d = 0;
         float value = 0;
 
         if (mode == 'Z') {
             settings_get_cal_transmission_zero(&value);
-            float_to_str(value, numbuf1, 6);
-            sprintf(buf, "CAL,%c,%s\r\n", mode, numbuf1);
+            sprintf_(buf, "CAL,%c,%f\r\n", mode, value);
         } else if (mode == 'H') {
             settings_get_cal_transmission_hi(&d, &value);
-            float_to_str(d, numbuf1, 2);
-            float_to_str(value, numbuf2, 6);
-            sprintf(buf, "CAL,%c,%s,%s\r\n", mode, numbuf1, numbuf2);
+            sprintf_(buf, "CAL,%c,%.2f,%f\r\n", mode, d, value);
         } else {
             sprintf(buf, "ERR\r\n");
         }
@@ -705,16 +676,12 @@ void cdc_command_diag_sensor(const char *cmd, size_t len)
             float ch0_basic;
             float ch1_basic;
             char buf[128];
-            char numbuf1[16];
-            char numbuf2[16];
 
             sensor_convert_to_basic_counts(gain, time, ch0_val, ch1_val, &ch0_basic, &ch1_basic);
-            float_to_str(ch0_basic, numbuf1, 6);
-            float_to_str(ch1_basic, numbuf2, 6);
 
-            sprintf(buf, "TSL2591,%d,%d,%s,%s\r\n", ch0_val, ch1_val, numbuf1, numbuf2);
+            sprintf_(buf, "TSL2591,%d,%d,%f,%f\r\n", ch0_val, ch1_val, ch0_basic, ch1_basic);
             cdc_send_response(buf);
-            log_d("TSL2591: CH0=%d, CH1=%d, %s, %s", ch0_val, ch1_val, numbuf1, numbuf2);
+            log_d("TSL2591: CH0=%d, CH1=%d, %f, %f", ch0_val, ch1_val, ch0_basic, ch1_basic);
         } else {
             cdc_send_response("ERR\r\n");
         }

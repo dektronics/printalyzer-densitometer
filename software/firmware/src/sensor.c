@@ -170,22 +170,10 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
     if (ret == osOK) {
         log_i("Gain calibration complete");
 
-        char numbuf0[16];
-        char numbuf1[16];
-
         log_d("Low -> 1.000000 1.000000");
-
-        float_to_str(gain_med_ch0, numbuf0, 6);
-        float_to_str(gain_med_ch1, numbuf1, 6);
-        log_d("Med -> %s %s", numbuf0, numbuf1);
-
-        float_to_str(gain_high_ch0, numbuf0, 6);
-        float_to_str(gain_high_ch1, numbuf1, 6);
-        log_d("High -> %s %s", numbuf0, numbuf1);
-
-        float_to_str(gain_max_ch0, numbuf0, 6);
-        float_to_str(gain_max_ch1, numbuf1, 6);
-        log_d("Max -> %s %s", numbuf0, numbuf1);
+        log_d("Med -> %f %f", gain_med_ch0, gain_med_ch1);
+        log_d("High -> %f %f", gain_high_ch0, gain_high_ch1);
+        log_d("Max -> %f %f", gain_max_ch0, gain_max_ch1);
 
         settings_set_cal_gain(TSL2591_GAIN_MEDIUM, gain_med_ch0, gain_med_ch1);
         settings_set_cal_gain(TSL2591_GAIN_HIGH, gain_high_ch0, gain_high_ch1);
@@ -219,8 +207,6 @@ osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_ca
     double slope = 0.0;
     double intercept = 0.0;
     double drop_factor = 0.0;
-
-    char numbuf[16];
 
     /* Parameter validation */
     if (light_source != SENSOR_LIGHT_REFLECTION && light_source != SENSOR_LIGHT_TRANSMISSION) {
@@ -298,8 +284,7 @@ osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_ca
 
     denominator = n_real * sum_xx - sum_x * sum_x;
     if (denominator <= 0.0) {
-        float_to_str(denominator, numbuf, 6);
-        log_e("Denominator calculation error: %s", numbuf);
+        log_e("Denominator calculation error: %f", denominator);
         return osError;
     }
 
@@ -309,19 +294,15 @@ osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_ca
 
     /* The drop factor is supposed to be negative */
     if (drop_factor >= 0.0) {
-        float_to_str(drop_factor, numbuf, 6);
-        log_e("Drop factor calculation error: %s", numbuf);
+        log_e("Drop factor calculation error: %f", drop_factor);
         return osError;
     }
 
     log_i("LED calibration run complete");
 
-    float_to_str(slope, numbuf, 6);
-    log_d("Slope = %s", numbuf);
-    float_to_str(intercept, numbuf, 6);
-    log_d("Intercept = %s", numbuf);
-    float_to_str(drop_factor, numbuf, 6);
-    log_d("Drop factor = %s", numbuf);
+    log_d("Slope = %f", slope);
+    log_d("Intercept = %f", intercept);
+    log_d("Drop factor = %f", drop_factor);
 
     if (light_source == SENSOR_LIGHT_TRANSMISSION) {
         settings_set_cal_transmission_led_factor(drop_factor);

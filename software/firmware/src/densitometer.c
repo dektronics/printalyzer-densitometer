@@ -25,8 +25,6 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     float cal_lo_value;
     float cal_hi_d;
     float cal_hi_value;
-    char numbuf1[16];
-    char numbuf2[16];
 
     /* Get the current calibration values */
     settings_get_cal_reflection_lo(&cal_lo_d, &cal_lo_value);
@@ -38,13 +36,9 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
 
         log_w("Invalid calibration values");
 
-        float_to_str(cal_lo_d, numbuf1, 2);
-        float_to_str(cal_lo_value, numbuf2, 6);
-        log_w("CAL-LO: D=%s, VALUE=%s", numbuf1, numbuf2);
+        log_w("CAL-LO: D=%.2f, VALUE=%f", cal_lo_d, cal_lo_value);
 
-        float_to_str(cal_hi_d, numbuf1, 2);
-        float_to_str(cal_hi_value, numbuf2, 6);
-        log_w("CAL-HI: D=%s, VALUE=%s", numbuf1, numbuf2);
+        log_w("CAL-HI: D=%.2f, VALUE=%f", cal_hi_d, cal_hi_value);
 
         return DENSITOMETER_CAL_ERROR;
     }
@@ -73,9 +67,7 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     /* Calculate the measured density */
     float meas_d = (m * (meas_ll - cal_lo_ll)) + cal_lo_d;
 
-    float_to_str(meas_d, numbuf1, 2);
-    float_to_str(meas_value, numbuf2, 6);
-    log_i("D=%s, VALUE=%s", numbuf1, numbuf2);
+    log_i("D=%.2f, VALUE=%f", meas_d, meas_value);
 
     /* Clamp the return value to be within an acceptable range */
     if (meas_d < 0.0F) { meas_d = 0.0F; }
@@ -120,8 +112,6 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     float cal_zero_value;
     float cal_hi_d;
     float cal_hi_value;
-    char numbuf1[16];
-    char numbuf2[16];
 
     /* Get the current calibration values */
     settings_get_cal_transmission_zero(&cal_zero_value);
@@ -132,13 +122,8 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
         || cal_hi_value >= cal_zero_value) {
 
         log_w("Invalid calibration values");
-
-        float_to_str(cal_zero_value, numbuf1, 6);
-        log_w("CAL-ZERO: VALUE=%s", numbuf1);
-
-        float_to_str(cal_hi_d, numbuf1, 2);
-        float_to_str(cal_hi_value, numbuf2, 6);
-        log_w("CAL-HI: D=%s, VALUE=%s", numbuf1, numbuf2);
+        log_w("CAL-ZERO: VALUE=%f", cal_zero_value);
+        log_w("CAL-HI: D=%.2f, VALUE=%f", cal_hi_d, cal_hi_value);
 
         return DENSITOMETER_CAL_ERROR;
     }
@@ -167,9 +152,7 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     /* Calculate the calibration corrected density */
     float corr_d = meas_d * adj_factor;
 
-    float_to_str(corr_d, numbuf1, 2);
-    float_to_str(meas_value, numbuf2, 6);
-    log_i("D=%s, VALUE=%s", numbuf1, numbuf2);
+    log_i("D=%.2f, VALUE=%f", corr_d, meas_value);
 
     /* Clamp the return value to be within an acceptable range */
     if (corr_d < 0.0F) { corr_d = 0.0F; }

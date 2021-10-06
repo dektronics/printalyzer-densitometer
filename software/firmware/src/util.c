@@ -1,13 +1,5 @@
 #include "util.h"
 
-#include <math.h>
-#include <printf.h>
-
-void float_to_str(float value, char *buf, uint8_t decimals)
-{
-    sprintf_(buf, "%f", value);
-}
-
 osStatus_t hal_to_os_status(HAL_StatusTypeDef hal_status)
 {
     switch (hal_status) {
