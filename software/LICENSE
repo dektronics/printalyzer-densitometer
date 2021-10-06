@@ -85,3 +85,13 @@
  Library has been modified as necessary for project integration purposes.
 
 ******************************************************************************
+
+ mpaland printf
+
+ Path:     firmware/external/printf
+ Upstream: https://github.com/mpaland/printf
+ License:  MIT
+
+ Library has been modified as necessary for project integration purposes.
+
+******************************************************************************
