@@ -2,7 +2,7 @@
 
 #define LOG_TAG "settings"
 
-#include <stdio.h>
+#include <printf.h>
 #include <string.h>
 #include <math.h>
 #include <elog.h>

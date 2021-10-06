@@ -65,7 +65,7 @@
 #endif
 
 // support for exponential floating point notation (%e/%g)
-// default: activated
+// defalt: activated
 #ifndef PRINTF_DISABLE_SUPPORT_EXPONENTIAL
 #define PRINTF_SUPPORT_EXPONENTIAL
 #endif

@@ -2,7 +2,7 @@
 
 #define LOG_TAG "main"
 
-#include <stdio.h>
+#include <printf.h>
 #include <cmsis_os.h>
 #include <elog.h>
 

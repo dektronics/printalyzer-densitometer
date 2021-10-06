@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #define LOG_TAG "freertos"
 #include <elog.h>
 

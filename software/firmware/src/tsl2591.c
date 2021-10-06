@@ -4,7 +4,6 @@
 
 #include "stm32l0xx_hal.h"
 
-#include <stdio.h>
 #include <elog.h>
 
 /* I2C device address */

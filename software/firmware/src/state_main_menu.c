@@ -2,7 +2,7 @@
 
 #define LOG_TAG "state_main_menu"
 
-#include <stdio.h>
+#include <printf.h>
 #include <math.h>
 #include <elog.h>
 

@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <elog.h>
+#include <printf.h>
 
 #include "settings.h"
 #include "sensor.h"

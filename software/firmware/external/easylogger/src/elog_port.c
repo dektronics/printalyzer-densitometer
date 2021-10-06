@@ -27,7 +27,7 @@
  */
 
 #include <elog.h>
-#include <stdio.h>
+#include <printf.h>
 #include <unistd.h>
 #include <cmsis_os.h>
 #include "stm32l0xx_hal.h"

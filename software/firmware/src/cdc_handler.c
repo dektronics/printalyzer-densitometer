@@ -5,7 +5,7 @@
 
 #include "stm32l0xx_hal.h"
 
-#include <stdio.h>
+#include <printf.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

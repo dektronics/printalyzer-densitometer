@@ -1,6 +1,6 @@
 #include "display.h"
 
-#include <stdio.h>
+#include <printf.h>
 #include <stdlib.h>
 #include <string.h>
 

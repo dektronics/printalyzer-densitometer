@@ -2,7 +2,6 @@
 
 #define LOG_TAG "u8g2"
 
-#include <stdio.h>
 #include <elog.h>
 #include <cmsis_os.h>
 
