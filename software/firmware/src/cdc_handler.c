@@ -25,8 +25,11 @@
 #include "util.h"
 
 #define CMD_DATA_SIZE 64
+#define CDC_TX_TIMEOUT 200
+#define CDC_MIN_BIT_RATE 9600
 
 static volatile bool cdc_initialized = false;
+static volatile bool cdc_host_connected = false;
 static uint8_t cmd_buffer[CMD_DATA_SIZE];
 static size_t cmd_buffer_len = 0;
 
@@ -34,6 +37,12 @@ static size_t cmd_buffer_len = 0;
 static osSemaphoreId_t cdc_rx_semaphore = NULL;
 static const osSemaphoreAttr_t cdc_rx_semaphore_attrs = {
     .name = "cdc_rx_semaphore"
+};
+
+/* Semaphore used to synchronize data writing */
+static osSemaphoreId_t cdc_tx_semaphore = NULL;
+static const osSemaphoreAttr_t cdc_tx_semaphore_attrs = {
+    .name = "cdc_tx_semaphore"
 };
 
 /* Mutex used to allow CDC writes from different tasks */
@@ -71,6 +80,13 @@ void task_cdc_run(void *argument)
         return;
     }
 
+    /* Create the CDC TX semaphore */
+    cdc_tx_semaphore = osSemaphoreNew(1, 0, &cdc_tx_semaphore_attrs);
+    if (!cdc_tx_semaphore) {
+        log_e("cdc_tx_semaphore create error");
+        return;
+    }
+
     /* Create the CDC write mutex */
     cdc_mutex = osMutexNew(&cdc_mutex_attrs);
     if (!cdc_mutex) {
@@ -99,12 +115,34 @@ void task_cdc_run(void *argument)
 
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
-    log_d("cdc_line_state: itf=%d, dtr=%d, rts=%d", itf, dtr, rts);
+    log_d("tud_cdc_line_state: itf=%d, dtr=%d, rts=%d", itf, dtr, rts);
+    osMutexAcquire(cdc_mutex, portMAX_DELAY);
+    if (dtr) {
+        cdc_line_coding_t *coding = NULL;
+        tud_cdc_get_line_coding(coding);
+        cdc_host_connected = !coding || (coding->bit_rate >= CDC_MIN_BIT_RATE);
+    } else {
+        cdc_host_connected = false;
+    }
+    osMutexRelease(cdc_mutex);
+}
+
+void tud_cdc_line_coding_cb(uint8_t itf, cdc_line_coding_t const* p_line_coding)
+{
+    log_d("tud_cdc_line_coding: itf=%d, bit_rate=%d", itf, p_line_coding->bit_rate);
+    osMutexAcquire(cdc_mutex, portMAX_DELAY);
+    if (p_line_coding->bit_rate < CDC_MIN_BIT_RATE) {
+        log_w("Bit rate not supported: %d < %d", p_line_coding->bit_rate, CDC_MIN_BIT_RATE);
+        cdc_host_connected = false;
+    }
+    osMutexRelease(cdc_mutex);
 }
 
 void tud_cdc_tx_complete_cb(uint8_t itf)
 {
     /* log_d("tud_cdc_tx_complete_cb: itf=%d", itf); */
+    if (!cdc_initialized) { return; }
+    osSemaphoreRelease(cdc_tx_semaphore);
 }
 
 void tud_cdc_rx_cb(uint8_t itf)
@@ -129,10 +167,7 @@ void cdc_task_loop()
         uint32_t count = tud_cdc_read(buf, sizeof(buf));
 
         /* Echo back out the device */
-        osMutexAcquire(cdc_mutex, portMAX_DELAY);
-        tud_cdc_write(buf, count);
-        tud_cdc_write_flush();
-        osMutexRelease(cdc_mutex);
+        cdc_write(buf, count);
 
         for (size_t i = 0; i < count; i++) {
             /* Fill buffer as long as there is space */
@@ -726,7 +761,15 @@ void cdc_send_response(const char *str)
 void cdc_write(const char *buf, size_t len)
 {
     osMutexAcquire(cdc_mutex, portMAX_DELAY);
-    tud_cdc_write(buf, len);
-    tud_cdc_write_flush();
+    if (cdc_host_connected) {
+        tud_cdc_write(buf, len);
+        tud_cdc_write_flush();
+        if (osSemaphoreAcquire(cdc_tx_semaphore, CDC_TX_TIMEOUT) != osOK) {
+            log_e("Unable to acquire cdc_tx_semaphore");
+            tud_cdc_write_clear();
+            tud_cdc_abort_transfer();
+            cdc_host_connected = false;
+        }
+    }
     osMutexRelease(cdc_mutex);
 }
