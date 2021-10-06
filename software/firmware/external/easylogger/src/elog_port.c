@@ -26,6 +26,8 @@
  * Created on: 2015-04-28
  */
 
+#include "elog_port.h"
+
 #include <elog.h>
 #include <printf.h>
 #include <unistd.h>
@@ -33,12 +35,15 @@
 #include "stm32l0xx_hal.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
+#include "cdc_handler.h"
 
 static osMutexId_t elog_mutex = NULL;
 static const osMutexAttr_t elog_mutex_attributes = {
     .name = "elog_mutex",
     .attr_bits = osMutexRecursive
 };
+
+static elog_port_output_callback_t output_callback = NULL;
 
 /**
  * EasyLogger port initialize
@@ -68,7 +73,11 @@ void elog_port_deinit(void)
  */
 void elog_port_output(const char *log, size_t size)
 {
-    write(1, log, size);
+    if (output_callback) {
+        output_callback(log, size);
+    } else {
+        write(1, log, size);
+    }
 }
 
 /**
@@ -138,4 +147,14 @@ const char *elog_port_get_t_info(void)
         t_info[0] = '\0';
     }
     return t_info;
+}
+
+/**
+ * Assign a callback to redirect log output
+ */
+void elog_port_redirect(elog_port_output_callback_t callback)
+{
+    elog_port_output_lock();
+    output_callback = callback;
+    elog_port_output_unlock();
 }

@@ -2,6 +2,7 @@
 
 #define LOG_TAG "cdc_handler"
 #include <elog.h>
+#include <elog_port.h>
 
 #include "stm32l0xx_hal.h"
 
@@ -198,6 +199,7 @@ void cdc_task_loop()
     }
 }
 
+extern void elog_redirect(bool value);
 void cdc_process_command(const char *cmd, size_t len)
 {
     if (len == 0 || cmd[0] == '\0') {
@@ -242,6 +244,14 @@ void cdc_process_command(const char *cmd, size_t len)
             cdc_command_diag_light(cmd, len);
         } else if (diag_prefix == 'S') {
             cdc_command_diag_sensor(cmd, len);
+        }
+    } else if (cmd_prefix == 'L' && len > 1) {
+        /* Logging command */
+        char log_prefix = toupper(cmd[1]);
+        if (log_prefix == 'U') {
+            elog_port_redirect(cdc_write);
+        } else if (log_prefix == 'D') {
+            elog_port_redirect(NULL);
         }
     }
 }
