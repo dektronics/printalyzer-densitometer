@@ -57,6 +57,7 @@ static void cdc_command_version(const char *cmd, size_t len);
 static void cdc_command_measure_reflection(const char *cmd, size_t len);
 static void cdc_command_measure_transmission(const char *cmd, size_t len);
 static void cdc_command_cal_gain(const char *cmd, size_t len);
+static void cdc_command_cal_light(const char *cmd, size_t len);
 static void cdc_command_cal_reflection(const char *cmd, size_t len);
 static void cdc_command_cal_transmission(const char *cmd, size_t len);
 static void cdc_command_diag_system(const char *cmd, size_t len);
@@ -223,6 +224,8 @@ void cdc_process_command(const char *cmd, size_t len)
         char cal_prefix = toupper(cmd[1]);
         if (cal_prefix == 'G') {
             cdc_command_cal_gain(cmd, len);
+        } else if (cal_prefix == 'L') {
+            cdc_command_cal_light(cmd, len);
         } else if (cal_prefix == 'R') {
             cdc_command_cal_reflection(cmd, len);
         } else if (cal_prefix == 'T') {
@@ -345,6 +348,49 @@ void cdc_command_cal_gain(const char *cmd, size_t len)
         settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &ch0_gain, &ch1_gain);
         sprintf_(buf, "TSL2591,MAXIMUM,%.2f,%.2f\r\n", ch0_gain, ch1_gain);
         cdc_send_response(buf);
+    }
+}
+
+void cdc_command_cal_light(const char *cmd, size_t len)
+{
+    /*
+     * "CL" : Calibration Light Source
+     * "CLM" -> Measure light source drop over time and save as calibration values
+     * "CLP" -> Return currently saved light source calibration values
+     */
+
+    if (len < 3) {
+        return;
+    }
+
+    char prefix = toupper(cmd[2]);
+
+    if (prefix == 'M') {
+        osStatus_t ret = osOK;
+        do {
+            ret = sensor_light_calibration(SENSOR_LIGHT_REFLECTION, NULL, NULL);
+            if (ret != osOK) { break; }
+            ret = sensor_light_calibration(SENSOR_LIGHT_TRANSMISSION, NULL, NULL);
+            if (ret != osOK) { break; }
+        } while (0);
+        if (ret == osOK) {
+            cdc_send_response("OK\r\n");
+        } else {
+            cdc_send_response("ERR\r\n");
+        }
+    } else if (prefix == 'P') {
+        char buf[128];
+        float value;
+
+        settings_get_cal_reflection_led_factor(&value);
+        sprintf_(buf, "LIGHT,REFL,%f\r\n", value);
+        cdc_send_response(buf);
+
+        settings_get_cal_transmission_led_factor(&value);
+        sprintf_(buf, "LIGHT,TRAN,%f\r\n", value);
+        cdc_send_response(buf);
+
+        cdc_send_response("OK\r\n");
     }
 }
 
