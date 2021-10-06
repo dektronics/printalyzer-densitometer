@@ -5,8 +5,8 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 1
 Title "Printalyzer Densitometer - Transmission LED Board"
-Date "2021-06-15"
-Rev "A"
+Date "2021-10-06"
+Rev "B"
 Comp "Dektronics"
 Comment1 "Derek Konigsberg"
 Comment2 ""
@@ -19,7 +19,7 @@ U 1 1 609352D1
 P 2575 2150
 F 0 "D1" H 2575 2275 50  0000 C CNN
 F 1 "LED" H 2575 2025 50  0000 C CNN
-F 2 "lib_fp:LED_WL-SWTP-3022" H 2575 2150 50  0001 C CNN
+F 2 "lib_fp:LED_WL-SWTP-3022-PAD" H 2575 2150 50  0001 C CNN
 F 3 "https://katalog.we-online.de/led/datasheet/158302250.pdf" H 2575 2150 50  0001 C CNN
 F 4 "LED WL-SWTP COOL WHT 5000K 2SMD" H 2575 2150 50  0001 C CNN "Description"
 F 5 "Würth Elektronik" H 2575 2150 50  0001 C CNN "Manufacturer"
