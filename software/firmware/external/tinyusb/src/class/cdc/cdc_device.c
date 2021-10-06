@@ -218,6 +218,30 @@ bool tud_cdc_n_write_clear (uint8_t itf)
   return tu_fifo_clear(&_cdcd_itf[itf].tx_ff);
 }
 
+uint32_t tud_cdc_n_abort_transfer (uint8_t itf)
+{
+  cdcd_interface_t* p_cdc = &_cdcd_itf[itf];
+
+  // Skip if usb is not ready yet
+  TU_VERIFY( tud_ready(), 0 );
+
+  uint8_t const rhport = TUD_OPT_RHPORT;
+
+  // Claim the endpoint, if not marked busy
+  usbd_edpt_claim(rhport, p_cdc->ep_in);
+
+  // Stall the endpoint
+  usbd_edpt_stall(rhport, p_cdc->ep_in);
+
+  // Clear the stalled endpoint
+  usbd_edpt_clear_stall(rhport, p_cdc->ep_in);
+
+  // Release the endpoint
+  usbd_edpt_release(rhport, p_cdc->ep_in);
+
+  return 0;
+}
+
 //--------------------------------------------------------------------+
 // USBD Driver API
 //--------------------------------------------------------------------+

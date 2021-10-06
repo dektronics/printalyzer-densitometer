@@ -104,6 +104,9 @@ uint32_t tud_cdc_n_write_available (uint8_t itf);
 // Clear the transmit FIFO
 bool tud_cdc_n_write_clear (uint8_t itf);
 
+// Stall and unstall the endpoint to abort an in-progress transfer
+uint32_t tud_cdc_n_abort_transfer  (uint8_t itf);
+
 //--------------------------------------------------------------------+
 // Application API (Single Port)
 //--------------------------------------------------------------------+
@@ -124,6 +127,8 @@ static inline uint32_t tud_cdc_write_str       (char const* str);
 static inline uint32_t tud_cdc_write_flush     (void);
 static inline uint32_t tud_cdc_write_available (void);
 static inline bool     tud_cdc_write_clear     (void);
+
+static inline uint32_t tud_cdc_abort_transfer  (void);
 
 //--------------------------------------------------------------------+
 // Application Callback API (weak is optional)
@@ -239,6 +244,11 @@ static inline uint32_t tud_cdc_write_available(void)
 static inline bool tud_cdc_write_clear(void)
 {
   return tud_cdc_n_write_clear(0);
+}
+
+static inline uint32_t tud_cdc_abort_transfer(void)
+{
+  return tud_cdc_n_abort_transfer(0);
 }
 
 /** @} */
