@@ -774,15 +774,26 @@ void cdc_send_response(const char *str)
 void cdc_write(const char *buf, size_t len)
 {
     osMutexAcquire(cdc_mutex, portMAX_DELAY);
-    if (cdc_host_connected) {
-        tud_cdc_write(buf, len);
-        tud_cdc_write_flush();
-        if (osSemaphoreAcquire(cdc_tx_semaphore, CDC_TX_TIMEOUT) != osOK) {
-            log_e("Unable to acquire cdc_tx_semaphore");
-            tud_cdc_write_clear();
-            tud_cdc_abort_transfer();
-            cdc_host_connected = false;
-        }
+    if (cdc_host_connected && len > 0) {
+        uint32_t n = 0;
+        uint32_t offset = 0;
+        do {
+            n = tud_cdc_write(buf + offset, len - offset);
+            if (n == 0) {
+                log_w("Write error");
+                break;
+            }
+            tud_cdc_write_flush();
+            offset += n;
+
+            if (osSemaphoreAcquire(cdc_tx_semaphore, CDC_TX_TIMEOUT) != osOK) {
+                log_e("Unable to acquire cdc_tx_semaphore");
+                tud_cdc_write_clear();
+                tud_cdc_abort_transfer();
+                cdc_host_connected = false;
+                break;
+            }
+        } while (offset < len);
     }
     osMutexRelease(cdc_mutex);
 }
