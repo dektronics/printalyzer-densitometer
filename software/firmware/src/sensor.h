@@ -40,6 +40,7 @@ typedef struct {
     tsl2591_time_t time;    /*!< Sensor ADC integration time */
     uint32_t reading_ticks; /*!< Tick time when the integration cycle finished */
     uint32_t light_ticks;   /*!< Tick time when the light state last changed */
+    uint32_t reading_count; /*!< Number of integration cycles since the sensor was enabled */
 } sensor_reading_t;
 
 typedef bool (*sensor_gain_calibration_callback_t)(sensor_gain_calibration_status_t status, void *user_data);

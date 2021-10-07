@@ -26,20 +26,32 @@ typedef enum {
     SENSOR_CONTROL_INTERRUPT
 } sensor_control_event_type_t;
 
+typedef struct {
+    tsl2591_gain_t gain;
+    tsl2591_time_t time;
+} sensor_control_config_params_t;
+
+typedef struct {
+    sensor_light_t light;
+    bool next_cycle;
+    uint8_t value;
+} sensor_control_light_mode_params_t;
+
+typedef struct {
+    uint32_t sensor_ticks;
+    uint32_t light_ticks;
+    uint32_t reading_count;
+} sensor_control_interrupt_params_t;
+
 /**
  * Sensor control event data.
  */
 typedef struct {
-    uint32_t ticks;
     sensor_control_event_type_t event_type;
     union {
-        struct {
-            uint8_t param1;
-            uint8_t param2;
-            uint8_t param3;
-            uint8_t param4;
-        } b;
-        uint32_t param;
+        sensor_control_config_params_t config;
+        sensor_control_light_mode_params_t light_mode;
+        sensor_control_interrupt_params_t interrupt;
     };
 } sensor_control_event_t;
 
@@ -49,6 +61,7 @@ extern I2C_HandleTypeDef hi2c1;
 static volatile bool sensor_initialized = false;
 static volatile uint32_t pending_int_light_change = 0;
 static volatile uint32_t light_change_ticks = 0;
+static volatile uint32_t reading_count = 0;
 
 /* Sensor task state variables */
 static bool sensor_running = false;
@@ -77,9 +90,9 @@ static const osSemaphoreAttr_t sensor_control_semaphore_attrs = {
 /* Sensor control implementation functions */
 static void sensor_control_start();
 static void sensor_control_stop();
-static void sensor_control_set_config(tsl2591_gain_t gain, tsl2591_time_t time);
-static void sensor_control_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value);
-static void sensor_control_interrupt(uint32_t sensor_ticks, uint32_t light_ticks);
+static void sensor_control_set_config(const sensor_control_config_params_t *params);
+static void sensor_control_set_light_mode(const sensor_control_light_mode_params_t *params);
+static void sensor_control_interrupt(const sensor_control_interrupt_params_t *params);
 
 void task_sensor_run(void *argument)
 {
@@ -136,16 +149,13 @@ void task_sensor_run(void *argument)
                 sensor_control_start();
                 break;
             case SENSOR_CONTROL_SET_CONFIG:
-                sensor_control_set_config((tsl2591_gain_t)control_event.b.param1, (tsl2591_time_t)control_event.b.param2);
+                sensor_control_set_config(&control_event.config);
                 break;
             case SENSOR_CONTROL_SET_LIGHT_MODE:
-                sensor_control_set_light_mode(
-                    (sensor_light_t)control_event.b.param1,
-                    (bool)control_event.b.param2,
-                    control_event.b.param3);
+                sensor_control_set_light_mode(&control_event.light_mode);
                 break;
             case SENSOR_CONTROL_INTERRUPT:
-                sensor_control_interrupt(control_event.ticks, control_event.param);
+                sensor_control_interrupt(&control_event.interrupt);
                 break;
             default:
                 break;
@@ -162,7 +172,6 @@ bool sensor_is_initialized()
 void sensor_start()
 {
     sensor_control_event_t control_event = {
-        .ticks = osKernelGetTickCount(),
         .event_type = SENSOR_CONTROL_START
     };
     osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
@@ -203,6 +212,7 @@ void sensor_control_start()
 
         /* Clear out any old sensor readings */
         osMessageQueueReset(sensor_reading_queue);
+        reading_count = 0;
 
         /* Enable ALS with interrupts */
         ret = tsl2591_set_enable(&hi2c1, TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN | TSL2591_ENABLE_AIEN);
@@ -220,7 +230,6 @@ void sensor_control_start()
 void sensor_stop()
 {
     sensor_control_event_t control_event = {
-        .ticks = osKernelGetTickCount(),
         .event_type = SENSOR_CONTROL_STOP
     };
     osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
@@ -245,11 +254,10 @@ void sensor_control_stop()
 void sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time)
 {
     sensor_control_event_t control_event = {
-        .ticks = osKernelGetTickCount(),
         .event_type = SENSOR_CONTROL_SET_CONFIG,
-        .b = {
-            .param1 = gain,
-            .param2 = time
+        .config = {
+            .gain = gain,
+            .time = time
         }
     };
     osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
@@ -259,20 +267,20 @@ void sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time)
     }
 }
 
-void sensor_control_set_config(tsl2591_gain_t gain, tsl2591_time_t time)
+void sensor_control_set_config(const sensor_control_config_params_t *params)
 {
-    log_d("sensor_control_set_config: %d, %d", gain, time);
+    log_d("sensor_control_set_config: %d, %d", params->gain, params->time);
 
     if (sensor_running) {
-        if (tsl2591_set_config(&hi2c1, gain, time) == HAL_OK) {
-            sensor_gain = gain;
-            sensor_time = time;
+        if (tsl2591_set_config(&hi2c1, params->gain, params->time) == HAL_OK) {
+            sensor_gain = params->gain;
+            sensor_time = params->time;
             sensor_discard_next_reading = true;
             osMessageQueueReset(sensor_reading_queue);
         }
     } else {
-        sensor_gain = gain;
-        sensor_time = time;
+        sensor_gain = params->gain;
+        sensor_time = params->time;
     }
 
     if (osSemaphoreRelease(sensor_control_semaphore) != osOK) {
@@ -284,12 +292,11 @@ void sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value)
 {
     //TODO have a way to ignore commands that don't change the current state
     sensor_control_event_t control_event = {
-        .ticks = osKernelGetTickCount(),
         .event_type = SENSOR_CONTROL_SET_LIGHT_MODE,
-        .b = {
-            .param1 = light,
-            .param2 = next_cycle,
-            .param3 = value
+        .light_mode = {
+            .light = light,
+            .next_cycle = next_cycle,
+            .value = value
         }
     };
     osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
@@ -299,7 +306,7 @@ void sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value)
     }
 }
 
-void sensor_control_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value)
+void sensor_control_set_light_mode(const sensor_control_light_mode_params_t *params)
 {
     //log_d("sensor_set_light_mode: %d, %d, %d", light, next_cycle, value);
 
@@ -307,22 +314,22 @@ void sensor_control_set_light_mode(sensor_light_t light, bool next_cycle, uint8_
     uint8_t pending_transmission;
 
     /* Convert the parameters into pending values for the LEDs */
-    if (light == SENSOR_LIGHT_OFF || value == 0) {
+    if (params->light == SENSOR_LIGHT_OFF || params->value == 0) {
         pending_reflection = 0;
         pending_transmission = 0;
-    } else if (light == SENSOR_LIGHT_REFLECTION) {
-        pending_reflection = value;
+    } else if (params->light == SENSOR_LIGHT_REFLECTION) {
+        pending_reflection = params->value;
         pending_transmission = 0;
-    } else if (light == SENSOR_LIGHT_TRANSMISSION) {
+    } else if (params->light == SENSOR_LIGHT_TRANSMISSION) {
         pending_reflection = 0;
-        pending_transmission = value;
+        pending_transmission = params->value;
     } else {
         pending_reflection = 0;
         pending_transmission = 0;
     }
 
     taskENTER_CRITICAL();
-    if (next_cycle) {
+    if (params->next_cycle) {
         /* Schedule the change for the next ISR invocation */
         pending_int_light_change = 0x80000000 | pending_reflection | (pending_transmission << 8);
     } else {
@@ -351,8 +358,10 @@ osStatus_t sensor_get_next_reading(sensor_reading_t *reading, uint32_t timeout)
 void sensor_int_handler()
 {
     sensor_control_event_t control_event = {
-        .ticks = osKernelGetTickCount(),
-        .event_type = SENSOR_CONTROL_INTERRUPT
+        .event_type = SENSOR_CONTROL_INTERRUPT,
+        .interrupt = {
+            .sensor_ticks = osKernelGetTickCount()
+        }
     };
 
     /* Apply any pending light change values */
@@ -363,13 +372,14 @@ void sensor_int_handler()
         light_change_ticks = osKernelGetTickCount();
         pending_int_light_change = 0;
     }
-    control_event.param = light_change_ticks;
+    control_event.interrupt.light_ticks = light_change_ticks;
+    control_event.interrupt.reading_count = ++reading_count;
     taskEXIT_CRITICAL_FROM_ISR(interrupt_status);
 
     osMessageQueuePut(sensor_control_queue, &control_event, 0, 0);
 }
 
-void sensor_control_interrupt(uint32_t sensor_ticks, uint32_t light_ticks)
+void sensor_control_interrupt(const sensor_control_interrupt_params_t *params)
 {
     HAL_StatusTypeDef ret = HAL_OK;
     uint8_t status = 0;
@@ -408,8 +418,9 @@ void sensor_control_interrupt(uint32_t sensor_ticks, uint32_t light_ticks)
         /* Fill out other reading fields */
         reading.gain = sensor_gain;
         reading.time = sensor_time;
-        reading.reading_ticks = sensor_ticks;
-        reading.light_ticks = light_ticks;
+        reading.reading_ticks = params->sensor_ticks;
+        reading.light_ticks = params->light_ticks;
+        reading.reading_count = params->reading_count;
 
         has_channel_data = true;
     } while (0);
@@ -417,7 +428,10 @@ void sensor_control_interrupt(uint32_t sensor_ticks, uint32_t light_ticks)
     //TODO need to make sure we can't jam in some of the failure cases
 
     if (has_channel_data) {
-        log_d("TSL2591: CH0=%d, CH1=%d, Gain=[%d], Time=%dms", reading.ch0_val, reading.ch1_val, sensor_gain, tsl2591_get_time_value_ms(sensor_time));
+        log_d("TSL2591[%d]: CH0=%d, CH1=%d, Gain=[%d], Time=%dms",
+            reading.reading_count,
+            reading.ch0_val, reading.ch1_val,
+            sensor_gain, tsl2591_get_time_value_ms(sensor_time));
 
         QueueHandle_t queue = (QueueHandle_t)sensor_reading_queue;
         xQueueOverwrite(queue, &reading);
