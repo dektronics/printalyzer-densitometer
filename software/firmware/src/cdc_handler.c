@@ -365,7 +365,8 @@ void cdc_command_cal_light(const char *cmd, size_t len)
 {
     /*
      * "CL" : Calibration Light Source
-     * "CLM" -> Measure light source drop over time and save as calibration values
+     * "CLR" -> Measure reflection light source drop over time and save as calibration values
+     * "CLT" -> Measure transmission light source drop over time and save as calibration values
      * "CLP" -> Return currently saved light source calibration values
      */
 
@@ -375,21 +376,34 @@ void cdc_command_cal_light(const char *cmd, size_t len)
 
     char prefix = toupper(cmd[2]);
 
-    if (prefix == 'M') {
+    if (prefix == 'R') {
         osStatus_t ret = osOK;
-        do {
-            ret = sensor_light_calibration(SENSOR_LIGHT_REFLECTION, NULL, NULL);
-            if (ret != osOK) { break; }
-            ret = sensor_light_calibration(SENSOR_LIGHT_TRANSMISSION, NULL, NULL);
-            if (ret != osOK) { break; }
-        } while (0);
+        ret = sensor_light_calibration(SENSOR_LIGHT_REFLECTION, NULL, NULL);
         if (ret == osOK) {
+            char buf[64];
+            float value;
+            settings_get_cal_reflection_led_factor(&value);
+            sprintf_(buf, "LIGHT,REFL,%f\r\n", value);
+            cdc_send_response(buf);
+            cdc_send_response("OK\r\n");
+        } else {
+            cdc_send_response("ERR\r\n");
+        }
+    } else if (prefix == 'T') {
+        osStatus_t ret = osOK;
+        ret = sensor_light_calibration(SENSOR_LIGHT_TRANSMISSION, NULL, NULL);
+        if (ret == osOK) {
+            char buf[64];
+            float value;
+            settings_get_cal_transmission_led_factor(&value);
+            sprintf_(buf, "LIGHT,TRAN,%f\r\n", value);
+            cdc_send_response(buf);
             cdc_send_response("OK\r\n");
         } else {
             cdc_send_response("ERR\r\n");
         }
     } else if (prefix == 'P') {
-        char buf[128];
+        char buf[64];
         float value;
 
         settings_get_cal_reflection_led_factor(&value);

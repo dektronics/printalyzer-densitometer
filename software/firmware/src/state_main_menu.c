@@ -25,7 +25,6 @@ typedef enum {
     MAIN_MENU_CALIBRATION_REFLECTION,
     MAIN_MENU_CALIBRATION_TRANSMISSION,
     MAIN_MENU_CALIBRATION_SENSOR,
-    MAIN_MENU_CALIBRATION_LIGHT,
     MAIN_MENU_SETTINGS,
     MAIN_MENU_SETTINGS_DIAGNOSTICS,
     MAIN_MENU_ABOUT
@@ -61,8 +60,6 @@ static void main_menu_calibration_reflection(state_main_menu_t *state, state_con
 static void main_menu_calibration_transmission(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_sensor(state_main_menu_t *state, state_controller_t *controller);
 static bool sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data);
-static void main_menu_calibration_light(state_main_menu_t *state, state_controller_t *controller);
-static bool sensor_light_calibration_callback(uint8_t progress, void *user_data);
 static bool sensor_calibration_should_abort();
 static void main_menu_settings(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t *controller);
@@ -102,8 +99,6 @@ void state_main_menu_process(state_t *state_base, state_controller_t *controller
         main_menu_calibration_transmission(state, controller);
     } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR) {
         main_menu_calibration_sensor(state, controller);
-    } else if (state->menu_state == MAIN_MENU_CALIBRATION_LIGHT) {
-        main_menu_calibration_light(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS) {
         main_menu_settings(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS_DIAGNOSTICS) {
@@ -139,8 +134,7 @@ void main_menu_calibration(state_main_menu_t *state, state_controller_t *control
         "Calibration", state->cal_option,
         "Reflection\n"
         "Transmission\n"
-        "Sensor\n"
-        "Light Source");
+        "Sensor");
 
     if (state->cal_option == 1) {
         state->menu_state = MAIN_MENU_CALIBRATION_REFLECTION;
@@ -148,8 +142,6 @@ void main_menu_calibration(state_main_menu_t *state, state_controller_t *control
         state->menu_state = MAIN_MENU_CALIBRATION_TRANSMISSION;
     } else if (state->cal_option == 3) {
         state->menu_state = MAIN_MENU_CALIBRATION_SENSOR;
-    } else if (state->cal_option == 4) {
-        state->menu_state = MAIN_MENU_CALIBRATION_LIGHT;
     } else if (state->cal_option == UINT8_MAX) {
         state_controller_set_next_state(controller, state->last_display_state);
     } else {
@@ -454,61 +446,6 @@ bool sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, v
     if (update_display) {
         display_static_list("Sensor Gain", buf);
     }
-
-    return !sensor_calibration_should_abort();
-}
-
-void main_menu_calibration_light(state_main_menu_t *state, state_controller_t *controller)
-{
-    uint8_t option = display_message(
-        "Hold device\n"
-        "firmly closed\n"
-        "with no film", NULL, NULL, " Measure ");
-    if (option == 1) {
-        osStatus_t ret = osOK;
-        const char *title;
-
-        if (!keypad_is_detect()) { return; }
-
-        do {
-            title = "Reflection\nLight";
-            display_static_list(title, "\nStarting...");
-            ret = sensor_light_calibration(SENSOR_LIGHT_REFLECTION, sensor_light_calibration_callback, (void *)title);
-            if (ret != osOK) { break; }
-
-            title = "Transmission\nLight";
-            display_static_list(title, "\nStarting...");
-            ret = sensor_light_calibration(SENSOR_LIGHT_TRANSMISSION, sensor_light_calibration_callback, (void *)title);
-            if (ret != osOK) { break; }
-        } while (0);
-
-        if (ret == osOK) {
-            display_message(
-                "Light", NULL,
-                "calibration\n"
-                "complete", " OK ");
-        } else {
-            display_message(
-                "Light", NULL,
-                "calibration\n"
-                "failed", " OK ");
-        }
-        state->menu_state = MAIN_MENU_CALIBRATION;
-
-    } else if (option == UINT8_MAX) {
-        state_controller_set_next_state(controller, state->last_display_state);
-    } else {
-        state->menu_state = MAIN_MENU_CALIBRATION;
-    }
-}
-
-bool sensor_light_calibration_callback(uint8_t progress, void *user_data)
-{
-    char buf[8];
-    const char *title = user_data;
-    sprintf(buf,
-        "\n%3d%%", progress);
-    display_static_list(title, buf);
 
     return !sensor_calibration_should_abort();
 }

@@ -112,6 +112,7 @@ bool sensor_is_reading_saturated(const sensor_reading_t *reading);
  */
 void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic);
 
+#if 0
 /**
  * Convert sensor readings from raw counts to basic counts.
  *
@@ -126,5 +127,6 @@ void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_
  * @param ch1_basic Basic count output for channel 1
  */
 void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic);
+#endif
 
 #endif /* SENSOR_H */

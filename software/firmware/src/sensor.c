@@ -490,8 +490,8 @@ osStatus_t sensor_read_loop(sensor_light_t light_source, uint8_t count, float *c
             break;
         }
 
-        /* Convert to calibrated basic counts */
-        sensor_convert_to_calibrated_basic_counts(light_source, &reading, &ch0_basic, &ch1_basic);
+        /* Convert to basic counts */
+        sensor_convert_to_basic_counts(&reading, &ch0_basic, &ch1_basic);
 
         ch0_sum += ch0_basic;
         ch1_sum += ch1_basic;
@@ -684,6 +684,7 @@ void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_
     }
 }
 
+#if 0
 void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic)
 {
     float ch0_gain;
@@ -741,3 +742,4 @@ void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, cons
         *ch1_basic = ch1_raw / ch1_cpl;
     }
 }
+#endif
