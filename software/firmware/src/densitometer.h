@@ -6,6 +6,9 @@
 
 #include "sensor.h"
 
+#define REFLECTION_MAX_D (2.50F)
+#define TRANSMISSION_MAX_D (5.00F)
+
 typedef enum {
     DENSITOMETER_OK = 0,
     DENSITOMETER_CAL_ERROR,

@@ -434,7 +434,7 @@ void cdc_command_cal_reflection(const char *cmd, size_t len)
 
         float d = val / 100.0F;
         if (d < 0) { d = 0.0F; }
-        else if (d > 2.50F) { d = 2.50F; }
+        else if (d > REFLECTION_MAX_D) { d = REFLECTION_MAX_D; }
 
         float meas_value = NAN;
 

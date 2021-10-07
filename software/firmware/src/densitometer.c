@@ -18,6 +18,7 @@ float densitometer_transmission_d = NAN;
 float densitometer_transmission_zero_d = NAN;
 
 #define CAL_READ_ITERATIONS 5
+#define MEASURE_READ_ITERATIONS 2
 
 densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t callback, void *user_data)
 {
@@ -35,9 +36,7 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
         || cal_lo_value < 0.0F || cal_hi_value >= cal_lo_value) {
 
         log_w("Invalid calibration values");
-
         log_w("CAL-LO: D=%.2f, VALUE=%f", cal_lo_d, cal_lo_value);
-
         log_w("CAL-HI: D=%.2f, VALUE=%f", cal_hi_d, cal_hi_value);
 
         return DENSITOMETER_CAL_ERROR;
@@ -46,7 +45,7 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     /* Perform sensor read */
     float ch0_basic;
     float ch1_basic;
-    if (sensor_read_target(SENSOR_LIGHT_REFLECTION, 2, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
+    if (sensor_read_target(SENSOR_LIGHT_REFLECTION, MEASURE_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
         log_w("Sensor read error");
         sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
@@ -131,7 +130,7 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     /* Perform sensor read */
     float ch0_basic;
     float ch1_basic;
-    if (sensor_read_target(SENSOR_LIGHT_TRANSMISSION, 2, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
+    if (sensor_read_target(SENSOR_LIGHT_TRANSMISSION, MEASURE_READ_ITERATIONS, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
         log_w("Sensor read error");
         sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
@@ -156,7 +155,7 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
 
     /* Clamp the return value to be within an acceptable range */
     if (corr_d < 0.0F) { corr_d = 0.0F; }
-    else if (corr_d > 4.00F) { corr_d = 4.00F; }
+    else if (corr_d > TRANSMISSION_MAX_D) { corr_d = TRANSMISSION_MAX_D; }
 
     densitometer_transmission_d = corr_d;
 
@@ -198,7 +197,7 @@ densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d, senso
     float ch1_basic;
 
     /* Make sure the argument is within a reasonable range */
-    if (cal_lo_d < 0.00F || cal_lo_d > 2.50F) {
+    if (cal_lo_d < 0.00F || cal_lo_d > REFLECTION_MAX_D) {
         return DENSITOMETER_CAL_ERROR;
     }
 
@@ -231,7 +230,7 @@ densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d, senso
     float ch1_basic;
 
     /* Make sure the argument is within a reasonable range */
-    if (cal_hi_d < 0.00F || cal_hi_d > 2.50F) {
+    if (cal_hi_d < 0.00F || cal_hi_d > REFLECTION_MAX_D) {
         return DENSITOMETER_CAL_ERROR;
     }
 
@@ -292,7 +291,7 @@ densitometer_result_t densitometer_calibrate_transmission_hi(float cal_hi_d, sen
     float ch1_basic;
 
     /* Make sure the argument is within a reasonable range */
-    if (cal_hi_d < 0.00F || cal_hi_d > 4.00F) {
+    if (cal_hi_d < 0.00F || cal_hi_d > TRANSMISSION_MAX_D) {
         return DENSITOMETER_CAL_ERROR;
     }
 
