@@ -656,7 +656,7 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
         if (sensor_get_next_reading(&reading, 1000) == osOK) {
             bool is_detect = keypad_is_detect();
             if (display_mode) {
-                sensor_convert_to_basic_counts(reading.gain, reading.time, reading.ch0_val, reading.ch1_val, &ch0_basic, &ch1_basic);
+                sensor_convert_to_basic_counts(&reading, &ch0_basic, &ch1_basic);
                 sprintf_(buf,
                     "CH0=%.5f\n"
                     "CH1=%.5f\n"

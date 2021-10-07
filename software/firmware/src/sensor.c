@@ -652,29 +652,35 @@ bool sensor_is_reading_saturated(const sensor_reading_t *reading)
     }
 }
 
-void sensor_convert_to_basic_counts(tsl2591_gain_t gain, tsl2591_time_t time, float ch0_val, float ch1_val, float *ch0_basic, float *ch1_basic)
+void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic)
 {
     float ch0_gain;
     float ch1_gain;
     float atime_ms;
 
-    /* Get the gain value from calibration */
-    settings_get_cal_gain(gain, &ch0_gain, &ch1_gain);
+    if (!reading) {
+        if (ch0_basic) { *ch0_basic = NAN; }
+        if (ch1_basic) { *ch1_basic = NAN; }
+        return;
+    }
+
+    /* Get the gain value from sensor calibration */
+    settings_get_cal_gain(reading->gain, &ch0_gain, &ch1_gain);
 
     /*
      * Integration time is uncalibrated, due to the assumption that all
      * target measurements will be done at the same setting.
      */
-    atime_ms = tsl2591_get_time_value_ms(time);
+    atime_ms = tsl2591_get_time_value_ms(reading->time);
 
     float ch0_cpl = (atime_ms * ch0_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);
     float ch1_cpl = (atime_ms * ch1_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);
 
     if (ch0_basic) {
-        *ch0_basic = ch0_val / ch0_cpl;
+        *ch0_basic = (float)reading->ch0_val / ch0_cpl;
     }
     if (ch1_basic) {
-        *ch1_basic = ch1_val / ch1_cpl;
+        *ch1_basic = (float)reading->ch1_val / ch1_cpl;
     }
 }
 
@@ -690,9 +696,13 @@ void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, cons
     float ch1_cpl;
     uint32_t light_on_ticks;
 
-    if (!reading) { return; }
+    if (!reading) {
+        if (ch0_basic) { *ch0_basic = NAN; }
+        if (ch1_basic) { *ch1_basic = NAN; }
+        return;
+    }
 
-    /* Get the gain value from calibration */
+    /* Get the gain value from sensor calibration */
     settings_get_cal_gain(reading->gain, &ch0_gain, &ch1_gain);
 
     /*

@@ -733,7 +733,14 @@ void cdc_command_diag_sensor(const char *cmd, size_t len)
             float ch1_basic;
             char buf[128];
 
-            sensor_convert_to_basic_counts(gain, time, ch0_val, ch1_val, &ch0_basic, &ch1_basic);
+            sensor_reading_t reading = {
+                .gain = gain,
+                .time = time,
+                .ch0_val = ch0_val,
+                .ch1_val = ch1_val
+            };
+
+            sensor_convert_to_basic_counts(&reading, &ch0_basic, &ch1_basic);
 
             sprintf_(buf, "TSL2591,%d,%d,%f,%f\r\n", ch0_val, ch1_val, ch0_basic, ch1_basic);
             cdc_send_response(buf);

@@ -106,14 +106,11 @@ bool sensor_is_reading_saturated(const sensor_reading_t *reading);
  * multiple readings and different device settings. All actual light
  * calculations shall be performed in terms of basic counts.
  *
- * @param gain Gain used to take the readings
- * @param time Integration time used to take the readings
- * @param ch0_val Raw counts for channel 0
- * @param ch1_val Raw counts for channel 1
+ * @param reading Reading structure with all raw values
  * @param ch0_basic Basic count output for channel 0
  * @param ch1_basic Basic count output for channel 1
  */
-void sensor_convert_to_basic_counts(tsl2591_gain_t gain, tsl2591_time_t time, float ch0_val, float ch1_val, float *ch0_basic, float *ch1_basic);
+void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic);
 
 /**
  * Convert sensor readings from raw counts to basic counts.
