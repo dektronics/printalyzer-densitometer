@@ -48,6 +48,7 @@ typedef struct {
  */
 typedef struct {
     sensor_control_event_type_t event_type;
+    osStatus_t *result;
     union {
         sensor_control_config_params_t config;
         sensor_control_light_mode_params_t light_mode;
@@ -88,11 +89,11 @@ static const osSemaphoreAttr_t sensor_control_semaphore_attrs = {
 };
 
 /* Sensor control implementation functions */
-static void sensor_control_start();
-static void sensor_control_stop();
-static void sensor_control_set_config(const sensor_control_config_params_t *params);
-static void sensor_control_set_light_mode(const sensor_control_light_mode_params_t *params);
-static void sensor_control_interrupt(const sensor_control_interrupt_params_t *params);
+static osStatus_t sensor_control_start();
+static osStatus_t sensor_control_stop();
+static osStatus_t sensor_control_set_config(const sensor_control_config_params_t *params);
+static osStatus_t sensor_control_set_light_mode(const sensor_control_light_mode_params_t *params);
+static osStatus_t sensor_control_interrupt(const sensor_control_interrupt_params_t *params);
 
 void task_sensor_run(void *argument)
 {
@@ -141,24 +142,35 @@ void task_sensor_run(void *argument)
     /* Start the main control event loop */
     for (;;) {
         if(osMessageQueueGet(sensor_control_queue, &control_event, NULL, portMAX_DELAY) == osOK) {
+            osStatus_t ret = osOK;
             switch (control_event.event_type) {
             case SENSOR_CONTROL_STOP:
-                sensor_control_stop();
+                ret = sensor_control_stop();
                 break;
             case SENSOR_CONTROL_START:
-                sensor_control_start();
+                ret = sensor_control_start();
                 break;
             case SENSOR_CONTROL_SET_CONFIG:
-                sensor_control_set_config(&control_event.config);
+                ret = sensor_control_set_config(&control_event.config);
                 break;
             case SENSOR_CONTROL_SET_LIGHT_MODE:
-                sensor_control_set_light_mode(&control_event.light_mode);
+                ret = sensor_control_set_light_mode(&control_event.light_mode);
                 break;
             case SENSOR_CONTROL_INTERRUPT:
-                sensor_control_interrupt(&control_event.interrupt);
+                ret = sensor_control_interrupt(&control_event.interrupt);
                 break;
             default:
                 break;
+            }
+
+            /* Handle all external commands by propagating their completion */
+            if (control_event.event_type != SENSOR_CONTROL_INTERRUPT) {
+                if (control_event.result) {
+                    *(control_event.result) = ret;
+                }
+                if (osSemaphoreRelease(sensor_control_semaphore) != osOK) {
+                    log_e("Unable to release sensor_control_semaphore");
+                }
             }
         }
     }
@@ -169,22 +181,21 @@ bool sensor_is_initialized()
     return sensor_initialized;
 }
 
-void sensor_start()
+osStatus_t sensor_start()
 {
+    osStatus_t result = osOK;
     sensor_control_event_t control_event = {
-        .event_type = SENSOR_CONTROL_START
+        .event_type = SENSOR_CONTROL_START,
+        .result = &result
     };
     osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
-
-    if (osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY) != osOK) {
-        log_e("Unable to acquire sensor_control_semaphore");
-    }
+    osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY);
+    return result;
 }
 
-void sensor_control_start()
+osStatus_t sensor_control_start()
 {
     HAL_StatusTypeDef ret = HAL_OK;
-
     log_d("sensor_control_start");
 
     do {
@@ -222,57 +233,59 @@ void sensor_control_start()
         sensor_running = true;
     } while (0);
 
-    if (osSemaphoreRelease(sensor_control_semaphore) != osOK) {
-        log_e("Unable to release sensor_control_semaphore");
-    }
+    return hal_to_os_status(ret);
 }
 
-void sensor_stop()
+osStatus_t sensor_stop()
 {
+    osStatus_t result = osOK;
     sensor_control_event_t control_event = {
-        .event_type = SENSOR_CONTROL_STOP
+        .event_type = SENSOR_CONTROL_STOP,
+        .result = &result
     };
     osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
-
-    if (osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY) != osOK) {
-        log_e("Unable to acquire sensor_control_semaphore");
-    }
+    osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY);
+    return result;
 }
 
-void sensor_control_stop()
+osStatus_t sensor_control_stop()
 {
+    HAL_StatusTypeDef ret = HAL_OK;
     log_d("sensor_control_stop");
-    if (tsl2591_set_enable(&hi2c1, 0x00) == HAL_OK) {
-        sensor_running = false;
-    }
 
-    if (osSemaphoreRelease(sensor_control_semaphore) != osOK) {
-        log_e("Unable to release sensor_control_semaphore");
-    }
+    do {
+        ret = tsl2591_set_enable(&hi2c1, 0x00);
+        if (ret != HAL_OK) { break; }
+        sensor_running = false;
+    } while (0);
+
+    return hal_to_os_status(ret);
 }
 
-void sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time)
+osStatus_t sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time)
 {
+    osStatus_t result = osOK;
     sensor_control_event_t control_event = {
         .event_type = SENSOR_CONTROL_SET_CONFIG,
+        .result = &result,
         .config = {
             .gain = gain,
             .time = time
         }
     };
     osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
-
-    if (osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY) != osOK) {
-        log_e("Unable to acquire sensor_control_semaphore");
-    }
+    osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY);
+    return result;
 }
 
-void sensor_control_set_config(const sensor_control_config_params_t *params)
+osStatus_t sensor_control_set_config(const sensor_control_config_params_t *params)
 {
+    HAL_StatusTypeDef ret = HAL_OK;
     log_d("sensor_control_set_config: %d, %d", params->gain, params->time);
 
     if (sensor_running) {
-        if (tsl2591_set_config(&hi2c1, params->gain, params->time) == HAL_OK) {
+        ret = tsl2591_set_config(&hi2c1, params->gain, params->time);
+        if (ret == HAL_OK) {
             sensor_gain = params->gain;
             sensor_time = params->time;
             sensor_discard_next_reading = true;
@@ -283,15 +296,15 @@ void sensor_control_set_config(const sensor_control_config_params_t *params)
         sensor_time = params->time;
     }
 
-    if (osSemaphoreRelease(sensor_control_semaphore) != osOK) {
-        log_e("Unable to release sensor_control_semaphore");
-    }
+    return hal_to_os_status(ret);
 }
 
-void sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value)
+osStatus_t sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value)
 {
+    osStatus_t result = osOK;
     sensor_control_event_t control_event = {
         .event_type = SENSOR_CONTROL_SET_LIGHT_MODE,
+        .result = &result,
         .light_mode = {
             .light = light,
             .next_cycle = next_cycle,
@@ -299,13 +312,11 @@ void sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value)
         }
     };
     osMessageQueuePut(sensor_control_queue, &control_event, 0, portMAX_DELAY);
-
-    if (osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY) != osOK) {
-        log_e("Unable to acquire sensor_control_semaphore");
-    }
+    osSemaphoreAcquire(sensor_control_semaphore, portMAX_DELAY);
+    return result;
 }
 
-void sensor_control_set_light_mode(const sensor_control_light_mode_params_t *params)
+osStatus_t sensor_control_set_light_mode(const sensor_control_light_mode_params_t *params)
 {
     //log_d("sensor_set_light_mode: %d, %d, %d", params->light, params->next_cycle, params->value);
 
@@ -340,9 +351,7 @@ void sensor_control_set_light_mode(const sensor_control_light_mode_params_t *par
     }
     taskEXIT_CRITICAL();
 
-    if (osSemaphoreRelease(sensor_control_semaphore) != osOK) {
-        log_e("Unable to release sensor_control_semaphore");
-    }
+    return osOK;
 }
 
 osStatus_t sensor_get_next_reading(sensor_reading_t *reading, uint32_t timeout)
@@ -378,7 +387,7 @@ void sensor_int_handler()
     osMessageQueuePut(sensor_control_queue, &control_event, 0, 0);
 }
 
-void sensor_control_interrupt(const sensor_control_interrupt_params_t *params)
+osStatus_t sensor_control_interrupt(const sensor_control_interrupt_params_t *params)
 {
     HAL_StatusTypeDef ret = HAL_OK;
     uint8_t status = 0;
@@ -424,8 +433,6 @@ void sensor_control_interrupt(const sensor_control_interrupt_params_t *params)
         has_channel_data = true;
     } while (0);
 
-    //TODO need to make sure we can't jam in some of the failure cases
-
     if (has_channel_data) {
         log_d("TSL2591[%d]: CH0=%d, CH1=%d, Gain=[%d], Time=%dms",
             reading.reading_count,
@@ -435,4 +442,6 @@ void sensor_control_interrupt(const sensor_control_interrupt_params_t *params)
         QueueHandle_t queue = (QueueHandle_t)sensor_reading_queue;
         xQueueOverwrite(queue, &reading);
     }
+
+    return hal_to_os_status(ret);
 }

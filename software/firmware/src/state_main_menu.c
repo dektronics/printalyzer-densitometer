@@ -496,10 +496,16 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
     bool settings_changed = true;
     char buf[128];
 
-    sensor_set_config(gain, time);
-    sensor_start();
+    do {
+        ret = sensor_set_config(gain, time);
+        if (ret != osOK) { break; }
+        ret = sensor_start();
+        if (ret != osOK) { break; }
 
-    ret = sensor_get_next_reading(&reading, 2000);
+        ret = sensor_get_next_reading(&reading, 2000);
+        if (ret != osOK) { break; }
+    } while (0);
+
     if (ret != osOK || reading.gain != gain || reading.time != time) {
         display_message(
             "Sensor", NULL,
@@ -548,9 +554,10 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
         }
 
         if (config_changed) {
-            sensor_set_config(gain, time);
-            config_changed = false;
-            settings_changed = true;
+            if (sensor_set_config(gain, time) == osOK) {
+                config_changed = false;
+                settings_changed = true;
+            }
         }
 
         if (settings_changed) {

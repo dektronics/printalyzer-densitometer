@@ -27,12 +27,12 @@ bool sensor_is_initialized();
 /**
  * Enable the sensor.
  */
-void sensor_start();
+osStatus_t sensor_start();
 
 /**
  * Disable the sensor.
  */
-void sensor_stop();
+osStatus_t sensor_stop();
 
 /**
  * Set the sensor configuration.
@@ -44,7 +44,7 @@ void sensor_stop();
  * @param gain Sensor ADC gain
  * @param time Sensor ADC integration time
  */
-void sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time);
+osStatus_t sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time);
 
 /**
  * Change the state of the sensor read light sources.
@@ -58,7 +58,7 @@ void sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time);
  * @param next_cycle Whether to delay the change until the completion of the next integration cycle
  * @param value Value to set when making the change
  */
-void sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value);
+osStatus_t sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value);
 
 /**
  * Get the next reading from the sensor.

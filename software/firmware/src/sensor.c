@@ -71,8 +71,10 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
 
     do {
         /* Put the sensor into a known initial state */
-        sensor_set_config(TSL2591_GAIN_MAXIMUM, TSL2591_TIME_100MS);
-        sensor_start();
+        ret = sensor_set_config(TSL2591_GAIN_MAXIMUM, TSL2591_TIME_100MS);
+        if (ret != osOK) { break; }
+        ret = sensor_start();
+        if (ret != osOK) { break; }
 
         /* Wait for things to stabilize */
         osDelay(1000);
@@ -217,21 +219,25 @@ osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_ca
 
     do {
         /* Set lights to initial off state */
-        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+        ret = sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+        if (ret != osOK) { break; }
 
         /* Rough delay for things to settle */
         osDelay(1000);
 
         /* Start the sensor */
-        sensor_set_config(TSL2591_GAIN_HIGH, TSL2591_TIME_200MS);
-        sensor_start();
+        ret = sensor_set_config(TSL2591_GAIN_HIGH, TSL2591_TIME_200MS);
+        if (ret != osOK) { break; }
+        ret = sensor_start();
+        if (ret != osOK) { break; }
 
         /* Swallow the first reading */
         ret = sensor_get_next_reading(&reading, 2000);
         if (ret != osOK) { break; }
 
         /* Set LED to full brightness at the next cycle */
-        sensor_set_light_mode(light_source, /*next_cycle*/true, 128);
+        ret = sensor_set_light_mode(light_source, /*next_cycle*/true, 128);
+        if (ret != osOK) { break; }
 
         /* Wait for another cycle which will trigger the LED on */
         ret = sensor_get_next_reading(&reading, 2000);
@@ -322,12 +328,6 @@ osStatus_t sensor_read_target(sensor_light_t light_source, uint8_t iterations,
     float *ch0_result, float *ch1_result,
     sensor_read_callback_t callback, void *user_data)
 {
-    //TODO This is a test function to try and work out the new task-based process
-
-    //TODO Should implement some sort of convergence algorithm instead of a fixed iteration count
-
-    //TODO Could even provide continuous results via callback and do convergence code on the caller side
-
     osStatus_t ret = osOK;
     tsl2591_gain_t gain = TSL2591_GAIN_MAXIMUM;
     tsl2591_time_t time = SENSOR_DEFAULT_READ_TIME;
@@ -344,30 +344,38 @@ osStatus_t sensor_read_target(sensor_light_t light_source, uint8_t iterations,
 
     log_i("Starting (task-based) read, %d iterations", iterations);
 
-    /* Put the sensor and light into a known initial state, with maximum gain */
-    sensor_set_config(gain, time);
-    sensor_set_light_mode(light_source, /*next_cycle*/true, 128);
-    sensor_start();
-
     do {
-        if (is_saturated) {
-            if (gain == TSL2591_GAIN_LOW) { break; }
-            gain--;
-
-            /* Set the new gain value */
-            sensor_set_config(gain, time);
-            is_saturated = false;
-        }
-
-        /* Run the read loop */
-        ret = sensor_read_loop(light_source, iterations, &ch0_avg, &ch1_avg, callback, user_data);
+        /* Put the sensor and light into a known initial state, with maximum gain */
+        ret = sensor_set_config(gain, time);
         if (ret != osOK) { break; }
+        ret = sensor_set_light_mode(light_source, /*next_cycle*/true, 128);
+        if (ret != osOK) { break; }
+        ret = sensor_start();
+        if (ret != osOK) { break; }
+    } while (0);
 
-        /* Check for saturation */
-        if (isnanf(ch0_avg) || isnanf(ch1_avg)) {
-            is_saturated = true;
-        }
-    } while (is_saturated && ret == osOK);
+    if (ret == osOK) {
+        do {
+            if (is_saturated) {
+                if (gain == TSL2591_GAIN_LOW) { break; }
+                gain--;
+
+                /* Set the new gain value */
+                ret = sensor_set_config(gain, time);
+                if (ret != osOK) { break; }
+                is_saturated = false;
+            }
+
+            /* Run the read loop */
+            ret = sensor_read_loop(light_source, iterations, &ch0_avg, &ch1_avg, callback, user_data);
+            if (ret != osOK) { break; }
+
+            /* Check for saturation */
+            if (isnanf(ch0_avg) || isnanf(ch1_avg)) {
+                is_saturated = true;
+            }
+        } while (is_saturated && ret == osOK);
+    }
 
     /* Turn off the sensor */
     sensor_stop();
@@ -545,7 +553,8 @@ osStatus_t sensor_gain_calibration_loop(
         }
 
         /* Setup for high gain measurement */
-        sensor_set_config(gain_high, time);
+        ret = sensor_set_config(gain_high, time);
+        if (ret != osOK) { break; }
 
         /* Wait for the first reading at the new settings to come through */
         ret = sensor_get_next_reading(&discard_reading, 2000);
@@ -577,7 +586,8 @@ osStatus_t sensor_gain_calibration_loop(
         }
 
         /* Setup for low gain measurement */
-        sensor_set_config(gain_low, time);
+        ret = sensor_set_config(gain_low, time);
+        if (ret != osOK) { break; }
 
         /* Wait for the first reading at the new settings to come through */
         ret = sensor_get_next_reading(&discard_reading, 2000);
