@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <machine/endian.h>
 #include <math.h>
 #include <tusb.h>
 #include <cmsis_os.h>
@@ -23,6 +24,7 @@
 #include "adc_handler.h"
 #include "tsl2591.h"
 #include "densitometer.h"
+#include "app_descriptor.h"
 #include "util.h"
 
 #define CMD_DATA_SIZE 64
@@ -209,7 +211,7 @@ void cdc_process_command(const char *cmd, size_t len)
 
     char cmd_prefix = toupper(cmd[0]);
 
-    if (cmd_prefix == 'V' && len == 1) {
+    if (cmd_prefix == 'V') {
         /* Version string command */
         cdc_command_version(cmd, len);
     } else if (cmd_prefix == 'M' && len > 1) {
@@ -257,11 +259,19 @@ void cdc_process_command(const char *cmd, size_t len)
 
 void cdc_command_version(const char *cmd, size_t len)
 {
-    UNUSED(cmd);
-    UNUSED(len);
+    const app_descriptor_t *app_descriptor = app_descriptor_get();
     char buf[64];
-    sprintf(buf, "Printalyzer Densitometer\r\n");
-    cdc_send_response(buf);
+
+    if (len == 1 ) {
+        sprintf(buf, "%s %s\r\n", app_descriptor->project_name, app_descriptor->version);
+        cdc_send_response(buf);
+    } else if (len == 2 && cmd[1] == 'B') {
+        sprintf(buf, "\"%s\",\"%s\",%08lX\r\n",
+            app_descriptor->build_date,
+            app_descriptor->build_describe,
+            __bswap32(app_descriptor->crc32));
+        cdc_send_response(buf);
+    }
 }
 
 void cdc_command_measure_reflection(const char *cmd, size_t len)
