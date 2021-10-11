@@ -1,20 +1,28 @@
 #include "stm32l0xx_hal.h"
 
 #define LOG_TAG "main"
+#include <elog.h>
 
 #include <printf.h>
 #include <cmsis_os.h>
-#include <elog.h>
+#include <machine/endian.h>
 
 #include "board_config.h"
 #include "keypad.h"
 #include "sensor.h"
+#include "display.h"
 #include "adc_handler.h"
 #include "task_main.h"
 #include "task_sensor.h"
+#include "app_descriptor.h"
+
+#define APP_ADDRESS 0x08000000UL
+#define END_ADDRESS 0x0801FFFBUL
+#define APP_SIZE ((uint32_t)(((END_ADDRESS - APP_ADDRESS) + 3UL) / 4UL))
 
 ADC_HandleTypeDef hadc;
 DMA_HandleTypeDef hdma_adc;
+CRC_HandleTypeDef hcrc;
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
@@ -29,6 +37,7 @@ static void tim2_init(void);
 static void spi1_init(void);
 static void dma_init(void);
 static void adc_init(void);
+static void crc_init(void);
 static void usb_init(void);
 static void startup_log_messages(void);
 
@@ -334,6 +343,19 @@ void adc_init(void)
     }
 }
 
+void crc_init(void)
+{
+    hcrc.Instance = CRC;
+    hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
+    hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+    hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+    hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+    hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
+    if (HAL_CRC_Init(&hcrc) != HAL_OK) {
+        error_handler();
+    }
+}
+
 void usb_init(void)
 {
     /* Peripheral clock enable */
@@ -345,12 +367,13 @@ void usb_init(void)
 
 void startup_log_messages(void)
 {
+    const app_descriptor_t *app_descriptor = app_descriptor_get();
     uint32_t hal_ver = HAL_GetHalVersion();
     uint8_t hal_ver_code = ((uint8_t)(hal_ver)) & 0x0F;
     uint8_t *uniqueId = (uint8_t*)UID_BASE;
 
     log_i("\033[0m");
-    log_i("---- Printalyzer Densitometer Startup ----");
+    log_i("---- %s Startup ----", app_descriptor->project_name);
     log_i("HAL Version: %d.%d.%d%c",
         ((uint8_t)(hal_ver >> 24)) & 0x0F,
         ((uint8_t)(hal_ver >> 16)) & 0x0F,
@@ -364,7 +387,31 @@ void startup_log_messages(void)
         uniqueId[0], uniqueId[1], uniqueId[2], uniqueId[3], uniqueId[4],
         uniqueId[5], uniqueId[6], uniqueId[7], uniqueId[8], uniqueId[9],
         uniqueId[10], uniqueId[11]);
+    log_i("App version: %s", app_descriptor->version);
+    log_i("Build date: %s", app_descriptor->build_date);
+    log_i("Build describe: %s", app_descriptor->build_describe);
+    log_i("Build checksum: %08lX", __bswap32(app_descriptor->crc32));
     log_i("-----------------------");
+}
+
+void startup_verify_checksum()
+{
+    const app_descriptor_t *app_descriptor = app_descriptor_get();
+    volatile uint32_t calculated_crc = 0;
+
+    calculated_crc =
+        HAL_CRC_Calculate(&hcrc, (uint32_t*)APP_ADDRESS, APP_SIZE);
+
+    __HAL_RCC_CRC_FORCE_RESET();
+    __HAL_RCC_CRC_RELEASE_RESET();
+
+    if (app_descriptor->crc32 != calculated_crc) {
+        log_e("Checksum invalid: %08lX != %08lX",
+            __bswap32(calculated_crc), __bswap32(app_descriptor->crc32));
+        error_handler();
+    } else {
+        log_i("Checksum valid");
+    }
 }
 
 int main(void)
@@ -388,6 +435,7 @@ int main(void)
     spi1_init();
     dma_init();
     adc_init();
+    crc_init();
     usb_init();
 
     /* Initialize the FreeRTOS scheduler */
@@ -406,6 +454,7 @@ int main(void)
 
     /* Print the initial startup messages */
     startup_log_messages();
+    startup_verify_checksum();
 
     /* Create the main task */
     task_main_init();

@@ -1,0 +1,13 @@
+#
+# Custom Makefile targets
+#
+
+densitometer-desc.dat: densitometer.bin
+	../tools/checksum.pl densitometer.bin densitometer-desc.dat
+
+densitometer-out.elf: densitometer.elf densitometer-desc.dat
+	arm-none-eabi-objcopy --update-section .app_descriptor=densitometer-desc.dat \
+	  densitometer.elf densitometer-out.elf
+
+densitometer-out.bin: densitometer-out.elf
+	arm-none-eabi-objcopy -O binary densitometer-out.elf "densitometer-out.bin"

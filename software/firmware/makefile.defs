@@ -1,0 +1,16 @@
+#
+# Makefile definitions used to setup initial build properties
+#
+
+ifeq ($(SHELL), cmd.exe)
+BUILD_DATE := $(shell python -c "from datetime import datetime; print(datetime.utcnow().strftime('%Y-%m-%d %H:%M'))")
+else
+BUILD_DATE := $(shell date -u +"%Y-%m-%d %H:%M")
+endif 
+
+BUILD_DESCRIBE := g$(shell git describe --always --dirty --exclude '*')
+
+$(info Build Time: $(BUILD_DATE))
+$(info Build Describe: $(BUILD_DESCRIBE))
+
+OBJCOPY_BIN += densitometer-out.elf densitometer-out.bin

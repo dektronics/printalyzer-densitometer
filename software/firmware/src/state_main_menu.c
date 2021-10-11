@@ -16,6 +16,7 @@
 #include "tsl2591.h"
 #include "task_sensor.h"
 #include "sensor.h"
+#include "app_descriptor.h"
 
 extern I2C_HandleTypeDef hi2c1;
 
@@ -632,12 +633,13 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
 
 void main_menu_about(state_main_menu_t *state, state_controller_t *controller)
 {
+    const app_descriptor_t *app_descriptor = app_descriptor_get();
     char buf[128];
 
     sprintf(buf,
         "Printalyzer\n"
         "Densitometer\n"
-        "v0.1");
+        "%s", app_descriptor->version);
 
     uint8_t option = display_message(buf, NULL, NULL, " OK ");
     if (option == UINT8_MAX) {
