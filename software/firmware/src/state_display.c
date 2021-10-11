@@ -15,6 +15,8 @@
 typedef struct {
     state_t base;
     bool display_dirty;
+    bool light_dirty;
+    bool is_detect_prev;
     bool menu_pending;
 } state_display_t;
 
@@ -27,6 +29,8 @@ static state_display_t state_reflection_display_data = {
         .state_exit = NULL
     },
     .display_dirty = true,
+    .light_dirty = true,
+    .is_detect_prev = false,
     .menu_pending = false
 };
 
@@ -39,6 +43,8 @@ static state_display_t state_transmission_display_data = {
         .state_exit = NULL
     },
     .display_dirty = true,
+    .light_dirty = true,
+    .is_detect_prev = false,
     .menu_pending = false
 };
 
@@ -51,6 +57,7 @@ void state_reflection_display_entry(state_t *state_base, state_controller_t *con
 {
     state_display_t *state = (state_display_t *)state_base;
     state->display_dirty = true;
+    state->light_dirty = true;
     state->menu_pending = false;
 }
 
@@ -58,11 +65,18 @@ void state_reflection_display_process(state_t *state_base, state_controller_t *c
 {
     state_display_t *state = (state_display_t *)state_base;
     bool is_detect = keypad_is_detect();
+    if (is_detect != state->is_detect_prev) {
+        state->light_dirty = true;
+        state->is_detect_prev = is_detect;
+    }
 
-    if (is_detect) {
-        sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
-    } else {
-        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+    if (state->light_dirty) {
+        if (is_detect) {
+            sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
+        } else {
+            sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+        }
+        state->light_dirty = false;
     }
 
     keypad_event_t keypad_event;
@@ -107,6 +121,7 @@ void state_transmission_display_entry(state_t *state_base, state_controller_t *c
 {
     state_display_t *state = (state_display_t *)state_base;
     state->display_dirty = true;
+    state->light_dirty = true;
     state->menu_pending = false;
 }
 
@@ -114,11 +129,18 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
 {
     state_display_t *state = (state_display_t *)state_base;
     bool is_detect = keypad_is_detect();
+    if (is_detect != state->is_detect_prev) {
+        state->light_dirty = true;
+        state->is_detect_prev = is_detect;
+    }
 
-    if (is_detect) {
-        sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
-    } else {
-        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+    if (state->light_dirty) {
+        if (is_detect) {
+            sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
+        } else {
+            sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+        }
+        state->light_dirty = false;
     }
 
     keypad_event_t keypad_event;

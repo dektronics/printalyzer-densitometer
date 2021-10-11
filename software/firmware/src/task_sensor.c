@@ -290,7 +290,6 @@ void sensor_control_set_config(const sensor_control_config_params_t *params)
 
 void sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value)
 {
-    //TODO have a way to ignore commands that don't change the current state
     sensor_control_event_t control_event = {
         .event_type = SENSOR_CONTROL_SET_LIGHT_MODE,
         .light_mode = {
@@ -308,7 +307,7 @@ void sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value)
 
 void sensor_control_set_light_mode(const sensor_control_light_mode_params_t *params)
 {
-    //log_d("sensor_set_light_mode: %d, %d, %d", light, next_cycle, value);
+    //log_d("sensor_set_light_mode: %d, %d, %d", params->light, params->next_cycle, params->value);
 
     uint8_t pending_reflection;
     uint8_t pending_transmission;
