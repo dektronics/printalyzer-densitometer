@@ -199,7 +199,6 @@ void cdc_task_loop()
     }
 }
 
-extern void elog_redirect(bool value);
 void cdc_process_command(const char *cmd, size_t len)
 {
     if (len == 0 || cmd[0] == '\0') {
