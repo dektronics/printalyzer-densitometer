@@ -24,6 +24,7 @@
  */
 
 #include "tusb.h"
+#include "stm32l072xx.h"
 
 /*
  * Note: Descriptor IDs are currently based on what the STM32 USB Device Stack
@@ -155,6 +156,19 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
     if (index == 0) {
         memcpy(&_desc_str[1], string_desc_arr[0], 2);
         chr_count = 1;
+    } else if (index == 3) {
+        char buf[32];
+        const uint8_t *uniqueId = (uint8_t*)UID_BASE;
+        sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+            uniqueId[0], uniqueId[1], uniqueId[2], uniqueId[3], uniqueId[4],
+            uniqueId[5], uniqueId[6], uniqueId[7], uniqueId[8], uniqueId[9],
+            uniqueId[10], uniqueId[11]);
+        chr_count = strlen(buf);
+        if ( chr_count > 31 ) chr_count = 31;
+
+        for (uint8_t i=0; i<chr_count; i++) {
+            _desc_str[1+i] = buf[i];
+        }
     } else {
         // Note: the 0xEE index string is a Microsoft OS 1.0 Descriptors.
         // https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/microsoft-defined-usb-descriptors
