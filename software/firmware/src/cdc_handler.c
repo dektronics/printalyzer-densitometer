@@ -170,9 +170,6 @@ void cdc_task_loop()
         char buf[64];
         uint32_t count = tud_cdc_read(buf, sizeof(buf));
 
-        /* Echo back out the device */
-        cdc_write(buf, count);
-
         for (size_t i = 0; i < count; i++) {
             /* Fill buffer as long as there is space */
             if (cmd_buffer_len < CMD_DATA_SIZE) {
