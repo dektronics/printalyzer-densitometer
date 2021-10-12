@@ -2,8 +2,24 @@
 #define CDC_HANDLER_H
 
 #include <stddef.h>
+#include <stdbool.h>
 
 void task_cdc_run(void *argument);
+
+/**
+ * Send a density reading out the CDC device.
+ *
+ * @param prefix The reading type, such as 'R' or 'T'
+ * @param value The reading value
+ */
+void cdc_send_density_reading(char prefix, float value);
+
+/**
+ * Send a message indicating the remote control state being changed
+ *
+ * @param enabled True if enabled, false if disabled
+ */
+void cdc_send_remote_state(bool enabled);
 
 /**
  * Write a message out the CDC device.

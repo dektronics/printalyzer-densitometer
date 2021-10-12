@@ -380,8 +380,8 @@ void startup_log_messages(void)
         ((uint8_t)(hal_ver >> 8)) & 0x0F,
         hal_ver_code > 0 ? (char)hal_ver_code : ' ');
     log_i("FreeRTOS: %s", tskKERNEL_VERSION_NUMBER);
-    log_i("Revision ID: 0x%lX", HAL_GetREVID());
     log_i("Device ID: 0x%lX", HAL_GetDEVID());
+    log_i("Revision ID: 0x%lX", HAL_GetREVID());
     log_i("SysClock: %ldMHz", HAL_RCC_GetSysClockFreq() / 1000000);
     log_i("Unique ID: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
         uniqueId[0], uniqueId[1], uniqueId[2], uniqueId[3], uniqueId[4],

@@ -12,7 +12,8 @@ typedef enum {
     KEYPAD_BUTTON_UP = 0x02,
     KEYPAD_BUTTON_DOWN = 0x04,
     KEYPAD_BUTTON_MENU = 0x08,
-    KEYPAD_BUTTON_DETECT = 0x10
+    KEYPAD_BUTTON_DETECT = 0x10,
+    KEYPAD_FORCE_TIMEOUT = 0xFF
 } keypad_key_t;
 
 typedef struct {

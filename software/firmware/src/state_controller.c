@@ -9,6 +9,7 @@
 #include "state_display.h"
 #include "state_measure.h"
 #include "state_main_menu.h"
+#include "state_remote.h"
 
 struct __state_controller_t {
     state_identifier_t current_state;
@@ -37,6 +38,7 @@ void state_controller_init()
     state_map[STATE_TRANSMISSION_DISPLAY] = state_transmission_display();
     state_map[STATE_TRANSMISSION_MEASURE] = state_transmission_measure();
     state_map[STATE_MAIN_MENU] = state_main_menu();
+    state_map[STATE_REMOTE] = state_remote();
 }
 
 void state_controller_loop()
@@ -66,6 +68,16 @@ void state_controller_loop()
         /* Call the process function for the state */
         if (state && state->state_process) {
             state->state_process(state, &state_controller);
+        }
+
+        /* Check if a thread notification should trigger a state transition */
+        uint32_t flags = osThreadFlagsWait(0x7FFFFFFF, osFlagsWaitAny, 0);
+        if ((flags & 0x80000000) == 0 && (flags & 0x40000000)) {
+            uint32_t next_state = flags & 0x00FFFFFF;
+            log_i("Notify switch to state: %d", next_state);
+            if (next_state < STATE_MAX) {
+                state_controller.next_state = next_state;
+            }
         }
 
         /* Check if we will do a state transition on the next loop */

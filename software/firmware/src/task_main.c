@@ -34,8 +34,8 @@ static const osSemaphoreAttr_t task_start_semaphore_attributes = {
 };
 
 #define TASK_MAIN_STACK_SIZE (2048U)
-#define TASK_USBD_STACK_SIZE (1536U)
-#define TASK_CDC_STACK_SIZE (1024U)
+#define TASK_USBD_STACK_SIZE (1024U)
+#define TASK_CDC_STACK_SIZE (1536U)
 
 #ifdef KEYPAD_DEBUG
 #define TASK_KEYPAD_STACK_SIZE (768U)
@@ -173,4 +173,36 @@ void task_usbd_run(void *argument)
     while (1) {
         tud_task();
     }
+}
+
+osStatus_t task_main_force_state(state_identifier_t next_state)
+{
+    if (next_state >= STATE_MAX) { return osErrorParameter; }
+
+    osStatus_t result = osOK;
+    keypad_event_t key_event = {
+        .key = KEYPAD_FORCE_TIMEOUT,
+        .pressed = true
+    };
+
+    do {
+        /* Clear any pending keypad events */
+        result = keypad_clear_events();
+        if (result != osOK) { break; }
+
+        /* Inject a key event to make menu key handlers hit timeouts */
+        result = keypad_inject_event(&key_event);
+
+        /* Clear any pending task notifications */
+        if (xTaskNotifyStateClear(task_list[0].task_handle) != osOK) {
+            result = osError;
+            break;
+        }
+
+        /* Set the task notification for the state change */
+        result = osThreadFlagsSet(task_list[0].task_handle, next_state | 0x40000000);
+        if (result != osOK) { break; }
+    } while (0);
+
+    return result;
 }

@@ -20,6 +20,7 @@
 #include "display.h"
 #include "light.h"
 #include "sensor.h"
+#include "task_main.h"
 #include "task_sensor.h"
 #include "adc_handler.h"
 #include "tsl2591.h"
@@ -31,10 +32,33 @@
 #define CDC_TX_TIMEOUT 200
 #define CDC_MIN_BIT_RATE 9600
 
+typedef enum {
+    CMD_TYPE_SET,
+    CMD_TYPE_GET,
+    CMD_TYPE_INVOKE
+} cmd_type_t;
+
+typedef enum {
+    CMD_CATEGORY_SYSTEM,
+    CMD_CATEGORY_MEASUREMENT,
+    CMD_CATEGORY_CALIBRATION,
+    CMD_CATEGORY_DIAGNOSTICS
+} cmd_category_t;
+
+typedef struct {
+    cmd_type_t type;
+    cmd_category_t category;
+    char action[8];
+    char args[32];
+} cdc_command_t;
+
 static volatile bool cdc_initialized = false;
 static volatile bool cdc_host_connected = false;
+static volatile bool cdc_logging_redirected = false;
 static uint8_t cmd_buffer[CMD_DATA_SIZE];
 static size_t cmd_buffer_len = 0;
+static bool cdc_remote_enabled = false;
+static volatile bool cdc_remote_active = false;
 
 /* Semaphore used to unblock the task when new data is available */
 static osSemaphoreId_t cdc_rx_semaphore = NULL;
@@ -55,19 +79,16 @@ static const osMutexAttr_t cdc_mutex_attrs = {
 };
 
 static void cdc_task_loop();
-static void cdc_process_command(const char *cmd, size_t len);
-static void cdc_command_version(const char *cmd, size_t len);
-static void cdc_command_measure_reflection(const char *cmd, size_t len);
-static void cdc_command_measure_transmission(const char *cmd, size_t len);
-static void cdc_command_cal_gain(const char *cmd, size_t len);
-static void cdc_command_cal_light(const char *cmd, size_t len);
-static void cdc_command_cal_reflection(const char *cmd, size_t len);
-static void cdc_command_cal_transmission(const char *cmd, size_t len);
-static void cdc_command_diag_system(const char *cmd, size_t len);
-static void cdc_command_diag_display(const char *cmd, size_t len);
-static void cdc_command_diag_light(const char *cmd, size_t len);
-static void cdc_command_diag_sensor(const char *cmd, size_t len);
+static void cdc_set_connected(bool connected);
+static void cdc_process_command(const char *buf, size_t len);
+static bool cdc_parse_command(cdc_command_t *cmd, const char *buf, size_t len);
+static bool cdc_process_command_system(const cdc_command_t *cmd);
+static bool cdc_process_command_measurement(const cdc_command_t *cmd);
+static bool cdc_process_command_calibration(const cdc_command_t *cmd);
+static bool cdc_process_command_diagnostics(const cdc_command_t *cmd);
+
 static void cdc_send_response(const char *str);
+static void cdc_send_command_response(const cdc_command_t *cmd, const char *str);
 
 extern I2C_HandleTypeDef hi2c1;
 
@@ -119,25 +140,29 @@ void task_cdc_run(void *argument)
 
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
-    log_d("tud_cdc_line_state: itf=%d, dtr=%d, rts=%d", itf, dtr, rts);
+    if (!cdc_logging_redirected) {
+        log_d("tud_cdc_line_state: itf=%d, dtr=%d, rts=%d", itf, dtr, rts);
+    }
     osMutexAcquire(cdc_mutex, portMAX_DELAY);
     if (dtr) {
         cdc_line_coding_t *coding = NULL;
         tud_cdc_get_line_coding(coding);
-        cdc_host_connected = !coding || (coding->bit_rate >= CDC_MIN_BIT_RATE);
+        cdc_set_connected(!coding || (coding->bit_rate >= CDC_MIN_BIT_RATE));
     } else {
-        cdc_host_connected = false;
+        cdc_set_connected(false);
     }
     osMutexRelease(cdc_mutex);
 }
 
 void tud_cdc_line_coding_cb(uint8_t itf, cdc_line_coding_t const* p_line_coding)
 {
-    log_d("tud_cdc_line_coding: itf=%d, bit_rate=%d", itf, p_line_coding->bit_rate);
+    if (!cdc_logging_redirected) {
+        log_d("tud_cdc_line_coding: itf=%d, bit_rate=%d", itf, p_line_coding->bit_rate);
+    }
     osMutexAcquire(cdc_mutex, portMAX_DELAY);
     if (p_line_coding->bit_rate < CDC_MIN_BIT_RATE) {
         log_w("Bit rate not supported: %d < %d", p_line_coding->bit_rate, CDC_MIN_BIT_RATE);
-        cdc_host_connected = false;
+        cdc_set_connected(false);
     }
     osMutexRelease(cdc_mutex);
 }
@@ -198,614 +223,532 @@ void cdc_task_loop()
     }
 }
 
-void cdc_process_command(const char *cmd, size_t len)
+void cdc_set_connected(bool connected)
 {
-    if (len == 0 || cmd[0] == '\0') {
+    if (cdc_host_connected != connected) {
+        if (!connected) {
+            elog_port_redirect(NULL);
+            elog_set_text_color_enabled(true);
+            cdc_logging_redirected = false;
+            if (cdc_remote_enabled) {
+                task_main_force_state(STATE_HOME);
+                cdc_remote_enabled = false;
+                cdc_remote_active = false;
+            }
+        }
+        cdc_host_connected = connected;
+    }
+}
+
+void cdc_process_command(const char *buf, size_t len)
+{
+    cdc_command_t cmd = {0};
+
+    if (len == 0 || buf[0] == '\0') {
         return;
     }
 
-    log_i("Command: \"%s\"", cmd);
-
-    char cmd_prefix = toupper(cmd[0]);
-
-    if (cmd_prefix == 'V') {
-        /* Version string command */
-        cdc_command_version(cmd, len);
-    } else if (cmd_prefix == 'M' && len > 1) {
-        /* Measurement command */
-        char meas_prefix = toupper(cmd[1]);
-        if (meas_prefix == 'R') {
-            cdc_command_measure_reflection(cmd, len);
-        } else if (meas_prefix == 'T') {
-            cdc_command_measure_transmission(cmd, len);
+    if (cdc_parse_command(&cmd, buf, len)) {
+        bool result = false;
+        switch (cmd.category) {
+        case CMD_CATEGORY_SYSTEM:
+            result = cdc_process_command_system(&cmd);
+            break;
+        case CMD_CATEGORY_MEASUREMENT:
+            result = cdc_process_command_measurement(&cmd);
+            break;
+        case CMD_CATEGORY_CALIBRATION:
+            result = cdc_process_command_calibration(&cmd);
+            break;
+        case CMD_CATEGORY_DIAGNOSTICS:
+            result = cdc_process_command_diagnostics(&cmd);
+            break;
+        default:
+            break;
         }
-    } else if (cmd_prefix == 'C' && len > 1) {
-        /* Calibration command */
-        char cal_prefix = toupper(cmd[1]);
-        if (cal_prefix == 'G') {
-            cdc_command_cal_gain(cmd, len);
-        } else if (cal_prefix == 'L') {
-            cdc_command_cal_light(cmd, len);
-        } else if (cal_prefix == 'R') {
-            cdc_command_cal_reflection(cmd, len);
-        } else if (cal_prefix == 'T') {
-            cdc_command_cal_transmission(cmd, len);
-        }
-    } else if (cmd_prefix == 'D' && len > 1) {
-        /* Diagnostic command */
-        char diag_prefix = toupper(cmd[1]);
-        if (diag_prefix == 'A') {
-            cdc_command_diag_system(cmd, len);
-        } else if (diag_prefix == 'D') {
-            cdc_command_diag_display(cmd, len);
-        } else if (diag_prefix == 'L') {
-            cdc_command_diag_light(cmd, len);
-        } else if (diag_prefix == 'S') {
-            cdc_command_diag_sensor(cmd, len);
-        }
-    } else if (cmd_prefix == 'L' && len > 1) {
-        /* Logging command */
-        char log_prefix = toupper(cmd[1]);
-        if (log_prefix == 'U') {
-            elog_port_redirect(cdc_write);
-        } else if (log_prefix == 'D') {
-            elog_port_redirect(NULL);
+        if (!result) {
+            cdc_send_command_response(&cmd, "NAK");
         }
     }
 }
 
-void cdc_command_version(const char *cmd, size_t len)
+bool cdc_parse_command(cdc_command_t *cmd, const char *buf, size_t len)
 {
-    const app_descriptor_t *app_descriptor = app_descriptor_get();
-    char buf[64];
+    cmd_type_t type;
+    cmd_category_t category;
 
-    if (len == 1 ) {
-        sprintf(buf, "%s %s\r\n", app_descriptor->project_name, app_descriptor->version);
-        cdc_send_response(buf);
-    } else if (len == 2 && cmd[1] == 'B') {
-        sprintf(buf, "\"%s\",\"%s\",%08lX\r\n",
+    if (!cmd || !buf || len < 2 || buf[0] == '\0') {
+        return false;
+    }
+
+    switch (buf[0]) {
+    case 'S':
+        type = CMD_TYPE_SET;
+        break;
+    case 'G':
+        type = CMD_TYPE_GET;
+        break;
+    case 'I':
+        type = CMD_TYPE_INVOKE;
+        break;
+    default:
+        return false;
+    }
+
+    switch (buf[1]) {
+    case 'S':
+        category = CMD_CATEGORY_SYSTEM;
+        break;
+    case 'M':
+        category = CMD_CATEGORY_MEASUREMENT;
+        break;
+    case 'C':
+        category = CMD_CATEGORY_CALIBRATION;
+        break;
+    case 'D':
+        category = CMD_CATEGORY_DIAGNOSTICS;
+        break;
+    default:
+        return false;
+    }
+
+    if (len > 2 && buf[2] != ' ') {
+        return false;
+    }
+
+    cmd->type = type;
+    cmd->category = category;
+
+    if (len > 3) {
+        char *p = strchr(buf + 3, ',');
+        if (p) {
+            strncpy(cmd->action, buf + 3, MIN(p - (buf + 3), sizeof(cmd->action) - 1));
+            strncpy(cmd->args, p + 1, MIN(len - ((p + 1) - buf), sizeof(cmd->args) - 1));
+        } else {
+            strncpy(cmd->action, buf + 3, MIN(len - 3, sizeof(cmd->action) - 1));
+            bzero(cmd->args, sizeof(cmd->args));
+        }
+    } else {
+        bzero(cmd->action, sizeof(cmd->action));
+        bzero(cmd->args, sizeof(cmd->args));
+    }
+
+    log_i("Command: [%c][%c] {%s},\"%s\"", buf[0], buf[1], cmd->action, cmd->args);
+
+    return true;
+}
+
+bool cdc_process_command_system(const cdc_command_t *cmd)
+{
+    /*
+     * System Commands
+     * "GS V"    -> Get project name and version
+     * "GS B"    -> Get firmware build information
+     * "GS DEV"  -> Get device information (HAL version, MCU Rev ID, MCU Dev ID, SysClock)
+     * "GS RTOS" -> Get FreeRTOS information
+     * "GS UID"  -> Get device unique ID
+     * "GS ISEN" -> Internal sensor readings
+     * "IS REMOTE,n" -> Invoke remote control mode (enable = 1, disable = 0)
+     */
+    const app_descriptor_t *app_descriptor = app_descriptor_get();
+    char buf[128];
+
+    if (!cmd) { return false; }
+
+    if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "V") == 0) {
+        /*
+         * Output format:
+         * Project name, Version
+         */
+        sprintf(buf, "\"%s\",\"%s\"", app_descriptor->project_name, app_descriptor->version);
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "B") == 0) {
+        /*
+         * Output format:
+         * Build date, Build describe, Checksum
+         */
+        sprintf(buf, "\"%s\",\"%s\",%08lX",
             app_descriptor->build_date,
             app_descriptor->build_describe,
             __bswap32(app_descriptor->crc32));
-        cdc_send_response(buf);
-    }
-}
-
-void cdc_command_measure_reflection(const char *cmd, size_t len)
-{
-    /*
-     * "MR" : Measurement Reflection
-     */
-
-    UNUSED(cmd);
-    UNUSED(len);
-
-    densitometer_result_t result = densitometer_reflection_measure(NULL, NULL);
-    if (result == DENSITOMETER_OK) {
-        char buf[128];
-
-        float meas_d = densitometer_reflection_get_last_reading();
-        sprintf_(buf, "MR,D=%.2f\r\n", meas_d);
-        cdc_send_response(buf);
-
-    } else if (result == DENSITOMETER_CAL_ERROR) {
-        cdc_send_response("ERR,CAL\r\n");
-
-    } else if (result == DENSITOMETER_SENSOR_ERROR) {
-        cdc_send_response("ERR,SENSOR\r\n");
-
-    } else {
-        cdc_send_response("ERR\r\n");
-
-    }
-}
-
-void cdc_command_measure_transmission(const char *cmd, size_t len)
-{
-    /*
-     * "MT" : Measurement Transmission
-     */
-
-    UNUSED(cmd);
-    UNUSED(len);
-
-    densitometer_result_t result = densitometer_transmission_measure(NULL, NULL);
-    if (result == DENSITOMETER_OK) {
-        char buf[128];
-
-        float meas_d = densitometer_transmission_get_last_reading();
-        sprintf_(buf, "MT,D=%.2f\r\n", meas_d);
-        cdc_send_response(buf);
-
-    } else if (result == DENSITOMETER_CAL_ERROR) {
-        cdc_send_response("ERR,CAL\r\n");
-
-    } else if (result == DENSITOMETER_SENSOR_ERROR) {
-        cdc_send_response("ERR,SENSOR\r\n");
-
-    } else {
-        cdc_send_response("ERR\r\n");
-
-    }
-}
-
-void cdc_command_cal_gain(const char *cmd, size_t len)
-{
-    /*
-     * "CG" : Calibration Gain
-     * "CGM" -> Measure actual sensor gain and save as calibration values
-     * "CGP" -> Return currently saved gain calibration values
-     */
-
-    if (len < 3) {
-        return;
-    }
-
-    char prefix = toupper(cmd[2]);
-
-    if (prefix == 'M') {
-        if (sensor_gain_calibration(NULL, NULL) == osOK) {
-            cdc_send_response("OK\r\n");
-        } else {
-            cdc_send_response("ERR\r\n");
-        }
-    } else if (prefix == 'P') {
-        char buf[128];
-        float ch0_gain, ch1_gain;
-
-        settings_get_cal_gain(TSL2591_GAIN_MEDIUM, &ch0_gain, &ch1_gain);
-        sprintf_(buf, "TSL2591,MEDIUM,%.2f,%.2f\r\n", ch0_gain, ch1_gain);
-        cdc_send_response(buf);
-
-        settings_get_cal_gain(TSL2591_GAIN_HIGH, &ch0_gain, &ch1_gain);
-        sprintf_(buf, "TSL2591,HIGH,%.2f,%.2f\r\n", ch0_gain, ch1_gain);
-        cdc_send_response(buf);
-
-        settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &ch0_gain, &ch1_gain);
-        sprintf_(buf, "TSL2591,MAXIMUM,%.2f,%.2f\r\n", ch0_gain, ch1_gain);
-        cdc_send_response(buf);
-    }
-}
-
-void cdc_command_cal_light(const char *cmd, size_t len)
-{
-    /*
-     * "CL" : Calibration Light Source
-     * "CLR" -> Measure reflection light source drop over time and save as calibration values
-     * "CLT" -> Measure transmission light source drop over time and save as calibration values
-     * "CLP" -> Return currently saved light source calibration values
-     */
-
-    if (len < 3) {
-        return;
-    }
-
-    char prefix = toupper(cmd[2]);
-
-    if (prefix == 'R') {
-        osStatus_t ret = osOK;
-        ret = sensor_light_calibration(SENSOR_LIGHT_REFLECTION, NULL, NULL);
-        if (ret == osOK) {
-            char buf[64];
-            float value;
-            settings_get_cal_reflection_led_factor(&value);
-            sprintf_(buf, "LIGHT,REFL,%f\r\n", value);
-            cdc_send_response(buf);
-            cdc_send_response("OK\r\n");
-        } else {
-            cdc_send_response("ERR\r\n");
-        }
-    } else if (prefix == 'T') {
-        osStatus_t ret = osOK;
-        ret = sensor_light_calibration(SENSOR_LIGHT_TRANSMISSION, NULL, NULL);
-        if (ret == osOK) {
-            char buf[64];
-            float value;
-            settings_get_cal_transmission_led_factor(&value);
-            sprintf_(buf, "LIGHT,TRAN,%f\r\n", value);
-            cdc_send_response(buf);
-            cdc_send_response("OK\r\n");
-        } else {
-            cdc_send_response("ERR\r\n");
-        }
-    } else if (prefix == 'P') {
-        char buf[64];
-        float value;
-
-        settings_get_cal_reflection_led_factor(&value);
-        sprintf_(buf, "LIGHT,REFL,%f\r\n", value);
-        cdc_send_response(buf);
-
-        settings_get_cal_transmission_led_factor(&value);
-        sprintf_(buf, "LIGHT,TRAN,%f\r\n", value);
-        cdc_send_response(buf);
-
-        cdc_send_response("OK\r\n");
-    }
-}
-
-void cdc_command_cal_reflection(const char *cmd, size_t len)
-{
-    /*
-     * "CRL" : Reflection Calibration CAL-LO
-     * "CRLMnnn" -> Calibrate using low target with a known density of n.nn (e.g. 123 = 1.23)
-     * "CLP"    -> Return currently saved low target calibration values
-     *
-     * "CRH" : Reflection Calibration CAL-HI
-     * "CRHMnnn" -> Calibrate using high target with a known density of n.nn (e.g. 123 = 1.23)
-     * "CRHP"    -> Return currently saved high target calibration values
-     */
-
-    if (len < 4) {
-        return;
-    }
-
-    char mode = toupper(cmd[2]);
-    char prefix = toupper(cmd[3]);
-
-    if (mode != 'L' && mode != 'H') {
-        return;
-    }
-
-    if (prefix == 'M') {
-        densitometer_result_t result = DENSITOMETER_OK;
-
-        int val = (len > 4) ? atoi(cmd + 4) : 0;
-
-        float d = val / 100.0F;
-        if (d < 0) { d = 0.0F; }
-        else if (d > REFLECTION_MAX_D) { d = REFLECTION_MAX_D; }
-
-        float meas_value = NAN;
-
-        if (mode == 'L') {
-            result = densitometer_calibrate_reflection_lo(d, NULL, NULL);
-            settings_get_cal_reflection_lo(NULL, &meas_value);
-        } else if (mode == 'H') {
-            result = densitometer_calibrate_reflection_hi(d, NULL, NULL);
-            settings_get_cal_reflection_hi(NULL, &meas_value);
-        } else {
-            result = DENSITOMETER_SENSOR_ERROR;
-        }
-
-        if (result == DENSITOMETER_OK) {
-            log_i("CAL, %c, D=%.2f, VALUE=%f", mode, d, meas_value);
-
-            cdc_send_response("OK\r\n");
-        } else {
-            cdc_send_response("ERR\r\n");
-        }
-
-        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
-
-    } else if (prefix == 'P') {
-        char buf[128];
-        float d = 0;
-        float value = 0;
-
-        if (mode == 'L') {
-            settings_get_cal_reflection_lo(&d, &value);
-        } else if (mode == 'H') {
-            settings_get_cal_reflection_hi(&d, &value);
-        }
-
-        sprintf_(buf, "CAL,%c,%.2f,%f\r\n", mode, d, value);
-        cdc_send_response(buf);
-    }
-}
-
-void cdc_command_cal_transmission(const char *cmd, size_t len)
-{
-    /*
-     * "CTZ" : Transmission Calibration Zero
-     * "CTZM" -> Calibrate the zero target, which is when no film is in the sensor path
-     * "CTZP" -> Return currently saved zero target calibration value
-     *
-     * "CTH" : Transmission Calibration CAL-HI
-     * "CTHMnnn" -> Calibrate using high target with a known density of n.nn (e.g. 123 = 1.23)
-     * "CTHP"    -> Return currently saved high target calibration values
-     */
-
-    char mode = toupper(cmd[2]);
-    char prefix = toupper(cmd[3]);
-
-    if (mode != 'Z' && mode != 'H') {
-        return;
-    }
-
-    if (prefix == 'M') {
-        densitometer_result_t result = DENSITOMETER_OK;
-        float d = NAN;
-        float meas_value = NAN;
-
-        if (mode == 'H') {
-            int val = (len > 4) ? atoi(cmd + 4) : 0;
-            d = val / 100.0F;
-            if (d < 0) { d = 0.0F; }
-        }
-
-        if (mode == 'Z') {
-            result = densitometer_calibrate_transmission_zero(NULL, NULL);
-            settings_get_cal_transmission_zero(&meas_value);
-        } else if (mode == 'H') {
-            result = densitometer_calibrate_transmission_hi(d, NULL, NULL);
-            settings_get_cal_transmission_hi(NULL, &meas_value);
-        } else {
-            result = DENSITOMETER_SENSOR_ERROR;
-        }
-
-        if (result == DENSITOMETER_OK) {
-            log_i("CAL, %c, D=%.2f, VALUE=%f", mode, d, meas_value);
-
-            cdc_send_response("OK\r\n");
-        } else {
-            cdc_send_response("ERR\r\n");
-        }
-
-        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
-
-    } else if (prefix == 'P') {
-        char buf[128];
-        float d = 0;
-        float value = 0;
-
-        if (mode == 'Z') {
-            settings_get_cal_transmission_zero(&value);
-            sprintf_(buf, "CAL,%c,%f\r\n", mode, value);
-        } else if (mode == 'H') {
-            settings_get_cal_transmission_hi(&d, &value);
-            sprintf_(buf, "CAL,%c,%.2f,%f\r\n", mode, d, value);
-        } else {
-            sprintf(buf, "ERR\r\n");
-        }
-
-        cdc_send_response(buf);
-    }
-}
-
-void cdc_command_diag_system(const char *cmd, size_t len)
-{
-    char buf[128];
-
-    /*
-     * "DA" : Diagnostic About System
-     * "DAI" -> Device information (HAL version, MCU Rev ID, MCU Dev ID, SysClock)
-     * "DAU" -> Device unique ID (MCU unique ID)
-     * "DAF" -> FreeRTOS runtime information
-     * "DAS" -> Internal sensor readings
-     */
-
-    if (len < 3) {
-        return;
-    }
-
-    char prefix = toupper(cmd[2]);
-
-    if (prefix == 'I') {
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "DEV") == 0) {
+        /*
+         * Output format:
+         * HAL Version, MCU Device ID, MCU Revision ID, SysClock Frequency
+         */
         uint32_t hal_ver = HAL_GetHalVersion();
         uint8_t hal_ver_code = ((uint8_t)(hal_ver)) & 0x0F;
 
-        /*
-         * Output format:
-         * HAL Version, MCU Revision ID, MCU Device ID, SysClock Frequency
-         */
-
-        sprintf(buf, "%d.%d.%d%c,0x%lX,0x%lX,%ldMHz\r\n",
+        sprintf(buf, "%d.%d.%d%c,0x%lX,0x%lX,%ldMHz",
             ((uint8_t)(hal_ver >> 24)) & 0x0F,
             ((uint8_t)(hal_ver >> 16)) & 0x0F,
             ((uint8_t)(hal_ver >> 8)) & 0x0F,
             (hal_ver_code > 0 ? (char)hal_ver_code : ' '),
-            HAL_GetREVID(),
             HAL_GetDEVID(),
+            HAL_GetREVID(),
             HAL_RCC_GetSysClockFreq() / 1000000);
-        cdc_send_response(buf);
-
-    } else if (prefix == 'U') {
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "RTOS") == 0) {
+        /*
+         * Output format:
+         * FreeRTOS Version, Heap Size, Heap Watermark, Task Count
+         */
+        sprintf(buf, "%s,%d,%d,%ld",
+            tskKERNEL_VERSION_NUMBER,
+            xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize(),
+            uxTaskGetNumberOfTasks());
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "UID") == 0) {
         uint8_t *uniqueId = (uint8_t*)UID_BASE;
 
-        sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\r\n",
+        sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
             uniqueId[0], uniqueId[1], uniqueId[2], uniqueId[3], uniqueId[4],
             uniqueId[5], uniqueId[6], uniqueId[7], uniqueId[8], uniqueId[9],
             uniqueId[10], uniqueId[11]);
-        cdc_send_response(buf);
-    } else if (prefix == 'F') {
-        sprintf(buf, "FreeRTOS,%s\r\n", tskKERNEL_VERSION_NUMBER);
-        cdc_send_response(buf);
-
-        sprintf(buf, "HEAP,%d,%d\r\n", xPortGetFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
-        cdc_send_response(buf);
-
-        TaskStatus_t *pxTaskStatusArray;
-        volatile UBaseType_t uxArraySize, x;
-        uxArraySize = uxTaskGetNumberOfTasks();
-        pxTaskStatusArray = pvPortMalloc(uxArraySize * sizeof(TaskStatus_t));
-        if (pxTaskStatusArray != NULL) {
-            uxArraySize = uxTaskGetSystemState(pxTaskStatusArray, uxArraySize, NULL);
-            for (x = 0; x < uxArraySize; x++) {
-                sprintf(buf, "TASK,\"%s\",%d\r\n",
-                    pxTaskStatusArray[x].pcTaskName,
-                    pxTaskStatusArray[x].usStackHighWaterMark * 4);
-                cdc_send_response(buf);
-            }
-            vPortFree(pxTaskStatusArray);
-        }
-        cdc_send_response("OK\r\n");
-    } else if (prefix == 'S') {
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "ISEN") == 0) {
+        /*
+         * Output format:
+         * VDDA, Temperature
+         */
         adc_readings_t readings;
         if (adc_read(&readings) == osOK) {
-            sprintf(buf, "VDDA,%dmV\r\n", readings.vdda_mv);
-            cdc_send_response(buf);
-
-            sprintf(buf, "TEMP,%dC\r\n", readings.temp_c);
-            cdc_send_response(buf);
-
-            cdc_send_response("OK\r\n");
+            sprintf(buf, "%dmV,%dC", readings.vdda_mv, readings.temp_c);
+            cdc_send_command_response(cmd, buf);
         } else {
-            cdc_send_response("ERR\r\n");
+            cdc_send_command_response(cmd, "ERR");
         }
+        return true;
+    } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "REMOTE") == 0) {
+        bool enable;
+        if (cmd->args[0] == '0' && cmd->args[1] == '\0') {
+            enable = false;
+        } else if (cmd->args[0] == '1' && cmd->args[1] == '\0') {
+            enable = true;
+        } else {
+            return false;
+        }
+
+        log_i("Set remote control mode: %d", enable);
+        if (enable) {
+            cdc_remote_enabled = true;
+            task_main_force_state(STATE_REMOTE);
+        } else {
+            task_main_force_state(STATE_HOME);
+            cdc_remote_enabled = false;
+        }
+
+        return true;
+    } else {
+        return false;
     }
 }
 
-void cdc_command_diag_display(const char *cmd, size_t len)
+bool cdc_process_command_measurement(const cdc_command_t *cmd)
 {
     /*
-     * "DD" : Diagnostic Display
-     * "DDS" -> Capture display screenshot
+     * It might make more sense to simply remove the explicit measurement
+     * commands, because they no longer make any sense here.
+     * In their place, perhaps this is where we should put commands to
+     * change the measurement response format from the default (just density)
+     * to an expanded version with raw/intermediate sensor readings that
+     * are useful to offline calibration routines.
      */
+    //TODO Add commands to change the measurement response format
+    return false;
+}
 
-    if (len < 3) {
-        return;
+bool cdc_process_command_calibration(const cdc_command_t *cmd)
+{
+    /*
+     * Calibration Commands
+     * "IC GAIN" -> Invoke the sensor gain calibration process [remote]
+     * "IC LR"   -> Invoke the reflection light source calibration process [remote]
+     * "IC LT"   -> Invoke the transmission light source calibration process [remote]
+     *
+     * "GC GAIN" -> Get sensor gain calibration values
+     * "GC LR"   -> Get reflection light source calibration value
+     * "GC LT"   -> Get reflection light source calibration value
+     */
+    if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "GAIN") == 0 && cdc_remote_active) {
+        //TODO This is long running, having some sort of progress notification could be helpful
+        osStatus_t result = sensor_gain_calibration(NULL, NULL);
+        if (result == osOK) {
+            cdc_send_command_response(cmd, "OK");
+        } else {
+            cdc_send_command_response(cmd, "ERR");
+        }
+        return true;
+    } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "LR") == 0 && cdc_remote_active) {
+        //TODO This is long running, having some sort of progress notification could be helpful
+        osStatus_t result = sensor_light_calibration(SENSOR_LIGHT_REFLECTION, NULL, NULL);
+        if (result == osOK) {
+            cdc_send_command_response(cmd, "OK");
+        } else {
+            cdc_send_command_response(cmd, "ERR");
+        }
+        return true;
+    } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "LT") == 0 && cdc_remote_active) {
+        //TODO This is long running, having some sort of progress notification could be helpful
+        osStatus_t result = sensor_light_calibration(SENSOR_LIGHT_TRANSMISSION, NULL, NULL);
+        if (result == osOK) {
+            cdc_send_command_response(cmd, "OK");
+        } else {
+            cdc_send_command_response(cmd, "ERR");
+        }
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "GAIN") == 0) {
+        char buf[128];
+        float ch0_medium;
+        float ch1_medium;
+        float ch0_high;
+        float ch1_high;
+        float ch0_maximum;
+        float ch1_maximum;
+
+        settings_get_cal_gain(TSL2591_GAIN_MEDIUM, &ch0_medium, &ch1_medium);
+        settings_get_cal_gain(TSL2591_GAIN_HIGH, &ch0_high, &ch1_high);
+        settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &ch0_maximum, &ch1_maximum);
+
+        sprintf_(buf, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
+            1.0F, 1.0F,
+            ch0_medium, ch1_medium,
+            ch0_high, ch1_high,
+            ch0_maximum, ch1_maximum);
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "LR") == 0) {
+        char buf[64];
+        float value;
+        settings_get_cal_reflection_led_factor(&value);
+        sprintf_(buf, "%f", value);
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "LT") == 0) {
+        char buf[64];
+        float value;
+        settings_get_cal_transmission_led_factor(&value);
+        sprintf_(buf, "%f", value);
+        cdc_send_command_response(cmd, buf);
+        return true;
     }
 
-    char prefix = toupper(cmd[2]);
+    return false;
+}
 
-    if (prefix == 'S') {
+bool cdc_process_command_diagnostics(const cdc_command_t *cmd)
+{
+    /*
+     * Diagnostics Commands
+     * "GD DISP" -> Get display screenshot (multi-line response)
+     *
+     * "SD LR,nnn" -> Set reflection light duty cycle (nnn/127) [remote]
+     * "SD LT,nnn" -> Set transmission light duty cycle (nnn/127) [remote]
+     *
+     * "ID S,START"   -> Invoke sensor start [remote]
+     * "ID S,STOP"    -> Invoke sensor stop [remote]
+     * "SD S,CFG,n,m" -> Set sensor gain (n = [0-3]) and integration time (m = [0-5]) [remote]
+     * "GD S,READING" -> Get next sensor reading [remote]
+     *
+     * "SD LOG,U" -> Set logging output to USB CDC device
+     * "SD LOG,D" -> Set logging output to debug port UART
+     */
+
+    if (!cmd) { return false; }
+
+    if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "DISP") == 0) {
+        cdc_send_command_response(cmd, "[[");
         display_capture_screenshot();
-    }
-}
+        cdc_send_response("]]\r\n");
+        return true;
+    } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "LR") == 0 && cdc_remote_active) {
+        uint8_t value = atoi(cmd->args);
+        if (value > 128) { value = 128; }
 
-void cdc_command_diag_light(const char *cmd, size_t len)
-{
-    /*
-     * "DL" : Diagnostic Light
-     * "DLRnnn" -> Reflection light, duty cycle = nnn/127
-     * "DLTnnn" -> Transmission light, duty cycle = nnn/127
-     * "DLAnnn" -> All light sources, duty cycle = nnn/127
-     */
-
-    if (len < 3) {
-        return;
-    }
-
-    char prefix = toupper(cmd[2]);
-
-    uint8_t val = (len > 3) ? atoi(cmd + 3) : 0;
-    if (val > 128) { val = 128; }
-
-    if (prefix == 'R') {
-        log_d("Set reflection light to %d", val);
-        light_set_reflection(val);
-    } else if (prefix == 'T') {
-        log_d("Set transmission light to %d", val);
-        light_set_transmission(val);
-    } else if (prefix == 'A') {
-        log_d("Set all light sources to %d", val);
-        light_set_reflection(val);
-        light_set_transmission(val);
-    }
-}
-
-void cdc_command_diag_sensor(const char *cmd, size_t len)
-{
-    /*
-     * "DS" : Diagnostic Sensor
-     * "DSR"  -> Take reading (output format TBD)
-     * "DSSnm" -> Set gain (n = [0-3]) and integration time (m = [0-5])
-     * "DSQ"  -> Query current sensor settings (output format TBD)
-     */
-
-    if (len < 3) {
-        return;
-    }
-
-    char prefix = toupper(cmd[2]);
-
-    if (prefix == 'R') {
-        log_d("Take sensor reading");
-
-        /*
-         * Note: This should be replaced with a call to a proper sensor
-         * handling routine, once one is written. For now, it is just
-         * directly calling the sensor's API in a rudimentary fashion.
-         */
-
-        HAL_StatusTypeDef ret;
-        bool enabled = false;
-        bool valid = false;
-        uint16_t ch0_val = 0;
-        uint16_t ch1_val = 0;
-        tsl2591_gain_t gain = TSL2591_GAIN_LOW;
-        tsl2591_time_t time = TSL2591_TIME_100MS;
-
-        do {
-            ret = tsl2591_enable(&hi2c1);
-            if (ret != HAL_OK) { break; }
-            enabled = true;
-
-            ret = tsl2591_get_config(&hi2c1, &gain, &time);
-            if (ret != HAL_OK) { break; }
-
-            do {
-                ret = tsl2591_get_status_valid(&hi2c1, &valid);
-            } while (!valid && ret == HAL_OK);
-            if (ret != HAL_OK) { break; }
-
-            ret = tsl2591_get_full_channel_data(&hi2c1, &ch0_val, &ch1_val);
-            if (ret != HAL_OK) { break; }
-        } while (0);
-
-        if (enabled) {
-            tsl2591_disable(&hi2c1);
-        }
-
-        if (ret == HAL_OK) {
-            float ch0_basic;
-            float ch1_basic;
-            char buf[128];
-
-            sensor_reading_t reading = {
-                .gain = gain,
-                .time = time,
-                .ch0_val = ch0_val,
-                .ch1_val = ch1_val
-            };
-
-            sensor_convert_to_basic_counts(&reading, &ch0_basic, &ch1_basic);
-
-            sprintf_(buf, "TSL2591,%d,%d,%f,%f\r\n", ch0_val, ch1_val, ch0_basic, ch1_basic);
-            cdc_send_response(buf);
-            log_d("TSL2591: CH0=%d, CH1=%d, %f, %f", ch0_val, ch1_val, ch0_basic, ch1_basic);
+        osStatus_t result = sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, value);
+        if (result == osOK) {
+            cdc_send_command_response(cmd, "OK");
         } else {
-            cdc_send_response("ERR\r\n");
+            cdc_send_command_response(cmd, "ERR");
         }
 
-    } else if (prefix == 'S' && len > 4 &&
-        isdigit((unsigned char)cmd[3]) && isdigit((unsigned char)cmd[4])) {
-        uint8_t val_g = cmd[3] - '0';
-        uint8_t val_t = cmd[4] - '0';
+        return true;
+    } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "LT") == 0 && cdc_remote_active) {
+        uint8_t value = atoi(cmd->args);
+        if (value > 128) { value = 128; }
 
-        if (val_g > 3) { val_g = 3; }
-        if (val_t > 5) { val_t = 5; }
-
-        log_d("Set sensor gain to [%d] and integration time to [%d]", val_g, val_t);
-
-        if (tsl2591_set_config(&hi2c1, val_g, val_t) == HAL_OK) {
-            cdc_send_response("OK\r\n");
+        osStatus_t result = sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, value);
+        if (result == osOK) {
+            cdc_send_command_response(cmd, "OK");
         } else {
-            cdc_send_response("ERR\r\n");
+            cdc_send_command_response(cmd, "ERR");
         }
 
-    } else if (prefix == 'Q') {
-        tsl2591_gain_t gain;
-        tsl2591_time_t time;
+        return true;
+    } else if (strcmp(cmd->action, "S") == 0 && cdc_remote_active) {
+        osStatus_t result;
+        if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->args, "START") == 0) {
+            result = sensor_start();
+            if (result == osOK) {
+                cdc_send_command_response(cmd, "OK");
+            } else {
+                cdc_send_command_response(cmd, "ERR");
+            }
+            return true;
+        } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->args, "STOP") == 0) {
+            result = sensor_stop();
+            if (result == osOK) {
+                cdc_send_command_response(cmd, "OK");
+            } else {
+                cdc_send_command_response(cmd, "ERR");
+            }
+            return true;
+        } else if (cmd->type == CMD_TYPE_SET && strncmp(cmd->args, "CFG,", 4) == 0) {
+            if (isdigit((unsigned char)cmd->args[4]) && cmd->args[5] == ','
+                && isdigit((unsigned char)cmd->args[6]) && cmd->args[7] == '\0') {
+                tsl2591_gain_t gain_val = cmd->args[4] - '0';
+                tsl2591_time_t time_val = cmd->args[6] - '0';
+                if (gain_val <= TSL2591_GAIN_MAXIMUM && time_val <= TSL2591_TIME_600MS) {
+                    result = sensor_set_config(gain_val, time_val);
+                    if (result == osOK) {
+                        cdc_send_command_response(cmd, "OK");
+                    } else {
+                        cdc_send_command_response(cmd, "ERR");
+                    }
+                    return true;
+                }
+            }
+        } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->args, "READING") == 0) {
+            /*
+             * Output format:
+             * CH0 value, CH1 value, Gain setting, Integration time setting
+             */
+            sensor_reading_t reading;
+            result = sensor_get_next_reading(&reading, 1000);
+            if (result == osOK) {
+                char buf[64];
+                sprintf(buf, "%d,%d,%d,%d",
+                    reading.ch0_val, reading.ch1_val, reading.gain, reading.time);
+                cdc_send_command_response(cmd, buf);
+            } else {
+                cdc_send_command_response(cmd, "ERR");
+            }
+            return true;
+        }
 
-        log_d("Query sensor settings");
-
-        if (tsl2591_get_config(&hi2c1, &gain, &time) == HAL_OK) {
-            char buf[64];
-            sprintf(buf, "TSL2591,%d,%d\r\n", gain, time);
-            cdc_send_response(buf);
-            log_d("TSL2591: gain=%d, time=%d", gain, time);
-        } else {
-            cdc_send_response("ERR\r\n");
+        return true;
+    } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "LOG") == 0) {
+        if (strcmp(cmd->args, "U") == 0) {
+            cdc_send_command_response(cmd, "OK");
+            cdc_logging_redirected = true;
+            elog_set_text_color_enabled(false);
+            elog_port_redirect(cdc_write);
+            return true;
+        } else if (strcmp(cmd->args, "D") == 0) {
+            cdc_send_command_response(cmd, "OK");
+            elog_port_redirect(NULL);
+            elog_set_text_color_enabled(true);
+            cdc_logging_redirected = false;
+            return true;
         }
     }
+
+    return false;
 }
 
 void cdc_send_response(const char *str)
 {
     size_t len = strlen(str);
     cdc_write(str, len);
+}
+
+void cdc_send_command_response(const cdc_command_t *cmd, const char *str)
+{
+    char buf[128];
+    char t_ch;
+    char c_ch;
+    if (!cmd || !str) { return; }
+
+    switch (cmd->type) {
+    case CMD_TYPE_SET:
+        t_ch = 'S';
+        break;
+    case CMD_TYPE_GET:
+        t_ch = 'G';
+        break;
+    case CMD_TYPE_INVOKE:
+        t_ch = 'I';
+        break;
+    default:
+        return;
+    }
+
+    switch (cmd->category) {
+    case CMD_CATEGORY_SYSTEM:
+        c_ch = 'S';
+        break;
+    case CMD_CATEGORY_MEASUREMENT:
+        c_ch = 'M';
+        break;
+    case CMD_CATEGORY_CALIBRATION:
+        c_ch = 'C';
+        break;
+    case CMD_CATEGORY_DIAGNOSTICS:
+        c_ch = 'D';
+        break;
+    default:
+        return;
+    }
+
+    size_t n = snprintf(buf, sizeof(buf), "%c%c %s,%s\r\n", t_ch, c_ch, cmd->action, str);
+    cdc_write(buf, n);
+}
+
+void cdc_send_density_reading(char prefix, float value)
+{
+    char buf[16];
+    char sign;
+
+    /* Force any invalid values to be zero */
+    if (isnanf(value) || isinff(value)) {
+        value = 0.0F;
+    }
+
+    /* Find the sign character */
+    if (value >= 0.0F) {
+        sign = '+';
+    } else {
+        sign = '-';
+    }
+
+    /* Format the result */
+    size_t n = sprintf_(buf, "%c%c%.2fD\r\n", prefix, sign, fabsf(value));
+
+    /* Catch cases where a negative was rounded to zero */
+    if (strncmp(buf + 1, "-0.00", 5) == 0) {
+        buf[1] = '+';
+    }
+
+    cdc_write(buf, n);
+}
+
+void cdc_send_remote_state(bool enabled)
+{
+    osMutexAcquire(cdc_mutex, portMAX_DELAY);
+    cdc_remote_active = enabled && cdc_remote_enabled;
+    osMutexRelease(cdc_mutex);
+    cdc_command_t cmd = {
+        .type = CMD_TYPE_INVOKE,
+        .category = CMD_CATEGORY_SYSTEM,
+        .action = "REMOTE"
+    };
+    cdc_send_command_response(&cmd, enabled ? "1" : "0");
 }
 
 void cdc_write(const char *buf, size_t len)
@@ -817,17 +760,21 @@ void cdc_write(const char *buf, size_t len)
         do {
             n = tud_cdc_write(buf + offset, len - offset);
             if (n == 0) {
-                log_w("Write error");
+                if (!cdc_logging_redirected) {
+                    log_w("Write error");
+                }
                 break;
             }
             tud_cdc_write_flush();
             offset += n;
 
             if (osSemaphoreAcquire(cdc_tx_semaphore, CDC_TX_TIMEOUT) != osOK) {
-                log_e("Unable to acquire cdc_tx_semaphore");
+                if (!cdc_logging_redirected) {
+                    log_e("Unable to acquire cdc_tx_semaphore");
+                }
                 tud_cdc_write_clear();
                 tud_cdc_abort_transfer();
-                cdc_host_connected = false;
+                cdc_set_connected(false);
                 break;
             }
         } while (offset < len);

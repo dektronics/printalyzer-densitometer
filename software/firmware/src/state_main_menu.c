@@ -551,6 +551,9 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
 
             if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
                 break;
+            } else if (keypad_event.pressed && keypad_event.key == KEYPAD_FORCE_TIMEOUT) {
+                state_controller_set_next_state(controller, state->last_display_state);
+                break;
             }
         }
 

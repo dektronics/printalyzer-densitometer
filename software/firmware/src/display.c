@@ -161,6 +161,9 @@ uint8_t u8x8_GetMenuEvent(u8x8_t *u8x8)
                 return U8X8_MSG_GPIO_MENU_DOWN;
             case KEYPAD_BUTTON_MENU:
                 return U8X8_MSG_GPIO_MENU_HOME;
+            case KEYPAD_FORCE_TIMEOUT:
+                menu_event_timeout = true;
+                return U8X8_MSG_GPIO_MENU_HOME;
             default:
                 break;
             }
@@ -215,6 +218,44 @@ void display_static_list(const char *title, const char *list)
     }
     u8g2_DrawSelectionList(&u8g2, &u8sl, yy, list);
 
+    u8g2_SendBuffer(&u8g2);
+}
+
+void display_static_message(const char *msg)
+{
+    uint8_t height;
+    uint8_t line_height;
+    u8g2_uint_t pixel_height;
+    u8g2_uint_t y;
+
+    display_prepare_menu_font();
+
+    u8g2_SetFontDirection(&u8g2, 0);
+    u8g2_SetFontPosBaseline(&u8g2);
+
+    /* Calculate line height */
+    line_height = u8g2_GetAscent(&u8g2);
+    line_height -= u8g2_GetDescent(&u8g2);
+
+    /* calculate overall height of the message box in lines*/
+    height = u8x8_GetStringLineCnt(msg);
+
+    /* Calculate the height in pixels */
+    pixel_height = height;
+    pixel_height *= line_height;
+
+    /* Calculate offset from top */
+    y = 0;
+    if (pixel_height < u8g2_GetDisplayHeight(&u8g2)) {
+        y = u8g2_GetDisplayHeight(&u8g2);
+        y -= pixel_height;
+        y /= 2;
+    }
+    y += u8g2_GetAscent(&u8g2);
+
+    /* Draw the text */
+    u8g2_ClearBuffer(&u8g2);
+    u8g2_DrawUTF8Lines(&u8g2, 0, y, u8g2_GetDisplayWidth(&u8g2), line_height, msg);
     u8g2_SendBuffer(&u8g2);
 }
 
