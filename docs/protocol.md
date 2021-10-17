@@ -6,62 +6,135 @@ device, which is essentially a virtual serial port. Through this interface,
 it is possible to configure and control all aspects of the device.
 This document covers that protocol.
 
-Top-Level Commands
-------------------
-* `V` - Show device name and version string
+## Data Formats
+
+All command and response lines are terminated by a CRLF (`\r\n`).
+
+### Command Format
+
+Each command is sent in a standardized form:
+
+`<TYPE><CATEGORY> <ACTION>[,<ARGS>]`
+* **TYPE** values:
+  * `S` - Set (change a value or state)
+  * `G` - Get (return a value or state)
+  * `I` - Invoke (perform some action on the system)
+* **CATEGORY** values:
+  * `S` - System (top-level system commands)
+  * `M` - Measurement (commands related to density measurements)
+  * `C` - Calibration (commands related to device calibration)
+  * `D` - Diagnostics (general diagnostic commands)
+* **ACTION** values are specific to each category, and documented in the following sections
+* **ARGS** values are specific to each action, and not all actions may have them
+
+### Response Format
+
+Command responses typically fit a format that is a mirror of the command that
+triggered them, except the `[,<ARGS>]` field is changed to represent
+information specific to that particular command response.
+
+The common formats for these response arguments are:
+* `OK` - The command completed successfully, with no further information
+* `ERR` - The command failed
+* `NAK` - The command was either unrecognized or can't be processed in the current system state
+* `A,B,C,D` - A comma-separated list of elements (with possible quoting of text)
+* A multi-line response as follows:
+  ```
+  TC ACTION,[[\r\n
+  Line 1
+  Line 2
+  ...
+  ]]\r\n
+  
+  ```
+
+### Density Format
+
+Density readings are sent out-of-band whenever a reading is taken on the device,
+and are not sent in response to commands. They follow the format of:
+
+`<R/T><+/->#.##D`
+
+An example of a density reading would be something like `R+0.20D` or `T+2.85D`.
+
+### Logging Format
+
+Redirected log messages have a unique prefix of `L/`, where "L" is the logging level.
+By looking for this pattern, they can be filtered out from the rest of the command
+protocol. By default, log messages are not redirected out the USB CDC interface.
 
 
-Measurement
------------
-* `MR` - Perform reflection density measurement
-* `MT` - Perform transmission density measurement
+## Commands
 
+Note: Commands that could conflict with the local device user interface
+may require that the device first be placed into "remote control" mode.
+If sent outside of this mode, they may fail with a **NAK**. Commands of
+this type are marked below.
 
-Calibration
------------
+Commands that lack a documented response format will return either `OK` or `ERR`.
 
-### Gain Calibration
-* `CGM` - Run the gain calibration process
-* `CGP` - Print the current gain calibration values
+### System Commands
 
-### Integration Time Calibration
-* `CIM` - Run the integration time calibration process
-* `CIP` - Print the current integration time calibration values
+* `GS V` - Get project name and version
+  * Response: `GS V,<Project name>,<Version>`
+* `GS B` - Get firmware build information
+  * Response: `GS B,<Build date>,<Build describe>,<Checksum>`
+* `GS DEV`  - Get device information
+  * Response: `GS DEV,<HAL Version>,<MCU Device ID>,<MCU Revision ID>,<SysClock Frequency>`
+* `GS RTOS` - Get FreeRTOS information
+  * Response: `GS RTOS,<FreeRTOS Version>,<Heap Free>,<Heap Watermark>,<Task Count>`
+* `GS UID`  - Get device unique ID
+  * Response: `GS UID,<UID>`
+* `GS ISEN` - Internal sensor readings
+  * Response: `GS ISEN,<VDDA>,<Temperature>`
+* `IS REMOTE,n` - Invoke remote control mode (enable = 1, disable = 0)
+  * Response: `IS REMOTE,n`
 
-### Reflection Calibration
-* CAL-LO Target Measurement
-  * `CRLMnnn` - Calibrate using low target with a known density of n.nn (e.g. 123 = 1.23)
-  * `CRLP` - Print the current low target calibration values
+### Measurement Commands
 
-* CAL-HI Target Measurement
-  * `CRHMnnn` - Calibrate using high target with a known density of n.nn (e.g. 123 = 1.23)
-  * `CRHP` - Print the current high target calibration values
+Measurement commands are TBD, and are likely to only include commands that
+get previous readings or change the response format. Actual measurement
+actions require sufficent user interaction that it does not make sense
+to trigger them remotely.
 
-### Transmission Calibration
-* Zero Target Measurement
-  * `CTZM` - Calibrate the zero target, which is when no film is in the sensor path
-  * `CTZP` - Print the current zero target calibration value
+### Calibration Commands
 
-* CAL-HI Target Measurement
-  * `CTHMnnn` - Calibrate using high target with a known density of n.nn (e.g. 123 = 1.23)
-  * `CTHP` - Print the current high target calibration values
+* `IC GAIN` - Invoke the sensor gain calibration process ***(remote mode)***
+  * This is a long process in which the device must be held closed.
+    Unless logging is redirected, it does not currently report progress
+    via the USB CDC interface.
+* `IC LR` - Invoke the reflection light source calibration process ***(remote mode)***
+  * This is a long process in which the device must be held closed.
+    Unless logging is redirected, it does not currently report progress
+    via the USB CDC interface.
+  * _Note: This process mostly exists to profile light source behavior, and may
+    be removed or disabled in the future._
+* `IC LT` - Invoke the transmission light source calibration process ***(remote mode)***
+  * This is a long process in which the device must be held closed.
+    Unless logging is redirected, it does not currently report progress
+    via the USB CDC interface.
+  * _Note: This process mostly exists to profile light source behavior, and may
+    be removed or disabled in the future._
+* `GC GAIN` - Get sensor gain calibration values
+  * Response: `GC GAIN,1.00,1.00,<M0>,<M1>,<H0>,<H1>,<X0>,<X1>`
+* `GC LR` - Get reflection light source calibration value
+  * Response: `GC LR,<DROP_FACTOR>`
+* `GC LT` - Get reflection light source calibration value
+  * Response: `GC LT,<DROP_FACTOR>`
 
-Diagnostic Commands
--------------------
-* About System
-  * `DAI` - Print device information (HAL version, MCU Rev ID, MCU Dev ID, SysClock)
-  * `DAU` - Print device unique ID
+### Diagnostic Commands
 
-* Display Diagnostics
-  * `DDS` - Capture a screenshot of the current display image in XBM format
-
-* Light Source Diagnostics
-  * `DLRnnn` - Set reflection light duty cycle (nnn/127)
-  * `DLTnnn` - Set transmission light duty cycle (nnn/127)
-  * `DLAnnn` - Set duty cycle of all light sources (nnn/127)
-
-* Sensor Diagnostics
-  * `DSR` - Take a raw sensor reading
-  * `DSSnm` - Set sensor gain (n = 0-3) and integration time (m = 0-5)
-    * Note: These correspond to values in the sensor's datasheet
-  * `DSQ` - Query current sensor settings
+* `GD DISP` - Get display screenshot
+  * Response is XBM data in the multi-line format described above
+* `SD LR,nnn` -> Set reflection light duty cycle (nnn/127) ***(remote mode)***
+  * Light sources are mutually exclusive. To turn both off, set either to 0.
+    To turn on to full brightness, set to 128.
+* `SD LT,nnn` -> Set transmission light duty cycle (nnn/127) ***(remote mode)***
+  * Light sources are mutually exclusive. To turn both off, set either to 0.
+    To turn on to full brightness, set to 128.
+* `ID S,START` - Invoke sensor start ***(remote mode)***
+* `ID S,STOP` - Invoke sensor stop ***(remote mode)***
+* `SD S,CFG,n,m` - Set sensor gain (n = [0-3]) and integration time (m = [0-5]) ***(remote mode)***
+* `GD S,READING` - Get next sensor reading ***(remote mode)***
+* `SD LOG,U` -> Set logging output to USB CDC device
+* `SD LOG,D` -> Set logging output to debug port UART (default)

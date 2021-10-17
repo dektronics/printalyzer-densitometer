@@ -395,7 +395,7 @@ bool cdc_process_command_system(const cdc_command_t *cmd)
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "RTOS") == 0) {
         /*
          * Output format:
-         * FreeRTOS Version, Heap Size, Heap Watermark, Task Count
+         * FreeRTOS Version, Heap Free, Heap Watermark, Task Count
          */
         sprintf(buf, "%s,%d,%d,%ld",
             tskKERNEL_VERSION_NUMBER,
