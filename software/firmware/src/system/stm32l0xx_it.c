@@ -55,7 +55,7 @@ void HardFault_Handler(void)
         ".syntax divided\n");
 }
 
-void HardFault_HandlerC(unsigned long *hardfault_args)
+__attribute__((used)) void HardFault_HandlerC(unsigned long *hardfault_args)
 {
     //TODO Revisit and clean up this code
     volatile unsigned long stacked_r0;
