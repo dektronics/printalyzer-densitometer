@@ -37,7 +37,11 @@ The common formats for these response arguments are:
 * `OK` - The command completed successfully, with no further information
 * `ERR` - The command failed
 * `NAK` - The command was either unrecognized or can't be processed in the current system state
-* `A,B,C,D` - A comma-separated list of elements (with possible quoting of text)
+* `A,B,C,D` - A comma-separated list of elements
+  * Strings in this list may be quoted
+  * Certain floating point values may be returned in a little-endian hex
+    encoded format if the `HEX` argument is passed as part of the command
+    to get them.
 * A multi-line response as follows:
   ```
   TC ACTION,[[\r\n
@@ -47,6 +51,7 @@ The common formats for these response arguments are:
   ]]\r\n
   
   ```
+
 
 ### Density Format
 
@@ -117,10 +122,17 @@ to trigger them remotely.
     be removed or disabled in the future._
 * `GC GAIN` - Get sensor gain calibration values
   * Response: `GC GAIN,1.00,1.00,<M0>,<M1>,<H0>,<H1>,<X0>,<X1>`
+  * Note: Adding `,HEX` will return the response in **HEX** format
 * `GC LR` - Get reflection light source calibration value
   * Response: `GC LR,<DROP_FACTOR>`
 * `GC LT` - Get reflection light source calibration value
   * Response: `GC LT,<DROP_FACTOR>`
+* `GC REFL` - Get reflection density calibration values
+  * Response: `GC REFL,<D>,<READING>`
+  * Note: Adding `,HEX` will return the response in **HEX** format
+* `GC TRAN` - Get transmission density calibration values
+  * Response: `GC TRAN,<D>,<READING>`
+  * Note: Adding `,HEX` will return the response in **HEX** format
 
 ### Diagnostic Commands
 

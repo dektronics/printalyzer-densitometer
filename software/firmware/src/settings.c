@@ -7,14 +7,12 @@
 #include <math.h>
 #include <elog.h>
 
+#include "util.h"
+
 static HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len);
 static HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, size_t data_len);
 static float settings_read_float(uint32_t address);
 static HAL_StatusTypeDef settings_write_float(uint32_t address, float val);
-static void copy_from_u32(uint8_t *buf, uint32_t val);
-static uint32_t copy_to_u32(const uint8_t *buf);
-static void copy_from_f32(uint8_t *buf, float val);
-static float copy_to_f32(const uint8_t *buf);
 
 #define CONFIG_HEADER (DATA_EEPROM_BASE + 0U)
 
@@ -362,35 +360,4 @@ HAL_StatusTypeDef settings_write_float(uint32_t address, float val)
     uint8_t data[4];
     copy_from_f32(data, val);
     return settings_write_buffer(address, data, sizeof(data));
-}
-
-void copy_from_u32(uint8_t *buf, uint32_t val)
-{
-    buf[0] = (val >> 24) & 0xFF;
-    buf[1] = (val >> 16) & 0xFF;
-    buf[2] = (val >> 8) & 0xFF;
-    buf[3] = val & 0xFF;
-}
-
-uint32_t copy_to_u32(const uint8_t *buf)
-{
-    return (uint32_t)buf[0] << 24
-        | (uint32_t)buf[1] << 16
-        | (uint32_t)buf[2] << 8
-        | (uint32_t)buf[3];
-}
-
-void copy_from_f32(uint8_t *buf, float val)
-{
-    uint32_t int_val;
-    memcpy(&int_val, &val, sizeof(float));
-    copy_from_u32(buf, int_val);
-}
-
-float copy_to_f32(const uint8_t *buf)
-{
-    float val;
-    uint32_t int_val = copy_to_u32(buf);
-    memcpy(&val, &int_val, sizeof(float));
-    return val;
 }

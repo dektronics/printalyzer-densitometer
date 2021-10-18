@@ -90,6 +90,9 @@ static bool cdc_process_command_diagnostics(const cdc_command_t *cmd);
 static void cdc_send_response(const char *str);
 static void cdc_send_command_response(const cdc_command_t *cmd, const char *str);
 
+static void encode_f32_array_response(char *buf, const float *array, size_t len);
+static size_t encode_f32(char *out, float value);
+
 extern I2C_HandleTypeDef hi2c1;
 
 void task_cdc_run(void *argument)
@@ -474,7 +477,9 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
      *
      * "GC GAIN" -> Get sensor gain calibration values
      * "GC LR"   -> Get reflection light source calibration value
-     * "GC LT"   -> Get reflection light source calibration value
+     * "GC LT"   -> Get transmission light source calibration value
+     * "GC REFL" -> Get reflection density calibration values
+     * "GC TRAN" -> Get transmission density calibration values
      */
     if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "GAIN") == 0 && cdc_remote_active) {
         //TODO This is long running, having some sort of progress notification could be helpful
@@ -505,22 +510,22 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "GAIN") == 0) {
         char buf[128];
-        float ch0_medium;
-        float ch1_medium;
-        float ch0_high;
-        float ch1_high;
-        float ch0_maximum;
-        float ch1_maximum;
+        float gain_val[8] = {0};
 
-        settings_get_cal_gain(TSL2591_GAIN_MEDIUM, &ch0_medium, &ch1_medium);
-        settings_get_cal_gain(TSL2591_GAIN_HIGH, &ch0_high, &ch1_high);
-        settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &ch0_maximum, &ch1_maximum);
+        gain_val[0] = 1.0F; gain_val[1] = 1.0F;
+        settings_get_cal_gain(TSL2591_GAIN_MEDIUM, &gain_val[2], &gain_val[3]);
+        settings_get_cal_gain(TSL2591_GAIN_HIGH, &gain_val[4], &gain_val[5]);
+        settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &gain_val[6], &gain_val[7]);
 
-        sprintf_(buf, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
-            1.0F, 1.0F,
-            ch0_medium, ch1_medium,
-            ch0_high, ch1_high,
-            ch0_maximum, ch1_maximum);
+        if (strcmp(cmd->args, "HEX") == 0) {
+            encode_f32_array_response(buf, gain_val, 8);
+        } else {
+            sprintf_(buf, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
+                gain_val[0], gain_val[1],
+                gain_val[2], gain_val[3],
+                gain_val[4], gain_val[5],
+                gain_val[6], gain_val[7]);
+        }
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "LR") == 0) {
@@ -535,6 +540,39 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         float value;
         settings_get_cal_transmission_led_factor(&value);
         sprintf_(buf, "%f", value);
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "REFL") == 0) {
+        char buf[64];
+        float refl_val[4] = {0};
+
+        settings_get_cal_reflection_lo(&refl_val[0], &refl_val[1]);
+        settings_get_cal_reflection_hi(&refl_val[2], &refl_val[3]);
+
+        if (strcmp(cmd->args, "HEX") == 0) {
+            encode_f32_array_response(buf, refl_val, 4);
+        } else {
+            sprintf_(buf, "%.2f,%f,%.2f,%f",
+                refl_val[0], refl_val[1],
+                refl_val[2], refl_val[3]);
+        }
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "TRAN") == 0) {
+        char buf[64];
+        float tran_val[4] = {0};
+
+        tran_val[0] = 0.0F;
+        settings_get_cal_transmission_zero(&tran_val[1]);
+        settings_get_cal_transmission_hi(&tran_val[2], &tran_val[3]);
+
+        if (strcmp(cmd->args, "HEX") == 0) {
+            encode_f32_array_response(buf, tran_val, 4);
+        } else {
+            sprintf_(buf, "%.2f,%f,%.2f,%f",
+                tran_val[0], tran_val[1],
+                tran_val[2], tran_val[3]);
+        }
         cdc_send_command_response(cmd, buf);
         return true;
     }
@@ -780,4 +818,24 @@ void cdc_write(const char *buf, size_t len)
         } while (offset < len);
     }
     osMutexRelease(cdc_mutex);
+}
+
+void encode_f32_array_response(char *buf, const float *array, size_t len)
+{
+    size_t offset = 0;
+    for (size_t i = 0; i < len; i++) {
+        if (i > 0) {
+            buf[offset++] = ',';
+        }
+        offset += encode_f32(buf + offset, array[i]);
+    }
+    buf[offset] = '\0';
+}
+
+size_t encode_f32(char *out, float value)
+{
+    uint8_t buf[4];
+    memset(buf, 0, sizeof(buf));
+    copy_from_f32(buf, value);
+    return sprintf(out, "%02X%02X%02X%02X", buf[0], buf[1], buf[2], buf[3]);
 }

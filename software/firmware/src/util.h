@@ -16,4 +16,9 @@
 osStatus_t hal_to_os_status(HAL_StatusTypeDef hal_status);
 HAL_StatusTypeDef os_to_hal_status(osStatus_t os_status);
 
+void copy_from_u32(uint8_t *buf, uint32_t val);
+uint32_t copy_to_u32(const uint8_t *buf);
+void copy_from_f32(uint8_t *buf, float val);
+float copy_to_f32(const uint8_t *buf);
+
 #endif /* UTIL_H */
