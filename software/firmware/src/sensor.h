@@ -82,12 +82,11 @@ osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_ca
  * from which target density can be calculated.
  *
  * @param light_source Light source to use for target measurement
- * @param iterations Number of read iterations to average across
  * @param ch0_result Channel 0 result, in basic counts
  * @param ch1_result Channel 1 result, in basic counts
  * @return HAL_OK on success
  */
-osStatus_t sensor_read_target(sensor_light_t light_source, uint8_t iterations,
+osStatus_t sensor_read_target(sensor_light_t light_source,
     float *ch0_result, float *ch1_result,
     sensor_read_callback_t callback, void *user_data);
 
