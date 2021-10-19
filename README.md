@@ -9,7 +9,7 @@ affordable reflection and transmission densitometer for photographic darkroom
 use.
 
 It was initially conceived as an accessory to complement the
-[Printalyzer Enlarging Timer & Exposure Meter](https://github.com/dkonigsberg/printalyzer)
+[Printalyzer Enlarging Timer & Exposure Meter](https://github.com/dektronics/printalyzer-timer)
 to ease the process of creating paper profiles. However, given the general
 utility of such a device, it has been spun off as a separate project in its
 own right.
