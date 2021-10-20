@@ -75,7 +75,7 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
 
-    cdc_send_density_reading('R', meas_d);
+    cdc_send_density_reading('R', meas_d, meas_value);
 
     return DENSITOMETER_OK;
 }
@@ -162,7 +162,7 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
 
-    cdc_send_density_reading('T', meas_d);
+    cdc_send_density_reading('T', meas_d, meas_value);
 
     return DENSITOMETER_OK;
 }

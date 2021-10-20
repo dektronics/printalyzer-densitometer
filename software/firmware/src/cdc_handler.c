@@ -52,6 +52,12 @@ typedef struct {
     char args[32];
 } cdc_command_t;
 
+typedef enum {
+    READING_FORMAT_BASIC,
+    READING_FORMAT_EXT,
+    READING_FORMAT_EXT_HEX
+} cdc_reading_format_t;
+
 static volatile bool cdc_initialized = false;
 static volatile bool cdc_host_connected = false;
 static volatile bool cdc_logging_redirected = false;
@@ -59,6 +65,7 @@ static uint8_t cmd_buffer[CMD_DATA_SIZE];
 static size_t cmd_buffer_len = 0;
 static bool cdc_remote_enabled = false;
 static volatile bool cdc_remote_active = false;
+static cdc_reading_format_t reading_format = READING_FORMAT_BASIC;
 
 /* Semaphore used to unblock the task when new data is available */
 static osSemaphoreId_t cdc_rx_semaphore = NULL;
@@ -238,6 +245,7 @@ void cdc_set_connected(bool connected)
                 cdc_remote_enabled = false;
                 cdc_remote_active = false;
             }
+            reading_format = READING_FORMAT_BASIC;
         }
         cdc_host_connected = connected;
     }
@@ -456,14 +464,44 @@ bool cdc_process_command_system(const cdc_command_t *cmd)
 bool cdc_process_command_measurement(const cdc_command_t *cmd)
 {
     /*
-     * It might make more sense to simply remove the explicit measurement
-     * commands, because they no longer make any sense here.
-     * In their place, perhaps this is where we should put commands to
-     * change the measurement response format from the default (just density)
-     * to an expanded version with raw/intermediate sensor readings that
-     * are useful to offline calibration routines.
+     * Measurement Commands
+     * "GM REFL" -> Get last reflection measurement
+     * "GM TRAN" -> Get last transmission measurement
+     * "SM FORMAT,x" -> Set measurement data format ("BASIC", "EXT", "EXT,HEX")
      */
-    //TODO Add commands to change the measurement response format
+    if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "REFL") == 0) {
+        char buf[32];
+        float reading = densitometer_reflection_get_last_reading();
+        if (strcmp(cmd->args, "HEX") == 0) {
+            encode_f32(buf, reading);
+        } else {
+            sprintf_(buf, "%.2f", reading);
+        }
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "TRAN") == 0) {
+        char buf[32];
+        float reading = densitometer_transmission_get_last_reading();
+        if (strcmp(cmd->args, "HEX") == 0) {
+            encode_f32(buf, reading);
+        } else {
+            sprintf_(buf, "%.2f", reading);
+        }
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "FORMAT") == 0) {
+        if (strcmp(cmd->args, "BASIC") == 0) {
+            reading_format = READING_FORMAT_BASIC;
+        } else if (strcmp(cmd->args, "EXT") == 0) {
+            reading_format = READING_FORMAT_EXT;
+        } else if (strcmp(cmd->args, "EXT,HEX") == 0) {
+            reading_format = READING_FORMAT_EXT_HEX;
+        } else {
+            return false;
+        }
+        cdc_send_command_response(cmd, "OK");
+        return true;
+    }
     return false;
 }
 
@@ -748,32 +786,54 @@ void cdc_send_command_response(const cdc_command_t *cmd, const char *str)
     cdc_write(buf, n);
 }
 
-void cdc_send_density_reading(char prefix, float value)
+void cdc_send_density_reading(char prefix, float d_value, float raw_value)
 {
     char buf[16];
     char sign;
 
     /* Force any invalid values to be zero */
-    if (isnanf(value) || isinff(value)) {
-        value = 0.0F;
+    if (isnanf(d_value) || isinff(d_value)) {
+        d_value = 0.0F;
+    }
+    if (isnanf(raw_value) || isinff(raw_value)) {
+        raw_value = 0.0F;
     }
 
     /* Find the sign character */
-    if (value >= 0.0F) {
+    if (d_value >= 0.0F) {
         sign = '+';
     } else {
         sign = '-';
     }
 
     /* Format the result */
-    size_t n = sprintf_(buf, "%c%c%.2fD\r\n", prefix, sign, fabsf(value));
+    size_t n = sprintf_(buf, "%c%c%.2fD\r\n", prefix, sign, fabsf(d_value));
 
     /* Catch cases where a negative was rounded to zero */
     if (strncmp(buf + 1, "-0.00", 5) == 0) {
         buf[1] = '+';
     }
 
-    cdc_write(buf, n);
+    if (reading_format == READING_FORMAT_EXT) {
+        char extbuf[32];
+        buf[n - 2] = '\0';
+        n = sprintf_(extbuf, "%s,%f,%f\r\n", buf, d_value, raw_value);
+        cdc_write(extbuf, n);
+    } else if (reading_format == READING_FORMAT_EXT_HEX) {
+        char extbuf[32];
+        n -= 2;
+        strncpy(extbuf, buf, n);
+        extbuf[n++] = ',';
+        n += encode_f32(extbuf + n, d_value);
+        extbuf[n++] = ',';
+        n += encode_f32(extbuf + n, raw_value);
+        extbuf[n++] = '\r';
+        extbuf[n++] = '\n';
+        extbuf[n] = '\0';
+        cdc_write(extbuf, n);
+    } else {
+        cdc_write(buf, n);
+    }
 }
 
 void cdc_send_remote_state(bool enabled)

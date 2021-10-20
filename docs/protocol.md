@@ -97,10 +97,18 @@ Commands that lack a documented response format will return either `OK` or `ERR`
 
 ### Measurement Commands
 
-Measurement commands are TBD, and are likely to only include commands that
-get previous readings or change the response format. Actual measurement
-actions require sufficent user interaction that it does not make sense
-to trigger them remotely.
+* `GM REFL` - Get last reflection measurement
+  * Response: `GM REFL,<D>`
+  * Note: Adding `,HEX` will return the response in **HEX** format
+* `GM TRAN` - Get last transmission measurement
+  * Response: `GM TRAN,<D>`
+  * Note: Adding `,HEX` will return the response in **HEX** format
+* `SM FORMAT,x` - Change measurement output format
+  * Possible measurement formats are:
+    * `BASIC` - The default format, which just includes mode and density to 2 decimal places
+    * `EXT` - Appends density and the raw basic count sensor reading to more decimal places
+    * `EXT` - Appends density and the raw basic count sensor reading in **HEX** format
+  * Note: The active format will revert to **BASIC** upon disconnect
 
 ### Calibration Commands
 
