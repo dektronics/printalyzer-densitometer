@@ -37,6 +37,10 @@ static HAL_StatusTypeDef settings_write_float(uint32_t address, float val);
 #define CONFIG_CAL_REFLECTION_LED_FACTOR   (CONFIG_CAL_BASE + 72U)
 #define CONFIG_CAL_TRANSMISSION_LED_FACTOR (CONFIG_CAL_BASE + 76U)
 
+#define CONFIG_CAL_SLOPE_B0 (CONFIG_CAL_BASE + 80U)
+#define CONFIG_CAL_SLOPE_B1 (CONFIG_CAL_BASE + 84U)
+#define CONFIG_CAL_SLOPE_B2 (CONFIG_CAL_BASE + 88U)
+
 static float setting_cal_gain_medium_ch0 = 0;
 static float setting_cal_gain_medium_ch1 = 0;
 static float setting_cal_gain_high_ch0 = 0;
@@ -55,6 +59,10 @@ static float setting_cal_transmission_hi_value = 0;
 
 static float setting_cal_reflection_led_factor = 0;
 static float setting_cal_transmission_led_factor = 0;
+
+static float setting_cal_slope_b0 = 0;
+static float setting_cal_slope_b1 = 0;
+static float setting_cal_slope_b2 = 0;
 
 HAL_StatusTypeDef settings_init()
 {
@@ -91,6 +99,10 @@ HAL_StatusTypeDef settings_init()
 
             settings_write_float(CONFIG_CAL_REFLECTION_LED_FACTOR, NAN);
             settings_write_float(CONFIG_CAL_TRANSMISSION_LED_FACTOR, NAN);
+
+            settings_write_float(CONFIG_CAL_SLOPE_B0, NAN);
+            settings_write_float(CONFIG_CAL_SLOPE_B1, NAN);
+            settings_write_float(CONFIG_CAL_SLOPE_B2, NAN);
         } else {
             /* Load Calibration Page */
             setting_cal_gain_medium_ch0 = settings_read_float(CONFIG_CAL_GAIN_MEDIUM_CH0);
@@ -111,6 +123,10 @@ HAL_StatusTypeDef settings_init()
 
             setting_cal_reflection_led_factor = settings_read_float(CONFIG_CAL_REFLECTION_LED_FACTOR);
             setting_cal_transmission_led_factor = settings_read_float(CONFIG_CAL_TRANSMISSION_LED_FACTOR);
+
+            setting_cal_slope_b0 = settings_read_float(CONFIG_CAL_SLOPE_B0);
+            setting_cal_slope_b1 = settings_read_float(CONFIG_CAL_SLOPE_B1);
+            setting_cal_slope_b2 = settings_read_float(CONFIG_CAL_SLOPE_B2);
         }
     } while (0);
 
@@ -217,6 +233,26 @@ void settings_get_cal_transmission_led_factor(float *value)
     if (value) {
         *value = setting_cal_transmission_led_factor;
     }
+}
+
+void settings_set_cal_slope(float b0, float b1, float b2)
+{
+    if (settings_write_float(CONFIG_CAL_SLOPE_B0, b0) == HAL_OK) {
+        setting_cal_slope_b0 = b0;
+    }
+    if (settings_write_float(CONFIG_CAL_SLOPE_B1, b1) == HAL_OK) {
+        setting_cal_slope_b1 = b1;
+    }
+    if (settings_write_float(CONFIG_CAL_SLOPE_B2, b2) == HAL_OK) {
+        setting_cal_slope_b2 = b2;
+    }
+}
+
+void settings_get_cal_slope(float *b0, float *b1, float *b2)
+{
+    if (b0) { *b0 = setting_cal_slope_b0; }
+    if (b1) { *b1 = setting_cal_slope_b1; }
+    if (b2) { *b2 = setting_cal_slope_b2; }
 }
 
 void settings_set_cal_reflection_lo(float d, float value)

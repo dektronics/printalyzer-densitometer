@@ -135,6 +135,16 @@ Commands that lack a documented response format will return either `OK` or `ERR`
   * Response: `GC LR,<DROP_FACTOR>`
 * `GC LT` - Get reflection light source calibration value
   * Response: `GC LT,<DROP_FACTOR>`
+* `GC SLOPE` - Get sensor slope calibration values
+  * Response: `GC SLOPE,<B0>,<B1>,<B2>`
+  * Note: Adding `,HEX` will return the response in **HEX** format
+* `SC SLOPE` - Set sensor slope calibration values
+  * Allowed formats:
+    * `SC SLOPE <B0>,<B1>,<B2>` - arguments in regular decimal format
+    * `SC SLOPE HEX,<B0>,<B1>,<B2>` - arguments in **HEX** format
+  * _Note: There is no on-device way to perform slope calibration.
+    It must be performed using the desktop application, and then
+    loaded onto the device via the command interface._
 * `GC REFL` - Get reflection density calibration values
   * Response: `GC REFL,<D>,<READING>`
   * Note: Adding `,HEX` will return the response in **HEX** format

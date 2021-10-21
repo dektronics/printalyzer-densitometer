@@ -99,6 +99,9 @@ static void cdc_send_command_response(const cdc_command_t *cmd, const char *str)
 
 static void encode_f32_array_response(char *buf, const float *array, size_t len);
 static size_t encode_f32(char *out, float value);
+static uint8_t decode_hex_char(char ch, bool *ok);
+static float decode_f32(const char *buf);
+static size_t decode_f32_array_args(const char *args, float *elements, size_t len);
 
 extern I2C_HandleTypeDef hi2c1;
 
@@ -516,6 +519,8 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
      * "GC GAIN" -> Get sensor gain calibration values
      * "GC LR"   -> Get reflection light source calibration value
      * "GC LT"   -> Get transmission light source calibration value
+     * "GC SLOPE" -> Get sensor slope calibration values
+     * "SC SLOPE" -> Set sensor slope calibration values
      * "GC REFL" -> Get reflection density calibration values
      * "GC TRAN" -> Get transmission density calibration values
      */
@@ -580,6 +585,28 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         sprintf_(buf, "%f", value);
         cdc_send_command_response(cmd, buf);
         return true;
+    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "SLOPE") == 0) {
+        char buf[64];
+        float slope_val[3] = {0};
+
+        settings_get_cal_slope(&slope_val[0], &slope_val[1], &slope_val[2]);
+
+        if (strcmp(cmd->args, "HEX") == 0) {
+            encode_f32_array_response(buf, slope_val, 3);
+        } else {
+            sprintf_(buf, "%f,%f,%f",
+                slope_val[0], slope_val[1], slope_val[2]);
+        }
+        cdc_send_command_response(cmd, buf);
+        return true;
+    } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "SLOPE") == 0) {
+        float slope_val[3] = {0};
+        size_t n = decode_f32_array_args(cmd->args, slope_val, 3);
+        if (n == 3) {
+            settings_set_cal_slope(slope_val[0], slope_val[1], slope_val[2]);
+            cdc_send_command_response(cmd, "OK");
+            return true;
+        }
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "REFL") == 0) {
         char buf[64];
         float refl_val[4] = {0};
@@ -898,4 +925,96 @@ size_t encode_f32(char *out, float value)
     memset(buf, 0, sizeof(buf));
     copy_from_f32(buf, value);
     return sprintf(out, "%02X%02X%02X%02X", buf[0], buf[1], buf[2], buf[3]);
+}
+
+uint8_t decode_hex_char(char ch, bool *ok)
+{
+    uint8_t val;
+    bool valid = true;
+    if ('0' <= ch && ch <= '9') {
+        val = (uint8_t)(ch - '0');
+    } else if ('A' <= ch && ch <= 'F') {
+        val = (uint8_t)(ch - 'A' + 10);
+    } else if ('a' <= ch && ch <= 'f') {
+        val = (uint8_t)(ch - 'a' + 10);
+    } else {
+        val = 0;
+        valid = false;
+    }
+    if (ok) { *ok = valid; }
+    return val;
+}
+
+float decode_f32(const char *buf)
+{
+    uint8_t hexbuf[4];
+    uint8_t nib1;
+    uint8_t nib2;
+    bool ok;
+
+    if (strlen(buf) != 8) {
+        return NAN;
+    }
+
+    for (size_t i = 0; i < 8; i += 2) {
+        nib1 = decode_hex_char(buf[i], &ok);
+        if (!ok) { return NAN; }
+
+        nib2 = decode_hex_char(buf[i + 1], &ok);
+        if (!ok) { return NAN; }
+
+        hexbuf[i / 2] = (nib1 << 4) + nib2;
+    }
+
+    return copy_to_f32(hexbuf);
+}
+
+size_t decode_f32_array_args(const char *args, float *elements, size_t len)
+{
+    char numbuf[16];
+    bool hex_format;
+    size_t n = 0;
+    size_t p, q;
+
+    if (strncmp(args, "HEX,", 4) == 0) {
+        hex_format = true;
+        p = 4;
+    } else {
+        hex_format = false;
+        p = 0;
+    }
+
+    q = p;
+    while (n < len) {
+        if (args[q] == ',' || args[q] == '\0') {
+            if (p >= q) { break; }
+            if (q - p < sizeof(numbuf) - 1) {
+                bzero(numbuf, sizeof(numbuf));
+                strncpy(numbuf, args + p, q - p);
+                if (hex_format) {
+                    elements[n] = decode_f32(numbuf);
+                } else {
+                    /*
+                     * Note: This function adds a fair bit of code size,
+                     * so removing support for non-HEX set command arguments
+                     * can be done if the space is needed.
+                     */
+                    elements[n] = atof(numbuf);
+                }
+            } else {
+                elements[n] = NAN;
+            }
+            n++;
+            if (args[q] == '\0') {
+                break;
+            } else {
+                p = q + 1;
+                q = p;
+            }
+        } else {
+            q++;
+        }
+    }
+
+    return n;
 }

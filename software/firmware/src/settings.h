@@ -18,6 +18,9 @@ void settings_get_cal_reflection_led_factor(float *value);
 void settings_set_cal_transmission_led_factor(float value);
 void settings_get_cal_transmission_led_factor(float *value);
 
+void settings_set_cal_slope(float b0, float b1, float b2);
+void settings_get_cal_slope(float *b0, float *b1, float *b2);
+
 void settings_set_cal_reflection_lo(float d, float value);
 void settings_get_cal_reflection_lo(float *d, float *value);
 

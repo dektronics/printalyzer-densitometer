@@ -25,7 +25,9 @@ typedef enum {
     MAIN_MENU_CALIBRATION,
     MAIN_MENU_CALIBRATION_REFLECTION,
     MAIN_MENU_CALIBRATION_TRANSMISSION,
-    MAIN_MENU_CALIBRATION_SENSOR,
+    MAIN_MENU_CALIBRATION_SENSOR_GAIN,
+    MAIN_MENU_CALIBRATION_SENSOR_GAIN_RUN,
+    MAIN_MENU_CALIBRATION_SENSOR_SLOPE,
     MAIN_MENU_SETTINGS,
     MAIN_MENU_SETTINGS_DIAGNOSTICS,
     MAIN_MENU_ABOUT
@@ -36,6 +38,7 @@ typedef struct {
     state_identifier_t last_display_state;
     uint8_t home_option;
     uint8_t cal_option;
+    uint8_t cal_sub_option;
     uint8_t settings_option;
     main_menu_state_t menu_state;
 } state_main_menu_t;
@@ -51,6 +54,7 @@ static state_main_menu_t state_main_menu_data = {
     .last_display_state = STATE_HOME,
     .home_option = 1,
     .cal_option = 1,
+    .cal_sub_option = 1,
     .settings_option = 1,
     .menu_state = MAIN_MENU_HOME
 };
@@ -59,7 +63,9 @@ static void main_menu_home(state_main_menu_t *state, state_controller_t *control
 static void main_menu_calibration(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_reflection(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_transmission(state_main_menu_t *state, state_controller_t *controller);
-static void main_menu_calibration_sensor(state_main_menu_t *state, state_controller_t *controller);
+static void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controller_t *controller);
+static void main_menu_calibration_sensor_gain_run(state_main_menu_t *state, state_controller_t *controller);
+static void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controller_t *controller);
 static bool sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data);
 static bool sensor_calibration_should_abort();
 static void main_menu_settings(state_main_menu_t *state, state_controller_t *controller);
@@ -80,6 +86,7 @@ void state_main_menu_entry(state_t *state_base, state_controller_t *controller, 
     }
     state->home_option = 1;
     state->cal_option = 1;
+    state->cal_sub_option = 1;
     state->settings_option = 1;
     state->menu_state = MAIN_MENU_HOME;
 }
@@ -98,8 +105,12 @@ void state_main_menu_process(state_t *state_base, state_controller_t *controller
         main_menu_calibration_reflection(state, controller);
     } else if (state->menu_state == MAIN_MENU_CALIBRATION_TRANSMISSION) {
         main_menu_calibration_transmission(state, controller);
-    } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR) {
-        main_menu_calibration_sensor(state, controller);
+    } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR_GAIN) {
+        main_menu_calibration_sensor_gain(state, controller);
+    } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR_GAIN_RUN) {
+        main_menu_calibration_sensor_gain_run(state, controller);
+    } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR_SLOPE) {
+        main_menu_calibration_sensor_slope(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS) {
         main_menu_settings(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS_DIAGNOSTICS) {
@@ -135,14 +146,17 @@ void main_menu_calibration(state_main_menu_t *state, state_controller_t *control
         "Calibration", state->cal_option,
         "Reflection\n"
         "Transmission\n"
-        "Sensor");
+        "Sensor Gain\n"
+        "Sensor Slope");
 
     if (state->cal_option == 1) {
         state->menu_state = MAIN_MENU_CALIBRATION_REFLECTION;
     } else if (state->cal_option == 2) {
         state->menu_state = MAIN_MENU_CALIBRATION_TRANSMISSION;
     } else if (state->cal_option == 3) {
-        state->menu_state = MAIN_MENU_CALIBRATION_SENSOR;
+        state->menu_state = MAIN_MENU_CALIBRATION_SENSOR_GAIN;
+    } else if (state->cal_option == 4) {
+        state->menu_state = MAIN_MENU_CALIBRATION_SENSOR_SLOPE;
     } else if (state->cal_option == UINT8_MAX) {
         state_controller_set_next_state(controller, state->last_display_state);
     } else {
@@ -384,8 +398,48 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
     }
 }
 
-void main_menu_calibration_sensor(state_main_menu_t *state, state_controller_t *controller)
+void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controller_t *controller)
 {
+    char buf[192];
+    float gain_val[8] = {0};
+
+    gain_val[0] = 1.0F; gain_val[1] = 1.0F;
+    settings_get_cal_gain(TSL2591_GAIN_MEDIUM, &gain_val[2], &gain_val[3]);
+    settings_get_cal_gain(TSL2591_GAIN_HIGH, &gain_val[4], &gain_val[5]);
+    settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &gain_val[6], &gain_val[7]);
+
+    sprintf_(buf,
+        "L0 = %.1fx\n"
+        "L1 = %.1fx\n"
+        "M0 = %.4fx\n"
+        "M1 = %.4fx\n"
+        "H0 = %.3fx\n"
+        "H1 = %.3fx\n"
+        "X0 = %.2fx\n"
+        "X1 = %.2fx\n"
+        "* Calibrate *",
+        gain_val[0], gain_val[1],
+        gain_val[2], gain_val[3],
+        gain_val[4], gain_val[5],
+        gain_val[6], gain_val[7]);
+
+    state->cal_sub_option = display_selection_list(
+        "Sensor Gain", state->cal_sub_option,
+        buf);
+
+    if (state->cal_sub_option == 9) {
+        state->menu_state = MAIN_MENU_CALIBRATION_SENSOR_GAIN_RUN;
+    } else if (state->cal_sub_option == UINT8_MAX) {
+        state_controller_set_next_state(controller, state->last_display_state);
+    } else if (state->cal_sub_option == 0) {
+        state->menu_state = MAIN_MENU_CALIBRATION;
+        state->cal_sub_option = 1;
+    }
+}
+
+void main_menu_calibration_sensor_gain_run(state_main_menu_t *state, state_controller_t *controller)
+{
+
     uint8_t option = display_message(
         "Hold device\n"
         "firmly closed\n"
@@ -449,6 +503,33 @@ bool sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, v
     }
 
     return !sensor_calibration_should_abort();
+}
+
+void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controller_t *controller)
+{
+    char buf[128];
+    float b0;
+    float b1;
+    float b2;
+
+    settings_get_cal_slope(&b0, &b1, &b2);
+
+    sprintf_(buf,
+        "B0 = %.6f\n"
+        "B1 = %.6f\n"
+        "B2 = %.6f",
+        b0, b1, b2);
+
+    state->cal_sub_option = display_selection_list(
+        "Sensor Slope", state->cal_sub_option,
+        buf);
+
+    if (state->cal_sub_option == UINT8_MAX) {
+        state_controller_set_next_state(controller, state->last_display_state);
+    } else if (state->cal_sub_option == 0) {
+        state->menu_state = MAIN_MENU_CALIBRATION;
+        state->cal_sub_option = 1;
+    }
 }
 
 bool sensor_calibration_should_abort()
