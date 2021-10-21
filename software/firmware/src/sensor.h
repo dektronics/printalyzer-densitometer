@@ -129,4 +129,18 @@ void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_
 void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic);
 #endif
 
+/**
+ * Apply the configured slope correction formula to a sensor reading.
+ *
+ * The input value is in basic counts, with the channels combined as
+ * is normally done as part of the measurement process.
+ *
+ * If the slope correction values are not correctly configured, then
+ * the input will be returned unmodified.
+ *
+ * @param basic_reading Sensor reading in combined basic counts
+ * @return Slope corrected sensor reading
+ */
+float sensor_apply_slope_calibration(float basic_reading);
+
 #endif /* SENSOR_H */

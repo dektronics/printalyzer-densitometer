@@ -719,3 +719,26 @@ void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, cons
     }
 }
 #endif
+
+float sensor_apply_slope_calibration(float basic_reading)
+{
+    float b0, b1, b2;
+
+    settings_get_cal_slope(&b0, &b1, &b2);
+
+    if (isnanf(basic_reading) || isinff(basic_reading) || basic_reading <= 0.0F) {
+        log_w("Cannot apply slope correction to invalid reading: %f", basic_reading);
+        return basic_reading;
+    }
+
+    if (isnanf(b0) || isinff(b0) || isnanf(b1) || isinff(b1) || isnanf(b2) || isinff(b2)) {
+        log_w("Invalid slope calibration values: %f, %f, %f", b0, b1, b2);
+        return basic_reading;
+    }
+
+    float l_reading = log10f(basic_reading);
+    float l_expected = b0 + (b1 * l_reading) + (b2 * powf(l_reading, 2.0F));
+    float corr_reading = powf(10.0F, l_expected);
+
+    return corr_reading;
+}

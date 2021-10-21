@@ -813,7 +813,7 @@ void cdc_send_command_response(const cdc_command_t *cmd, const char *str)
     cdc_write(buf, n);
 }
 
-void cdc_send_density_reading(char prefix, float d_value, float raw_value)
+void cdc_send_density_reading(char prefix, float d_value, float raw_value, float corr_value)
 {
     char buf[16];
     char sign;
@@ -842,18 +842,20 @@ void cdc_send_density_reading(char prefix, float d_value, float raw_value)
     }
 
     if (reading_format == READING_FORMAT_EXT) {
-        char extbuf[32];
+        char extbuf[48];
         buf[n - 2] = '\0';
-        n = sprintf_(extbuf, "%s,%f,%f\r\n", buf, d_value, raw_value);
+        n = sprintf_(extbuf, "%s,%f,%f,%f\r\n", buf, d_value, raw_value, corr_value);
         cdc_write(extbuf, n);
     } else if (reading_format == READING_FORMAT_EXT_HEX) {
-        char extbuf[32];
+        char extbuf[48];
         n -= 2;
         strncpy(extbuf, buf, n);
         extbuf[n++] = ',';
         n += encode_f32(extbuf + n, d_value);
         extbuf[n++] = ',';
         n += encode_f32(extbuf + n, raw_value);
+        extbuf[n++] = ',';
+        n += encode_f32(extbuf + n, corr_value);
         extbuf[n++] = '\r';
         extbuf[n++] = '\n';
         extbuf[n] = '\0';

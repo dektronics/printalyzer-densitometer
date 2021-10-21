@@ -52,9 +52,12 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     /* Make sure the two channels don't overlap the wrong way */
     if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
 
-    /* Convert all values into log units */
+    /* Combine and correct the basic reading */
     float meas_value = ch0_basic - ch1_basic;
-    float meas_ll = log10f(meas_value);
+    float corr_value = sensor_apply_slope_calibration(meas_value);
+
+    /* Convert all values into log units */
+    float meas_ll = log10f(corr_value);
     float cal_hi_ll = log10f(cal_hi_value);
     float cal_lo_ll = log10f(cal_lo_value);
 
@@ -64,7 +67,7 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     /* Calculate the measured density */
     float meas_d = (m * (meas_ll - cal_lo_ll)) + cal_lo_d;
 
-    log_i("D=%.2f, VALUE=%f", meas_d, meas_value);
+    log_i("D=%.2f, VALUE=%f,%f", meas_d, meas_value, corr_value);
 
     /* Clamp the return value to be within an acceptable range */
     if (meas_d < 0.0F) { meas_d = 0.0F; }
@@ -75,7 +78,7 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
 
-    cdc_send_density_reading('R', meas_d, meas_value);
+    cdc_send_density_reading('R', meas_d, meas_value, corr_value);
 
     return DENSITOMETER_OK;
 }
@@ -137,13 +140,16 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     }
 
     if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
+
+    /* Combine and correct the basic reading */
     float meas_value = ch0_basic - ch1_basic;
+    float corr_value = sensor_apply_slope_calibration(meas_value);
 
     /* Calculate the measured CAL-HI density relative to the zero value */
     float cal_hi_meas_d = -1.0F * log10f(cal_hi_value / cal_zero_value);
 
     /* Calculate the measured target density relative to the zero value */
-    float meas_d = -1.0F * log10f(meas_value / cal_zero_value);
+    float meas_d = -1.0F * log10f(corr_value / cal_zero_value);
 
     /* Calculate the adjustment factor */
     float adj_factor = cal_hi_d / cal_hi_meas_d;
@@ -151,7 +157,7 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     /* Calculate the calibration corrected density */
     float corr_d = meas_d * adj_factor;
 
-    log_i("D=%.2f, VALUE=%f", corr_d, meas_value);
+    log_i("D=%.2f, VALUE=%f,%f", corr_d, meas_value, corr_value);
 
     /* Clamp the return value to be within an acceptable range */
     if (corr_d < 0.0F) { corr_d = 0.0F; }
@@ -162,7 +168,7 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
 
-    cdc_send_density_reading('T', meas_d, meas_value);
+    cdc_send_density_reading('T', meas_d, meas_value, corr_value);
 
     return DENSITOMETER_OK;
 }
@@ -211,14 +217,17 @@ densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d, senso
     }
 
     if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-    float meas_value = ch0_basic - ch1_basic;
 
-    if (meas_value < 0.01F) {
+    /* Combine and correct the basic reading */
+    float meas_value = ch0_basic - ch1_basic;
+    float corr_value = sensor_apply_slope_calibration(meas_value);
+
+    if (meas_value < 0.01F || corr_value < 0.01F) {
         return DENSITOMETER_CAL_ERROR;
     }
 
     /* Save the calibration value */
-    settings_set_cal_reflection_lo(cal_lo_d, meas_value);
+    settings_set_cal_reflection_lo(cal_lo_d, corr_value);
 
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
@@ -244,14 +253,17 @@ densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d, senso
     }
 
     if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-    float meas_value = ch0_basic - ch1_basic;
 
-    if (meas_value < 0.01F) {
+    /* Combine and correct the basic reading */
+    float meas_value = ch0_basic - ch1_basic;
+    float corr_value = sensor_apply_slope_calibration(meas_value);
+
+    if (meas_value < 0.01F || corr_value < 0.01F) {
         return DENSITOMETER_CAL_ERROR;
     }
 
     /* Save the calibration value */
-    settings_set_cal_reflection_hi(cal_hi_d, meas_value);
+    settings_set_cal_reflection_hi(cal_hi_d, corr_value);
 
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
@@ -272,14 +284,17 @@ densitometer_result_t densitometer_calibrate_transmission_zero(sensor_read_callb
     }
 
     if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-    float meas_value = ch0_basic - ch1_basic;
 
-    if (meas_value < 0.01F) {
+    /* Combine and correct the basic reading */
+    float meas_value = ch0_basic - ch1_basic;
+    float corr_value = sensor_apply_slope_calibration(meas_value);
+
+    if (meas_value < 0.01F || corr_value < 0.01F) {
         return DENSITOMETER_CAL_ERROR;
     }
 
     /* Save the calibration value */
-    settings_set_cal_transmission_zero(meas_value);
+    settings_set_cal_transmission_zero(corr_value);
 
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
@@ -305,14 +320,17 @@ densitometer_result_t densitometer_calibrate_transmission_hi(float cal_hi_d, sen
     }
 
     if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-    float meas_value = ch0_basic - ch1_basic;
 
-    if (meas_value < 0.01F) {
+    /* Combine and correct the basic reading */
+    float meas_value = ch0_basic - ch1_basic;
+    float corr_value = sensor_apply_slope_calibration(meas_value);
+
+    if (meas_value < 0.01F || corr_value < 0.01F) {
         return DENSITOMETER_CAL_ERROR;
     }
 
     /* Save the calibration value */
-    settings_set_cal_transmission_hi(cal_hi_d, meas_value);
+    settings_set_cal_transmission_hi(cal_hi_d, corr_value);
 
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
