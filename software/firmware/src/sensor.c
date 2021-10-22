@@ -16,8 +16,6 @@
 #include "light.h"
 #include "util.h"
 
-#define SENSOR_DEFAULT_START_TIME (TSL2591_TIME_100MS)
-#define SENSOR_DEFAULT_READ_TIME (TSL2591_TIME_200MS)
 #define SENSOR_TARGET_READ_ITERATIONS 2
 
 /* These constants are for the opal stage plate */
@@ -344,7 +342,7 @@ osStatus_t sensor_read_target(sensor_light_t light_source,
 
     do {
         /* Put the sensor and light into a known initial state, with maximum gain */
-        ret = sensor_set_config(TSL2591_GAIN_MAXIMUM, SENSOR_DEFAULT_START_TIME);
+        ret = sensor_set_config(TSL2591_GAIN_MAXIMUM, TSL2591_TIME_100MS);
         if (ret != osOK) { break; }
 
         /* Activate light source synchronized with sensor cycle */
@@ -363,15 +361,23 @@ osStatus_t sensor_read_target(sensor_light_t light_source,
         /* Invoke the progress callback */
         if (callback) { callback(user_data); }
 
-        /* Pick target gain based on previous result */
-        if (sensor_is_reading_saturated(&reading)) {
+        /*
+         * Pick target gain based on previous result.
+         * Since the measurement integration time will be approximately
+         * double the initialization integration time, this detection
+         * needs to be at a point slightly less than half the saturation
+         * point for measurement readings.
+         * The regular saturation detection won't work here, because
+         * the 100ms saturation point is slightly greater than half-way.
+         */
+        if (reading.ch0_val > 32700 || reading.ch1_val > 32700) {
             target_read_gain = TSL2591_GAIN_HIGH;
         } else {
             target_read_gain = TSL2591_GAIN_MAXIMUM;
         }
 
         /* Switch to the target read gain and integration time */
-        ret = sensor_set_config(target_read_gain, SENSOR_DEFAULT_READ_TIME);
+        ret = sensor_set_config(target_read_gain, TSL2591_TIME_200MS);
         if (ret != osOK) { break; }
 
         /* Take the actual target measurement readings */
