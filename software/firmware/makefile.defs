@@ -13,4 +13,4 @@ BUILD_DESCRIBE := g$(shell git describe --always --dirty --exclude '*')
 $(info Build Time: $(BUILD_DATE))
 $(info Build Describe: $(BUILD_DESCRIBE))
 
-OBJCOPY_BIN += densitometer-out.elf densitometer-out.bin
+OBJCOPY_BIN += densitometer-out.elf densitometer-out.bin densitometer.dfu

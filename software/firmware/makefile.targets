@@ -11,3 +11,6 @@ densitometer-out.elf: densitometer.elf densitometer-desc.dat
 
 densitometer-out.bin: densitometer-out.elf
 	arm-none-eabi-objcopy -O binary densitometer-out.elf "densitometer-out.bin"
+
+densitometer.dfu : densitometer-out.bin
+	../tools/dfuse-pack.py -b 0x08000000:densitometer-out.bin -D 0x0483:0xdf11 -a 0 densitometer.dfu
