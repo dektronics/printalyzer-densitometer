@@ -54,8 +54,7 @@ typedef struct {
 
 typedef enum {
     READING_FORMAT_BASIC,
-    READING_FORMAT_EXT,
-    READING_FORMAT_EXT_HEX
+    READING_FORMAT_EXT
 } cdc_reading_format_t;
 
 static volatile bool cdc_initialized = false;
@@ -470,26 +469,18 @@ bool cdc_process_command_measurement(const cdc_command_t *cmd)
      * Measurement Commands
      * "GM REFL" -> Get last reflection measurement
      * "GM TRAN" -> Get last transmission measurement
-     * "SM FORMAT,x" -> Set measurement data format ("BASIC", "EXT", "EXT,HEX")
+     * "SM FORMAT,x" -> Set measurement data format ("BASIC", "EXT")
      */
     if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "REFL") == 0) {
         char buf[32];
         float reading = densitometer_reflection_get_last_reading();
-        if (strcmp(cmd->args, "HEX") == 0) {
-            encode_f32(buf, reading);
-        } else {
-            sprintf_(buf, "%.2f", reading);
-        }
+        encode_f32(buf, reading);
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "TRAN") == 0) {
         char buf[32];
         float reading = densitometer_transmission_get_last_reading();
-        if (strcmp(cmd->args, "HEX") == 0) {
-            encode_f32(buf, reading);
-        } else {
-            sprintf_(buf, "%.2f", reading);
-        }
+        encode_f32(buf, reading);
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "FORMAT") == 0) {
@@ -497,8 +488,6 @@ bool cdc_process_command_measurement(const cdc_command_t *cmd)
             reading_format = READING_FORMAT_BASIC;
         } else if (strcmp(cmd->args, "EXT") == 0) {
             reading_format = READING_FORMAT_EXT;
-        } else if (strcmp(cmd->args, "EXT,HEX") == 0) {
-            reading_format = READING_FORMAT_EXT_HEX;
         } else {
             return false;
         }
@@ -563,16 +552,8 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         settings_get_cal_gain(TSL2591_GAIN_MEDIUM, &gain_val[2], &gain_val[3]);
         settings_get_cal_gain(TSL2591_GAIN_HIGH, &gain_val[4], &gain_val[5]);
         settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &gain_val[6], &gain_val[7]);
+        encode_f32_array_response(buf, gain_val, 8);
 
-        if (strcmp(cmd->args, "HEX") == 0) {
-            encode_f32_array_response(buf, gain_val, 8);
-        } else {
-            sprintf_(buf, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
-                gain_val[0], gain_val[1],
-                gain_val[2], gain_val[3],
-                gain_val[4], gain_val[5],
-                gain_val[6], gain_val[7]);
-        }
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "LR") == 0) {
@@ -594,13 +575,8 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         float slope_val[3] = {0};
 
         settings_get_cal_slope(&slope_val[0], &slope_val[1], &slope_val[2]);
+        encode_f32_array_response(buf, slope_val, 3);
 
-        if (strcmp(cmd->args, "HEX") == 0) {
-            encode_f32_array_response(buf, slope_val, 3);
-        } else {
-            sprintf_(buf, "%f,%f,%f",
-                slope_val[0], slope_val[1], slope_val[2]);
-        }
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "SLOPE") == 0) {
@@ -617,14 +593,8 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
 
         settings_get_cal_reflection_lo(&refl_val[0], &refl_val[1]);
         settings_get_cal_reflection_hi(&refl_val[2], &refl_val[3]);
+        encode_f32_array_response(buf, refl_val, 4);
 
-        if (strcmp(cmd->args, "HEX") == 0) {
-            encode_f32_array_response(buf, refl_val, 4);
-        } else {
-            sprintf_(buf, "%.2f,%f,%.2f,%f",
-                refl_val[0], refl_val[1],
-                refl_val[2], refl_val[3]);
-        }
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "TRAN") == 0) {
@@ -634,14 +604,8 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         tran_val[0] = 0.0F;
         settings_get_cal_transmission_zero(&tran_val[1]);
         settings_get_cal_transmission_hi(&tran_val[2], &tran_val[3]);
+        encode_f32_array_response(buf, tran_val, 4);
 
-        if (strcmp(cmd->args, "HEX") == 0) {
-            encode_f32_array_response(buf, tran_val, 4);
-        } else {
-            sprintf_(buf, "%.2f,%f,%.2f,%f",
-                tran_val[0], tran_val[1],
-                tran_val[2], tran_val[3]);
-        }
         cdc_send_command_response(cmd, buf);
         return true;
     }
@@ -847,11 +811,6 @@ void cdc_send_density_reading(char prefix, float d_value, float raw_value, float
 
     if (reading_format == READING_FORMAT_EXT) {
         char extbuf[48];
-        buf[n - 2] = '\0';
-        n = sprintf_(extbuf, "%s,%f,%f,%f\r\n", buf, d_value, raw_value, corr_value);
-        cdc_write(extbuf, n);
-    } else if (reading_format == READING_FORMAT_EXT_HEX) {
-        char extbuf[48];
         n -= 2;
         strncpy(extbuf, buf, n);
         extbuf[n++] = ',';
@@ -978,18 +937,10 @@ float decode_f32(const char *buf)
 size_t decode_f32_array_args(const char *args, float *elements, size_t len)
 {
     char numbuf[16];
-    bool hex_format;
     size_t n = 0;
     size_t p, q;
 
-    if (strncmp(args, "HEX,", 4) == 0) {
-        hex_format = true;
-        p = 4;
-    } else {
-        hex_format = false;
-        p = 0;
-    }
-
+    p = 0;
     q = p;
     while (n < len) {
         if (args[q] == ',' || args[q] == '\0') {
@@ -997,16 +948,7 @@ size_t decode_f32_array_args(const char *args, float *elements, size_t len)
             if (q - p < sizeof(numbuf) - 1) {
                 bzero(numbuf, sizeof(numbuf));
                 strncpy(numbuf, args + p, q - p);
-                if (hex_format) {
-                    elements[n] = decode_f32(numbuf);
-                } else {
-                    /*
-                     * Note: This function adds a fair bit of code size,
-                     * so removing support for non-HEX set command arguments
-                     * can be done if the space is needed.
-                     */
-                    elements[n] = atof(numbuf);
-                }
+                elements[n] = decode_f32(numbuf);
             } else {
                 elements[n] = NAN;
             }
