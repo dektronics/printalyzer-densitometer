@@ -61,6 +61,7 @@ typedef void (*sensor_read_callback_t)(void *user_data);
  */
 osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data);
 
+#if TEST_LIGHT_CAL
 /**
  * Run the sensor light source calibration process.
  *
@@ -73,6 +74,7 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
  * @return osOK on success
  */
 osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_calibration_callback_t callback, void *user_data);
+#endif
 
 /**
  * Perform a target reading with the sensor.
@@ -111,23 +113,6 @@ bool sensor_is_reading_saturated(const sensor_reading_t *reading);
  * @param ch1_basic Basic count output for channel 1
  */
 void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic);
-
-#if 0
-/**
- * Convert sensor readings from raw counts to basic counts.
- *
- * Basic counts are normalized based on the sensor gain, integration time,
- * and various system constants. This allows them to be compared across
- * multiple readings and different device settings. All actual light
- * calculations shall be performed in terms of basic counts.
- *
- * @param light_source Light source used to take the readings
- * @param reading Reading structure with all raw values
- * @param ch0_basic Basic count output for channel 0
- * @param ch1_basic Basic count output for channel 1
- */
-void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic);
-#endif
 
 /**
  * Apply the configured slope correction formula to a sensor reading.

@@ -116,18 +116,6 @@ Commands that lack a documented response format will return either `OK` or `ERR`
   * This is a long process in which the device must be held closed.
     Unless logging is redirected, it does not currently report progress
     via the USB CDC interface.
-* `IC LR` - Invoke the reflection light source calibration process ***(remote mode)***
-  * This is a long process in which the device must be held closed.
-    Unless logging is redirected, it does not currently report progress
-    via the USB CDC interface.
-  * _Note: This process mostly exists to profile light source behavior, and may
-    be removed or disabled in the future._
-* `IC LT` - Invoke the transmission light source calibration process ***(remote mode)***
-  * This is a long process in which the device must be held closed.
-    Unless logging is redirected, it does not currently report progress
-    via the USB CDC interface.
-  * _Note: This process mostly exists to profile light source behavior, and may
-    be removed or disabled in the future._
 * `GC GAIN` - Get sensor gain calibration values
   * Response: `GC GAIN,1.00,1.00,<M0>,<M1>,<H0>,<H1>,<X0>,<X1>`
   * Note: Adding `,HEX` will return the response in **HEX** format

@@ -533,8 +533,10 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
             cdc_send_command_response(cmd, "ERR");
         }
         return true;
-    } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "LR") == 0 && cdc_remote_active) {
-        //TODO This is long running, having some sort of progress notification could be helpful
+    }
+#ifdef TEST_LIGHT_CAL
+    else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "LR") == 0 && cdc_remote_active) {
+        /* This command is only enabled for development and testing purposes */
         osStatus_t result = sensor_light_calibration(SENSOR_LIGHT_REFLECTION, NULL, NULL);
         if (result == osOK) {
             cdc_send_command_response(cmd, "OK");
@@ -543,7 +545,7 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         }
         return true;
     } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "LT") == 0 && cdc_remote_active) {
-        //TODO This is long running, having some sort of progress notification could be helpful
+        /* This command is only enabled for development and testing purposes */
         osStatus_t result = sensor_light_calibration(SENSOR_LIGHT_TRANSMISSION, NULL, NULL);
         if (result == osOK) {
             cdc_send_command_response(cmd, "OK");
@@ -551,7 +553,9 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
             cdc_send_command_response(cmd, "ERR");
         }
         return true;
-    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "GAIN") == 0) {
+    }
+#endif
+    else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "GAIN") == 0) {
         char buf[128];
         float gain_val[8] = {0};
 

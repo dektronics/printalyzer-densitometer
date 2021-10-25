@@ -185,6 +185,7 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
     return ret;
 }
 
+#if TEST_LIGHT_CAL
 osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_calibration_callback_t callback, void *user_data)
 {
     osStatus_t ret = osOK;
@@ -321,6 +322,7 @@ osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_ca
 
     return os_to_hal_status(ret);
 }
+#endif
 
 osStatus_t sensor_read_target(sensor_light_t light_source,
     float *ch0_result, float *ch1_result,
@@ -665,66 +667,6 @@ void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_
         *ch1_basic = (float)reading->ch1_val / ch1_cpl;
     }
 }
-
-#if 0
-void sensor_convert_to_calibrated_basic_counts(sensor_light_t light_source, const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic)
-{
-    float ch0_gain;
-    float ch1_gain;
-    float atime_ms;
-    float light_drop_factor;
-    float ch0_raw;
-    float ch1_raw;
-    float ch0_cpl;
-    float ch1_cpl;
-    uint32_t light_on_ticks;
-
-    if (!reading) {
-        if (ch0_basic) { *ch0_basic = NAN; }
-        if (ch1_basic) { *ch1_basic = NAN; }
-        return;
-    }
-
-    /* Get the gain value from sensor calibration */
-    settings_get_cal_gain(reading->gain, &ch0_gain, &ch1_gain);
-
-    /*
-     * Integration time is uncalibrated, due to the assumption that all
-     * target measurements will be done at the same setting.
-     */
-    atime_ms = tsl2591_get_time_value_ms(reading->time);
-
-    /* Get the light source calibration value */
-    if (light_source == SENSOR_LIGHT_REFLECTION) {
-        settings_get_cal_reflection_led_factor(&light_drop_factor);
-    } else if (light_source == SENSOR_LIGHT_TRANSMISSION) {
-        settings_get_cal_transmission_led_factor(&light_drop_factor);
-    } else {
-        light_drop_factor = NAN;
-    }
-
-    /* Get the readings into floating point variables */
-    ch0_raw = reading->ch0_val;
-    ch1_raw = reading->ch1_val;
-
-    /* Apply the light drop factor */
-    light_on_ticks = reading->reading_ticks - reading->light_ticks;
-    if (!isnanf(light_drop_factor) && light_drop_factor < 0.0F && light_on_ticks > 0 && light_on_ticks < 600000) {
-        ch0_raw -= (ch0_raw * (light_drop_factor * logf(light_on_ticks)));
-        ch1_raw -= (ch1_raw * (light_drop_factor * logf(light_on_ticks)));
-    }
-
-    ch0_cpl = (atime_ms * ch0_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);
-    ch1_cpl = (atime_ms * ch1_gain) / (TSL2591_LUX_GA * TSL2591_LUX_DF);
-
-    if (ch0_basic) {
-        *ch0_basic = ch0_raw / ch0_cpl;
-    }
-    if (ch1_basic) {
-        *ch1_basic = ch1_raw / ch1_cpl;
-    }
-}
-#endif
 
 float sensor_apply_slope_calibration(float basic_reading)
 {
