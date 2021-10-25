@@ -117,10 +117,9 @@ Commands that lack a documented response format will return either `OK` or `ERR`
   * Response: `GC GAIN,<L0>,<L1>,<M0>,<M1>,<H0>,<H1>,<X0>,<X1>`
   * Note: `<L0>` and `<L1>` will always be equivalent to 1.0, as they represent
     the sensor's base gain value. They are only included for the sake of completeness.
-* `GC LR` - Get reflection light source calibration value
-  * Response: `GC LR,<DROP_FACTOR>`
-* `GC LT` - Get reflection light source calibration value
-  * Response: `GC LT,<DROP_FACTOR>`
+* `SC GAIN,<M0>,<M1>,<H0>,<H1>,<X0>,<X1>` - Set sensor gain calibration values
+  * Note: `<L0>` and `<L1>` are omitted from the set command as their value
+    cannot be changed.
 * `GC SLOPE` - Get sensor slope calibration values
   * Response: `GC SLOPE,<B0>,<B1>,<B2>`
 * `SC SLOPE,<B0>,<B1>,<B2>` - Set sensor slope calibration values
@@ -128,9 +127,14 @@ Commands that lack a documented response format will return either `OK` or `ERR`
     It must be performed using the desktop application, and then
     loaded onto the device via the command interface._
 * `GC REFL` - Get reflection density calibration values
-  * Response: `GC REFL,<D>,<READING>`
+  * Response: `GC REFL,<LD>,<LREADING>,<HD>,<HREADING>`
+* `SC REFL,<LD>,<LREADING>,<HD>,<HREADING>` - Set reflection density calibration values
+  * The reading values are assumed to be in slope corrected basic counts
 * `GC TRAN` - Get transmission density calibration values
-  * Response: `GC TRAN,<D>,<READING>`
+  * Response: `GC TRAN,<LD>,<LREADING>,<HD>,<HREADING>`
+* `SC TRAN,<LD>,<LREADING>,<HD>,<HREADING>` - Get transmission density calibration values
+  * The reading values are assumed to be in slope corrected basic counts
+  * Note: `<HD>` is always zero, and only included here for the sake of consistency
 
 ### Diagnostic Commands
 

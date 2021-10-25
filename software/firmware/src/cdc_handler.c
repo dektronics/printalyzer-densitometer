@@ -49,7 +49,7 @@ typedef struct {
     cmd_type_t type;
     cmd_category_t category;
     char action[8];
-    char args[32];
+    char args[56];
 } cdc_command_t;
 
 typedef enum {
@@ -502,16 +502,15 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
     /*
      * Calibration Commands
      * "IC GAIN" -> Invoke the sensor gain calibration process [remote]
-     * "IC LR"   -> Invoke the reflection light source calibration process [remote]
-     * "IC LT"   -> Invoke the transmission light source calibration process [remote]
      *
      * "GC GAIN" -> Get sensor gain calibration values
-     * "GC LR"   -> Get reflection light source calibration value
-     * "GC LT"   -> Get transmission light source calibration value
+     * "SC GAIN" -> Set sensor gain calibration values
      * "GC SLOPE" -> Get sensor slope calibration values
      * "SC SLOPE" -> Set sensor slope calibration values
      * "GC REFL" -> Get reflection density calibration values
+     * "SC REFL" -> Set reflection density calibration values
      * "GC TRAN" -> Get transmission density calibration values
+     * "SC TRAN" -> Set transmission density calibration values
      */
     if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "GAIN") == 0 && cdc_remote_active) {
         //TODO This is long running, having some sort of progress notification could be helpful
@@ -556,7 +555,20 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
 
         cdc_send_command_response(cmd, buf);
         return true;
-    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "LR") == 0) {
+    } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "GAIN") == 0) {
+        float gain_val[6] = {0};
+        size_t n = decode_f32_array_args(cmd->args, gain_val, 8);
+        if (n == 6) {
+            settings_set_cal_gain(TSL2591_GAIN_MEDIUM, gain_val[0], gain_val[1]);
+            settings_set_cal_gain(TSL2591_GAIN_HIGH, gain_val[2], gain_val[3]);
+            settings_set_cal_gain(TSL2591_GAIN_MAXIMUM, gain_val[4], gain_val[5]);
+
+            cdc_send_command_response(cmd, "OK");
+            return true;
+        }
+    }
+#ifdef TEST_LIGHT_CAL
+    else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "LR") == 0) {
         char buf[64];
         float value;
         settings_get_cal_reflection_led_factor(&value);
@@ -570,7 +582,9 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         sprintf_(buf, "%f", value);
         cdc_send_command_response(cmd, buf);
         return true;
-    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "SLOPE") == 0) {
+    }
+#endif
+    else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "SLOPE") == 0) {
         char buf[64];
         float slope_val[3] = {0};
 
@@ -597,6 +611,16 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
 
         cdc_send_command_response(cmd, buf);
         return true;
+    } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "REFL") == 0) {
+        float refl_val[4] = {0};
+        size_t n = decode_f32_array_args(cmd->args, refl_val, 4);
+        if (n == 4) {
+            settings_set_cal_reflection_lo(refl_val[0], refl_val[1]);
+            settings_set_cal_reflection_hi(refl_val[2], refl_val[3]);
+
+            cdc_send_command_response(cmd, "OK");
+            return true;
+        }
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "TRAN") == 0) {
         char buf[64];
         float tran_val[4] = {0};
@@ -608,6 +632,16 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
 
         cdc_send_command_response(cmd, buf);
         return true;
+    } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "TRAN") == 0) {
+        float tran_val[4] = {0};
+        size_t n = decode_f32_array_args(cmd->args, tran_val, 4);
+        if (n == 4 && tran_val[0] < 0.001F) {
+            settings_set_cal_transmission_zero(tran_val[1]);
+            settings_set_cal_transmission_hi(tran_val[2], tran_val[3]);
+
+            cdc_send_command_response(cmd, "OK");
+            return true;
+        }
     }
 
     return false;
