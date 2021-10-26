@@ -12,8 +12,7 @@
 #include "cdc_handler.h"
 
 static u8g2_t u8g2;
-static uint8_t display_contrast = 0x9F;
-static uint8_t display_brightness = 0x0F;
+static uint8_t display_contrast = 0x7F;
 static bool menu_event_timeout = false;
 
 #define MENU_TIMEOUT_MS 30000
@@ -33,6 +32,7 @@ HAL_StatusTypeDef display_init(SPI_HandleTypeDef *hspi)
 
     u8g2_InitDisplay(&u8g2);
     u8g2_SetPowerSave(&u8g2, 0);
+    u8g2_SetContrast(&u8g2, display_contrast);
 
     /*
      * Slightly increase the display refresh frequency
@@ -75,24 +75,6 @@ void display_set_contrast(uint8_t value)
 uint8_t display_get_contrast()
 {
     return display_contrast;
-}
-
-void display_set_brightness(uint8_t value)
-{
-    uint8_t arg = value & 0x0F;
-
-    u8x8_t *u8x8 = &(u8g2.u8x8);
-    u8x8_cad_StartTransfer(u8x8);
-    u8x8_cad_SendCmd(u8x8, 0x0C7);
-    u8x8_cad_SendArg(u8x8, arg);
-    u8x8_cad_EndTransfer(u8x8);
-
-    display_brightness = arg;
-}
-
-uint8_t display_get_brightness()
-{
-    return display_brightness;
 }
 
 static void display_capture_screenshot_callback(const char *s)
