@@ -91,14 +91,6 @@ void state_reflection_measure_process(state_t *state_base, state_controller_t *c
             if (!keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
                 /* Return to the display state if the measure button was released */
                 state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
-            } else if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_ACTION, KEYPAD_BUTTON_UP)) {
-                log_i("Setting zero measurement to target");
-                densitometer_reflection_set_zero();
-                state->display_dirty = true;
-            } else if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_ACTION, KEYPAD_BUTTON_DOWN)) {
-                log_i("Clear zero measurement");
-                densitometer_reflection_clear_zero();
-                state->display_dirty = true;
             }
         }
 
@@ -161,14 +153,6 @@ void state_transmission_measure_process(state_t *state_base, state_controller_t 
             if (!keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
                 /* Return to the display state if the measure button was released */
                 state_controller_set_next_state(controller, STATE_TRANSMISSION_DISPLAY);
-            } else if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_ACTION, KEYPAD_BUTTON_UP)) {
-                log_i("Setting zero measurement to target");
-                densitometer_transmission_set_zero();
-                state->display_dirty = true;
-            } else if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_ACTION, KEYPAD_BUTTON_DOWN)) {
-                log_i("Clear zero measurement");
-                densitometer_transmission_clear_zero();
-                state->display_dirty = true;
             }
         }
 

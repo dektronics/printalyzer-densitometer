@@ -172,6 +172,20 @@ bool keypad_is_key_pressed(const keypad_event_t *event, keypad_key_t key)
     }
 }
 
+bool keypad_is_only_key_pressed(const keypad_event_t *event, keypad_key_t key)
+{
+    if (!event) { return false; }
+
+    int index = keypad_keycode_to_index(key);
+    int detect_index = keypad_keycode_to_index(KEYPAD_BUTTON_DETECT);
+    uint16_t masked_state = event->keypad_state & ~(1 << detect_index);
+    if (index < KEYPAD_INDEX_MAX && event && masked_state == (1 << index)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool keypad_is_key_released_or_repeated(const keypad_event_t *event, keypad_key_t key)
 {
     if (!event) { return false; }

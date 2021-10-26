@@ -18,6 +18,8 @@ typedef struct {
     bool light_dirty;
     bool is_detect_prev;
     bool menu_pending;
+    int up_repeat;
+    int down_repeat;
 } state_display_t;
 
 static void state_reflection_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
@@ -31,7 +33,9 @@ static state_display_t state_reflection_display_data = {
     .display_dirty = true,
     .light_dirty = true,
     .is_detect_prev = false,
-    .menu_pending = false
+    .menu_pending = false,
+    .up_repeat = 0,
+    .down_repeat = 0
 };
 
 static void state_transmission_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
@@ -45,7 +49,9 @@ static state_display_t state_transmission_display_data = {
     .display_dirty = true,
     .light_dirty = true,
     .is_detect_prev = false,
-    .menu_pending = false
+    .menu_pending = false,
+    .up_repeat = 0,
+    .down_repeat = 0
 };
 
 state_t *state_reflection_display()
@@ -59,6 +65,8 @@ void state_reflection_display_entry(state_t *state_base, state_controller_t *con
     state->display_dirty = true;
     state->light_dirty = true;
     state->menu_pending = false;
+    state->up_repeat = 0;
+    state->down_repeat = 0;
 }
 
 void state_reflection_display_process(state_t *state_base, state_controller_t *controller)
@@ -89,12 +97,38 @@ void state_reflection_display_process(state_t *state_base, state_controller_t *c
                 state_controller_set_next_state(controller, STATE_MAIN_MENU);
             }
         } else {
-            if (is_detect && keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
+            if (is_detect && keypad_is_only_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
                 state_controller_set_next_state(controller, STATE_REFLECTION_MEASURE);
-            } else if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_UP, KEYPAD_BUTTON_DOWN)) {
-                state->menu_pending = true;
-            } else if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
+            } else if (keypad_event.key == KEYPAD_BUTTON_UP) {
+                if (keypad_event.pressed || keypad_event.repeated) {
+                    state->up_repeat++;
+                } else {
+                    if (state->up_repeat > 5) {
+                        log_i("Clear zero reflection measurement");
+                        densitometer_reflection_clear_zero();
+                    }
+                    state->up_repeat = 0;
+                    state->display_dirty = true;
+                }
+            } else if (keypad_event.key == KEYPAD_BUTTON_DOWN) {
+                if (keypad_event.pressed || keypad_event.repeated) {
+                    state->down_repeat++;
+                } else {
+                    if (state->down_repeat > 5) {
+                        log_i("Setting zero reflection measurement");
+                        densitometer_reflection_set_zero();
+                    }
+                    state->down_repeat = 0;
+                    state->display_dirty = true;
+                }
+            } else if (keypad_is_only_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
                 state_controller_set_next_state(controller, STATE_TRANSMISSION_DISPLAY);
+            }
+
+            if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_UP, KEYPAD_BUTTON_DOWN)) {
+                state->menu_pending = true;
+                state->up_repeat = 0;
+                state->down_repeat = 0;
             }
         }
     }
@@ -123,6 +157,8 @@ void state_transmission_display_entry(state_t *state_base, state_controller_t *c
     state->display_dirty = true;
     state->light_dirty = true;
     state->menu_pending = false;
+    state->up_repeat = 0;
+    state->down_repeat = 0;
 }
 
 void state_transmission_display_process(state_t *state_base, state_controller_t *controller)
@@ -153,12 +189,38 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
                 state_controller_set_next_state(controller, STATE_MAIN_MENU);
             }
         } else {
-            if (is_detect && keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
+            if (is_detect && keypad_is_only_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
                 state_controller_set_next_state(controller, STATE_TRANSMISSION_MEASURE);
-            } else if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_UP, KEYPAD_BUTTON_DOWN)) {
-                state->menu_pending = true;
-            } else if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
+            } else if (keypad_event.key == KEYPAD_BUTTON_UP) {
+                if (keypad_event.pressed || keypad_event.repeated) {
+                    state->up_repeat++;
+                } else {
+                    if (state->up_repeat > 5) {
+                        log_i("Clear zero transmission measurement");
+                        densitometer_transmission_clear_zero();
+                    }
+                    state->up_repeat = 0;
+                    state->display_dirty = true;
+                }
+            } else if (keypad_event.key == KEYPAD_BUTTON_DOWN) {
+                if (keypad_event.pressed || keypad_event.repeated) {
+                    state->down_repeat++;
+                } else {
+                    if (state->down_repeat > 5) {
+                        log_i("Setting zero transmission measurement");
+                        densitometer_transmission_set_zero();
+                    }
+                    state->down_repeat = 0;
+                    state->display_dirty = true;
+                }
+            } else if (keypad_is_only_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
                 state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
+            }
+
+            if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_UP, KEYPAD_BUTTON_DOWN)) {
+                state->menu_pending = true;
+                state->up_repeat = 0;
+                state->down_repeat = 0;
             }
         }
     }
