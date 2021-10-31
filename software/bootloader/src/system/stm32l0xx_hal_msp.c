@@ -46,6 +46,7 @@ void HAL_CRC_MspDeInit(CRC_HandleTypeDef* hcrc)
     }
 }
 
+#ifdef HAL_SPI_MODULE_ENABLED
 /**
  * SPI MSP Initialization
  *
@@ -92,7 +93,9 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi)
         HAL_GPIO_DeInit(GPIOA, DISP_SCK_Pin | DISP_MOSI_Pin);
     }
 }
+#endif
 
+#ifdef HAL_UART_MODULE_ENABLED
 /**
  * @brief UART MSP Initialization
  *
@@ -139,3 +142,4 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
         HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
     }
 }
+#endif

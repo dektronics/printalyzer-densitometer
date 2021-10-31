@@ -16,13 +16,12 @@
 #include "task_sensor.h"
 #include "app_descriptor.h"
 
-#define APP_ADDRESS 0x08000000UL
+#define APP_ADDRESS 0x08004000UL
 #define END_ADDRESS 0x0801FFFBUL
 #define APP_SIZE ((uint32_t)(((END_ADDRESS - APP_ADDRESS) + 3UL) / 4UL))
 
 ADC_HandleTypeDef hadc;
 DMA_HandleTypeDef hdma_adc;
-CRC_HandleTypeDef hcrc;
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
@@ -37,7 +36,6 @@ static void tim2_init(void);
 static void spi1_init(void);
 static void dma_init(void);
 static void adc_init(void);
-static void crc_init(void);
 static void usb_init(void);
 static void startup_log_messages(void);
 
@@ -343,19 +341,6 @@ void adc_init(void)
     }
 }
 
-void crc_init(void)
-{
-    hcrc.Instance = CRC;
-    hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
-    hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
-    hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
-    hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
-    hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
-    if (HAL_CRC_Init(&hcrc) != HAL_OK) {
-        error_handler();
-    }
-}
-
 void usb_init(void)
 {
     /* Peripheral clock enable */
@@ -394,26 +379,6 @@ void startup_log_messages(void)
     log_i("-----------------------");
 }
 
-void startup_verify_checksum()
-{
-    const app_descriptor_t *app_descriptor = app_descriptor_get();
-    volatile uint32_t calculated_crc = 0;
-
-    calculated_crc =
-        HAL_CRC_Calculate(&hcrc, (uint32_t*)APP_ADDRESS, APP_SIZE);
-
-    __HAL_RCC_CRC_FORCE_RESET();
-    __HAL_RCC_CRC_RELEASE_RESET();
-
-    if (app_descriptor->crc32 != calculated_crc) {
-        log_e("Checksum invalid: %08lX != %08lX",
-            __bswap32(calculated_crc), __bswap32(app_descriptor->crc32));
-        error_handler();
-    } else {
-        log_i("Checksum valid");
-    }
-}
-
 int main(void)
 {
     /*
@@ -435,7 +400,6 @@ int main(void)
     spi1_init();
     dma_init();
     adc_init();
-    crc_init();
     usb_init();
 
     /* Initialize the FreeRTOS scheduler */
@@ -454,7 +418,6 @@ int main(void)
 
     /* Print the initial startup messages */
     startup_log_messages();
-    startup_verify_checksum();
 
     /* Create the main task */
     task_main_init();

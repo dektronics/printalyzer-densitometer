@@ -18,7 +18,7 @@
 
 #include "stm32l0xx_hal.h"
 #include "stm32l0xx_it.h"
-//#include <tusb.h>
+#include <tusb.h>
 
 /******************************************************************************/
 /*          Cortex-M0+ Processor Interruption and Exception Handlers          */
@@ -76,5 +76,5 @@ void SysTick_Handler(void)
  */
 void USB_IRQHandler(void)
 {
-    //tud_int_handler(0);
+    tud_int_handler(0);
 }

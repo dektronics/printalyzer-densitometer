@@ -79,6 +79,7 @@
  TinyUSB
 
  Path:     firmware/external/tinyusb
+           bootloader/external/tinyusb
  Upstream: https://github.com/hathach/tinyusb
  License:  MIT
 
@@ -93,5 +94,17 @@
  License:  MIT
 
  Library has been modified as necessary for project integration purposes.
+
+******************************************************************************
+
+ TinyUF2
+
+ Path:     bootloader/src (selected files)
+           firmware/tools/uf2conv.py
+ Upstream: https://github.com/adafruit/tinyuf2
+ License:  MIT
+
+ Portions of the bootloader code that handle the UF2 protocol and the
+ USB MSC device class are substantially derived from the TinyUF2 project.
 
 ******************************************************************************

@@ -1,17 +1,32 @@
 #include "stm32l0xx_hal.h"
 
+#include <tusb.h>
 #include "board_config.h"
+#include "board_api.h"
+#include "uf2.h"
 
 CRC_HandleTypeDef hcrc;
+#ifdef HAL_SPI_MODULE_ENABLED
 SPI_HandleTypeDef hspi1;
+#endif
+#ifdef HAL_UART_MODULE_ENABLED
 UART_HandleTypeDef huart1;
+#endif
 
 static void system_clock_config(void);
 static void usart1_uart_init(void);
+static void usart1_uart_deinit(void);
 static void gpio_init(void);
+static void gpio_deinit(void);
 static void spi1_init(void);
+static void spi1_deinit(void);
 static void crc_init(void);
+static void crc_deinit(void);
 static void usb_init(void);
+static void usb_deinit(void);
+
+static bool check_start_bootloader();
+static void start_application();
 
 void error_handler(void);
 
@@ -51,10 +66,8 @@ void system_clock_config(void)
         error_handler();
     }
 
-    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_I2C1
-        | RCC_PERIPHCLK_USB;
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_USB;
     PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
-    PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
         error_handler();
@@ -63,6 +76,7 @@ void system_clock_config(void)
 
 void usart1_uart_init(void)
 {
+#ifdef HAL_UART_MODULE_ENABLED
     huart1.Instance = USART1;
     huart1.Init.BaudRate = 115200;
     huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -76,6 +90,14 @@ void usart1_uart_init(void)
     if (HAL_UART_Init(&huart1) != HAL_OK) {
         error_handler();
     }
+#endif
+}
+
+void usart1_uart_deinit(void)
+{
+#ifdef HAL_UART_MODULE_ENABLED
+    HAL_UART_DeInit(&huart1);
+#endif
 }
 
 void gpio_init(void)
@@ -131,8 +153,25 @@ void gpio_init(void)
     HAL_GPIO_Init(SENSOR_INT_GPIO_Port, &GPIO_InitStruct);
 }
 
+void gpio_deinit(void)
+{
+    /* De-initialize GPIO pins */
+    HAL_GPIO_DeInit(GPIOC, BTN4_Pin | BTN3_Pin);
+    HAL_GPIO_DeInit(GPIOA, BTN2_Pin | BTN1_Pin | BTN5_Pin);
+    HAL_GPIO_DeInit(GPIOA, DISP_CS_Pin | DISP_DC_Pin);
+    HAL_GPIO_DeInit(DISP_RES_GPIO_Port, DISP_RES_Pin);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_1 | GPIO_PIN_4);
+    HAL_GPIO_DeInit(SENSOR_INT_GPIO_Port, SENSOR_INT_Pin);
+
+    /* GPIO Ports Clock Disable */
+    __HAL_RCC_GPIOC_CLK_DISABLE();
+    __HAL_RCC_GPIOA_CLK_DISABLE();
+    __HAL_RCC_GPIOB_CLK_DISABLE();
+}
+
 void spi1_init(void)
 {
+#ifdef HAL_SPI_MODULE_ENABLED
     hspi1.Instance = SPI1;
     hspi1.Init.Mode = SPI_MODE_MASTER;
     hspi1.Init.Direction = SPI_DIRECTION_2LINES;
@@ -148,6 +187,14 @@ void spi1_init(void)
     if (HAL_SPI_Init(&hspi1) != HAL_OK) {
         error_handler();
     }
+#endif
+}
+
+void spi1_deinit(void)
+{
+#ifdef HAL_SPI_MODULE_ENABLED
+    HAL_SPI_DeInit(&hspi1);
+#endif
 }
 
 void crc_init(void)
@@ -163,6 +210,11 @@ void crc_init(void)
     }
 }
 
+void crc_deinit(void)
+{
+    HAL_CRC_DeInit(&hcrc);
+}
+
 void usb_init(void)
 {
     /* Peripheral clock enable */
@@ -170,6 +222,60 @@ void usb_init(void)
 
     /* Peripheral interrupt init */
     HAL_NVIC_SetPriority(USB_IRQn, 3, 0);
+}
+
+void usb_deinit(void)
+{
+    /* Peripheral interrupt disable */
+    HAL_NVIC_DisableIRQ(USB_IRQn);
+
+    /* Peripheral clock enable */
+    __HAL_RCC_USB_CLK_DISABLE();
+}
+
+bool check_start_bootloader()
+{
+    BL_LOG_STR("Starting bootloader check\r\n");
+
+    /* Check if the button combination is held down for about a second */
+    uint8_t button_counter = 0;
+    while (button_counter < 10) {
+        if (HAL_GPIO_ReadPin(BTN1_GPIO_Port, BTN1_Pin) == GPIO_PIN_SET
+            && HAL_GPIO_ReadPin(BTN4_GPIO_Port, BTN4_Pin) == GPIO_PIN_SET
+            && HAL_GPIO_ReadPin(BTN5_GPIO_Port, BTN5_Pin) == GPIO_PIN_RESET) {
+            HAL_Delay(50);
+            button_counter++;
+        } else {
+            BL_LOG_STR("Falling through button check\r\n");
+            break;
+        }
+    }
+    if (button_counter >= 10) {
+        BL_LOG_STR("Buttons held, going to bootloader\r\n");
+        return true;
+    }
+
+    /* Check if valid application code is in flash */
+    if (!board_app_valid()) {
+        BL_LOG_STR("App is not valid, going to bootloader\r\n");
+        return true;
+    } else {
+        BL_LOG_STR("App is valid\r\n");
+        return false;
+    }
+}
+
+void start_application()
+{
+    /* De-initialize all the peripherals */
+    usb_deinit();
+    spi1_deinit();
+    crc_deinit();
+    gpio_deinit();
+    usart1_uart_deinit();
+
+    /* Start the application */
+    board_app_jump();
 }
 
 int main(void)
@@ -186,15 +292,37 @@ int main(void)
     /* Initialize the debug UART */
     usart1_uart_init();
 
-    /* Initialize the rest of the configured peripherals */
+    /* Initialize the minimum peripherals to detect startup mode */
     gpio_init();
-    spi1_init();
     crc_init();
+
+    BL_LOG_STR("---- Densitometer Bootloader ----\r\n");
+
+    if (!check_start_bootloader()) {
+        BL_LOG_STR("Starting application\r\n");
+        start_application();
+        while(1) { }
+    }
+
+    BL_LOG_STR("Initializing bootloader\r\n");
+
+    /* Initialize additional peripherals needed for the bootloader */
+    spi1_init();
     usb_init();
 
-    /* Infinite loop */
-    while (1)
-    {
+    /* Initialize UF2 components */
+    uf2_init();
+
+    /* Initialize the TinyUSB stack */
+    tusb_init();
+
+    /* Initialize the display */
+    board_display_init();
+    indicator_set(STATE_BOOTLOADER_STARTED);
+
+    /* Main loop */
+    while (1) {
+        tud_task();
     }
 }
 

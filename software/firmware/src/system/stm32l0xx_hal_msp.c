@@ -85,32 +85,6 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
 }
 
 /**
- * CRC MSP Initialization
- *
- * @param hcrc: CRC handle pointer
- */
-void HAL_CRC_MspInit(CRC_HandleTypeDef* hcrc)
-{
-    if (hcrc->Instance == CRC) {
-        /* Peripheral clock enable */
-        __HAL_RCC_CRC_CLK_ENABLE();
-    }
-}
-
-/**
- * CRC MSP De-Initialization
- *
- * @param hcrc: CRC handle pointer
- */
-void HAL_CRC_MspDeInit(CRC_HandleTypeDef* hcrc)
-{
-    if (hcrc->Instance == CRC) {
-        /* Peripheral clock disable */
-        __HAL_RCC_CRC_CLK_DISABLE();
-    }
-}
-
-/**
  * I2C MSP Initialization
  *
  * @param hi2c: I2C handle pointer

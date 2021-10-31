@@ -30,16 +30,21 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include "stm32l0xx_hal.h"
 
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
 
 /* Variables */
 extern int __io_putchar(int ch) __attribute__((weak));
 extern int __io_getchar(void) __attribute__((weak));
 
-
 char *__env[1] = { 0 };
 char **environ = __env;
 
+#ifdef HAL_UART_MODULE_ENABLED
+extern UART_HandleTypeDef huart1;
+#endif
 
 /* Functions */
 void initialise_monitor_handles()
@@ -77,20 +82,32 @@ __attribute__((weak)) int _read(int file, char *ptr, int len)
 
 __attribute__((weak)) int _write(int file, char *ptr, int len)
 {
+#ifdef HAL_UART_MODULE_ENABLED
+    if (file == STDOUT_FILENO || file == STDERR_FILENO) {
+        HAL_StatusTypeDef status = HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, HAL_MAX_DELAY);
+        if (status == HAL_OK) {
+            return len;
+        } else {
+            errno = EIO;
+            return -1;
+        }
+    } else {
+        errno = EBADF;
+        return -1;
+    }
+#else
     int DataIdx;
-
-    for (DataIdx = 0; DataIdx < len; DataIdx++)
-    {
+    for (DataIdx = 0; DataIdx < len; DataIdx++) {
         __io_putchar(*ptr++);
     }
     return len;
+#endif
 }
 
 int _close(int file)
 {
     return -1;
 }
-
 
 int _fstat(int file, struct stat *st)
 {
@@ -154,3 +171,11 @@ int _execve(char *name, char **argv, char **env)
     errno = ENOMEM;
     return -1;
 }
+
+#ifdef HAL_UART_MODULE_ENABLED
+__attribute__((weak)) int __io_putchar(int ch)
+{
+    HAL_StatusTypeDef status = HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+    return (status == HAL_OK ? ch : 0);
+}
+#endif

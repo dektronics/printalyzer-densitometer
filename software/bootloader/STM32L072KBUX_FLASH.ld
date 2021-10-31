@@ -46,7 +46,7 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
   RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 20K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 128K
+  FLASH   (rx)    : ORIGIN = 0x08000000,   LENGTH = 16K
 }
 
 /* Sections */
@@ -59,6 +59,16 @@ SECTIONS
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
   } >FLASH
+
+  /* Make sure the gap between .isr_vector and .text is filled correctly */
+  .start_fill :
+  {
+    . = ALIGN(4);
+    BYTE(0xFF);
+    . = ALIGN(4);
+    BYTE(0xFF);
+    . = ALIGN(4);
+  } > FLASH =0xFF
 
   /* The program code and other data into "FLASH" Rom type memory */
   .text :
@@ -147,6 +157,13 @@ SECTIONS
 
   } >RAM AT> FLASH
 
+  /* Pad out to the full reserved size */
+  .end_fill :
+  {
+    FILL(0xFF);
+    BYTE(0xFF);
+    . = ORIGIN(FLASH) + LENGTH(FLASH);
+  } > FLASH
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);
   .bss :
