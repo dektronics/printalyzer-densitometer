@@ -118,6 +118,7 @@ __USED void board_app_jump(void)
 
 void board_dfu_complete(void)
 {
+    BL_LOG_STR("DFU complete");
     NVIC_SystemReset();
 }
 
@@ -135,9 +136,10 @@ void board_flash_init(void)
     HAL_FLASH_Unlock();
 
     /* Clear flash flags */
-    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_ENDHV | FLASH_FLAG_WRPERR
-        | FLASH_FLAG_PGAERR | FLASH_FLAG_SIZERR | FLASH_FLAG_OPTVERR
-        | FLASH_FLAG_RDERR | FLASH_FLAG_FWWERR | FLASH_FLAG_NOTZEROERR);
+    __HAL_FLASH_CLEAR_FLAG(
+        FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_SIZERR |
+        FLASH_FLAG_OPTVERR | FLASH_FLAG_RDERR | FLASH_FLAG_FWWERR |
+        FLASH_FLAG_NOTZEROERR);
 
     HAL_FLASH_Lock();
 }
@@ -174,7 +176,6 @@ static bool flash_erase(uint32_t addr, uint32_t len)
         erase_init.PageAddress = addr;
         erase_init.NbPages = len / FLASH_PAGE_SIZE;
         HAL_FLASHEx_Erase(&erase_init, &page_error);
-
         if (page_error != 0xFFFFFFFF) {
             BL_LOG_STR("Failed to erase\r\n");
             return false;
@@ -184,7 +185,7 @@ static bool flash_erase(uint32_t addr, uint32_t len)
     return true;
 }
 
-static void flash_write(uint32_t dst, const uint8_t *src, int len)
+__USED __RAM_FUNC void flash_write(uint32_t dst, const uint8_t *src, int len)
 {
     /*
      * This function assumes that the address is page aligned
@@ -192,18 +193,11 @@ static void flash_write(uint32_t dst, const uint8_t *src, int len)
      */
     BL_LOG_STR("Writing to flash\r\n");
 
-    for (size_t i = 0; i < len; i += 4) {
-        uint32_t data = *((uint32_t*) ((void*) (src + i)));
-
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, dst + i, (uint32_t)data) != HAL_OK) {
+    for (size_t i = 0; i < len; i += FLASH_PAGE_SIZE/2) {
+        uint32_t *data = (uint32_t *)((void*)(src + i));
+        if (HAL_FLASHEx_HalfPageProgram(dst + i, data) != HAL_OK) {
             BL_LOG_STR("Failed to write flash at address\r\n");
             BL_LOG_HEX(dst + i);
-            break;
-        }
-
-        if (FLASH_WaitForLastOperation(HAL_MAX_DELAY) != HAL_OK) {
-            BL_LOG_STR("Waiting on last operation failed\r\n");
-            return;
         }
     }
 
