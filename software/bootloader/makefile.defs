@@ -1,0 +1,5 @@
+#
+# Makefile definitions used to setup initial build properties
+#
+
+OBJCOPY_BIN += densitometer-bootloader.dfu

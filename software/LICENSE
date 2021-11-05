@@ -100,7 +100,7 @@
  TinyUF2
 
  Path:     bootloader/src (selected files)
-           firmware/tools/uf2conv.py
+           tools/uf2conv.py
  Upstream: https://github.com/adafruit/tinyuf2
  License:  MIT
 

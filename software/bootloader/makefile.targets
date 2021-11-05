@@ -1,0 +1,6 @@
+#
+# Custom Makefile targets
+#
+
+densitometer-bootloader.dfu : densitometer-bootloader.bin
+	../../tools/dfuse-pack.py -b 0x08000000:densitometer-bootloader.bin -D 0x0483:0xdf11 -a 0 densitometer-bootloader.dfu

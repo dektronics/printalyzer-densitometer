@@ -3,7 +3,7 @@
 #
 
 densitometer-desc.dat: densitometer.bin
-	../tools/checksum.pl densitometer.bin densitometer-desc.dat
+	../../tools/checksum.pl densitometer.bin densitometer-desc.dat
 
 densitometer-out.elf: densitometer.elf densitometer-desc.dat
 	arm-none-eabi-objcopy --update-section .app_descriptor=densitometer-desc.dat \
@@ -13,7 +13,7 @@ densitometer-out.bin: densitometer-out.elf
 	arm-none-eabi-objcopy -O binary densitometer-out.elf "densitometer-out.bin"
 
 densitometer.dfu : densitometer-out.bin
-	../tools/dfuse-pack.py -b 0x08004000:densitometer-out.bin -D 0x0483:0xdf11 -a 0 densitometer.dfu
+	../../tools/dfuse-pack.py -b 0x08004000:densitometer-out.bin -D 0x0483:0xdf11 -a 0 densitometer.dfu
 
 densitometer.uf2 : densitometer-out.bin
-	../tools/uf2conv.py -f 0x202E3A91 -b 0x08004000 -c -o densitometer.uf2 densitometer-out.bin
+	../../tools/uf2conv.py -f 0x202E3A91 -b 0x08004000 -c -o densitometer.uf2 densitometer-out.bin
