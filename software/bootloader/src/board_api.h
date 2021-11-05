@@ -28,6 +28,7 @@
 #ifndef BOARDS_H
 #define BOARDS_H
 
+#include "stm32l0xx_hal.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>

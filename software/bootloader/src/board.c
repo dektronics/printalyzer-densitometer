@@ -118,7 +118,7 @@ __USED void board_app_jump(void)
 
 void board_dfu_complete(void)
 {
-    BL_LOG_STR("DFU complete");
+    BL_LOG_STR("DFU complete\r\n");
     NVIC_SystemReset();
 }
 
@@ -187,6 +187,8 @@ static bool flash_erase(uint32_t addr, uint32_t len)
 
 __USED __RAM_FUNC void flash_write(uint32_t dst, const uint8_t *src, int len)
 {
+    HAL_StatusTypeDef status = HAL_OK;
+
     /*
      * This function assumes that the address is page aligned
      * and that the length is an even multiple of the page size.
@@ -195,7 +197,10 @@ __USED __RAM_FUNC void flash_write(uint32_t dst, const uint8_t *src, int len)
 
     for (size_t i = 0; i < len; i += FLASH_PAGE_SIZE/2) {
         uint32_t *data = (uint32_t *)((void*)(src + i));
-        if (HAL_FLASHEx_HalfPageProgram(dst + i, data) != HAL_OK) {
+        __disable_irq();
+        status = HAL_FLASHEx_HalfPageProgram(dst + i, data);
+        __enable_irq();
+        if (status != HAL_OK) {
             BL_LOG_STR("Failed to write flash at address\r\n");
             BL_LOG_HEX(dst + i);
         }
