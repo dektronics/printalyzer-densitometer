@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>592</width>
-    <height>580</height>
+    <height>585</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -78,7 +78,7 @@
               </font>
              </property>
              <property name="text">
-              <string notr="true">&lt;Refl/Trans&gt;</string>
+              <string>No Measurement</string>
              </property>
             </widget>
            </item>
@@ -147,36 +147,7 @@
        <attribute name="title">
         <string>Diagnostics</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_5">
-        <item row="0" column="1">
-         <widget class="QGroupBox" name="commandGroupBox">
-          <property name="title">
-           <string>Commands</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_9">
-           <item>
-            <widget class="QPushButton" name="screenshotButton">
-             <property name="text">
-              <string>Take Screenshot</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="verticalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>40</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </widget>
-        </item>
+       <layout class="QGridLayout" name="gridLayout_5" rowstretch="0,0,1" columnstretch="1,0">
         <item row="0" column="0">
          <widget class="QGroupBox" name="firmwareGroupBox">
           <property name="enabled">
@@ -220,6 +191,19 @@
               <string>&lt;Checksum&gt;</string>
              </property>
             </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </widget>
@@ -266,33 +250,54 @@
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0">
-             <item>
-              <layout class="QVBoxLayout" name="verticalLayout_4">
-               <item>
-                <widget class="QLabel" name="mcuVddaLabel">
-                 <property name="text">
-                  <string notr="true">&lt;MCU Vdda&gt;</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="mcuTempLabel">
-                 <property name="text">
-                  <string notr="true">&lt;MCU Temp&gt;</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <widget class="QPushButton" name="refreshSensorsPushButton">
-               <property name="text">
-                <string>Refresh</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
+            <widget class="QLabel" name="mcuVddaLabel">
+             <property name="text">
+              <string notr="true">&lt;MCU Vdda&gt;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="mcuTempLabel">
+             <property name="text">
+              <string notr="true">&lt;MCU Temp&gt;</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QGroupBox" name="commandGroupBox">
+          <property name="title">
+           <string>Commands</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_9">
+           <item>
+            <widget class="QPushButton" name="screenshotButton">
+             <property name="text">
+              <string>Take Screenshot</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="refreshSensorsPushButton">
+             <property name="text">
+              <string>Refresh Info</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </widget>
@@ -316,11 +321,20 @@
        <attribute name="title">
         <string>Calibration</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout_10">
+       <layout class="QVBoxLayout" name="verticalLayout_10" stretch="0,0,1,0">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,0">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetDefaultConstraint</enum>
+          </property>
           <item>
            <widget class="QGroupBox" name="gainGroupBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="title">
              <string>Gain Calibration</string>
             </property>
@@ -422,10 +436,13 @@
                <property name="orientation">
                 <enum>Qt::Vertical</enum>
                </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Expanding</enum>
+               </property>
                <property name="sizeHint" stdset="0">
                 <size>
                  <width>20</width>
-                 <height>40</height>
+                 <height>0</height>
                 </size>
                </property>
               </spacer>
@@ -469,6 +486,12 @@
           </item>
           <item>
            <widget class="QGroupBox" name="slopeGroupBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="title">
              <string>Slope Calibration</string>
             </property>
@@ -479,19 +502,6 @@
                 <string>Slope Calibration Tool</string>
                </property>
               </widget>
-             </item>
-             <item>
-              <spacer name="verticalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>40</height>
-                </size>
-               </property>
-              </spacer>
              </item>
              <item>
               <layout class="QFormLayout" name="formLayout">
@@ -547,7 +557,7 @@
                <property name="sizeHint" stdset="0">
                 <size>
                  <width>20</width>
-                 <height>40</height>
+                 <height>0</height>
                 </size>
                </property>
               </spacer>
@@ -800,7 +810,7 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>20</width>
-            <height>40</height>
+            <height>0</height>
            </size>
           </property>
          </spacer>
@@ -961,7 +971,6 @@
  </widget>
  <tabstops>
   <tabstop>readingValueLineEdit</tabstop>
-  <tabstop>refreshSensorsPushButton</tabstop>
   <tabstop>screenshotButton</tabstop>
   <tabstop>low0LineEdit</tabstop>
   <tabstop>low1LineEdit</tabstop>
