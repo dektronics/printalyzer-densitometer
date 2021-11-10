@@ -23,7 +23,7 @@ major changes before it can be considered to be stable.**_
 ## Project Layout
 
 ### Hardware
-The "hardware" directory contains [KiCad](http://kicad-pcb.org/) projects
+The "hardware" directory contains [KiCad](https://www.kicad.org/) projects
 with the complete circuit schematics, bill-of-materials, and
 PCB layouts.
 
