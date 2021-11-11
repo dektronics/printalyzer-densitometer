@@ -55,6 +55,7 @@ public slots:
 
 public:
     bool connected() const;
+    bool deviceUnrecognized() const;
 
     QString projectName() const;
     QString version() const;
@@ -102,6 +103,8 @@ public:
     float calTransmissionHiReading() const;
 
 signals:
+    void connectionOpened();
+    void connectionClosed();
     void connectionError();
 
     void densityReading(DensityType type, float dValue, float rawValue, float corrValue);
@@ -134,13 +137,15 @@ private:
     void readCalibrationResponse(const DensCommand &response);
     void readDiagnosticsResponse(const DensCommand &response);
 
-    void sendCommand(const DensCommand &command);
+    bool sendCommand(const DensCommand &command);
 
     QSerialPort *serialPort_;
     bool multilinePending_;
     DensCommand multilineResponse_;
     QByteArray multilineBuffer_;
+    bool connecting_;
     bool connected_;
+    bool deviceUnrecognized_;
 
     QString projectName_;
     QString version_;

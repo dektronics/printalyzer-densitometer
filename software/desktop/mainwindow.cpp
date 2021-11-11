@@ -96,6 +96,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->slopeCalPushButton, &QPushButton::clicked, this, &MainWindow::onSlopeCalibrationTool);
 
     // Densitometer interface update signals
+    connect(densInterface_, &DensInterface::connectionOpened, this, &MainWindow::onConnectionOpened);
+    connect(densInterface_, &DensInterface::connectionClosed, this, &MainWindow::onConnectionClosed);
     connect(densInterface_, &DensInterface::connectionError, this, &MainWindow::onConnectionError);
     connect(densInterface_, &DensInterface::densityReading, this, &MainWindow::onDensityReading);
     connect(densInterface_, &DensInterface::systemVersionResponse, this, &MainWindow::onSystemVersionResponse);
@@ -154,20 +156,14 @@ void MainWindow::onOpenConnectionDialogFinished(int result)
                                   .arg(p.name, p.stringBaudRate, p.stringDataBits,
                                        p.stringParity, p.stringStopBits,
                                        p.stringFlowControl));
-                densInterface_->sendSetMeasurementFormat(DensInterface::FormatExtended);
-                densInterface_->sendGetSystemBuild();
-                densInterface_->sendGetSystemDeviceInfo();
-                densInterface_->sendGetSystemUID();
-                densInterface_->sendGetSystemInternalSensors();
-                refreshButtonState();
             } else {
                 serialPort_->close();
-                QMessageBox::critical(this, tr("Error"), tr("Unrecognized device"));
                 statusLabel_->setText(tr("Unrecognized device"));
+                QMessageBox::critical(this, tr("Error"), tr("Unrecognized device"));
             }
         } else {
-            QMessageBox::critical(this, tr("Error"), serialPort_->errorString());
             statusLabel_->setText(tr("Open error"));
+            QMessageBox::critical(this, tr("Error"), serialPort_->errorString());
         }
     }
 }
@@ -179,7 +175,6 @@ void MainWindow::closeConnection()
     if (serialPort_->isOpen()) {
         serialPort_->close();
     }
-    statusLabel_->setText(tr("Disconnected"));
     refreshButtonState();
     ui->actionConnect->setEnabled(true);
     ui->actionDisconnect->setEnabled(false);
@@ -229,6 +224,32 @@ void MainWindow::refreshButtonState()
     onCalSlopeTextChanged();
     onCalReflectionTextChanged();
     onCalTransmissionTextChanged();
+}
+
+void MainWindow::onConnectionOpened()
+{
+    qDebug() << "Connection opened";
+    densInterface_->sendSetMeasurementFormat(DensInterface::FormatExtended);
+    densInterface_->sendGetSystemBuild();
+    densInterface_->sendGetSystemDeviceInfo();
+    densInterface_->sendGetSystemUID();
+    densInterface_->sendGetSystemInternalSensors();
+    refreshButtonState();
+}
+
+void MainWindow::onConnectionClosed()
+{
+    qDebug() << "Connection closed";
+    refreshButtonState();
+    ui->actionConnect->setEnabled(true);
+    ui->actionDisconnect->setEnabled(false);
+
+    if (densInterface_->deviceUnrecognized()) {
+        statusLabel_->setText(tr("Unrecognized device"));
+        QMessageBox::critical(this, tr("Error"), tr("Unrecognized device"));
+    } else {
+        statusLabel_->setText(tr("Disconnected"));
+    }
 }
 
 void MainWindow::onConnectionError()

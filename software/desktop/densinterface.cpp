@@ -9,7 +9,9 @@ DensInterface::DensInterface(QObject *parent)
     : QObject(parent)
     , serialPort_(nullptr)
     , multilinePending_(false)
+    , connecting_(false)
     , connected_(false)
+    , deviceUnrecognized_(false)
     , buildChecksum_(0)
     , freeRtosHeapSize_(0)
     , freeRtosHeapWatermark_(0)
@@ -27,46 +29,27 @@ bool DensInterface::connectToDevice(QSerialPort *serialPort)
     if (!serialPort || !serialPort->isOpen()) {
         return false;
     }
-
-    // Verify initial device info in blocking mode
-    DensCommand versionQuery(DensCommand::TypeGet, DensCommand::CategorySystem, "V");
-    QByteArray versionBytes = versionQuery.toString().toLatin1().append("\r\n");
-    if (serialPort->write(versionBytes) <= 0) {
-        qWarning() << "Unable to send version request";
+    if (connected_ || connecting_) {
         return false;
     }
 
-    QByteArray line;
-    do {
-        if (!serialPort->waitForReadyRead()) {
-            qWarning() << "Error waiting for initial response";
-            return false;
-        }
-
-        line = serialPort->readLine();
-        DensCommand response = DensCommand::parse(line);
-        if (response.isDensity()) {
-            continue;
-        } else if (response.isValid() && response.isMatch(versionQuery) && response.args().length() >= 2) {
-            readSystemResponse(response);
-        } else {
-            qWarning() << "Unexpected response:" << line;
-            return false;
-        }
-    } while(line.isEmpty());
+    // Set to connecting state
+    connecting_ = true;
+    deviceUnrecognized_ = false;
 
     // Connect to signals for non-blocking command use
     serialPort_ = serialPort;
     connect(serialPort_, &QSerialPort::errorOccurred, this, &DensInterface::handleError);
     connect(serialPort_, &QSerialPort::readyRead, this, &DensInterface::readData);
 
-    connected_ = true;
-
-    return true;
+    // Send command to get system version, to verify connected device
+    DensCommand command(DensCommand::TypeGet, DensCommand::CategorySystem, "V");
+    return sendCommand(command);
 }
 
 void DensInterface::disconnectFromDevice()
 {
+    bool notify = connected_ || connecting_;
     if (serialPort_) {
         disconnect(serialPort_, &QSerialPort::errorOccurred, this, &DensInterface::handleError);
         disconnect(serialPort_, &QSerialPort::readyRead, this, &DensInterface::readData);
@@ -75,7 +58,11 @@ void DensInterface::disconnectFromDevice()
     multilineResponse_ = DensCommand();
     multilineBuffer_.clear();
     multilinePending_ = false;
+    connecting_ = false;
     connected_ = false;
+    if (notify) {
+        emit connectionClosed();
+    }
 }
 
 void DensInterface::sendGetSystemVersion()
@@ -226,6 +213,7 @@ void DensInterface::sendSetCalTransmission(float loDensity, float loReading, flo
 }
 
 bool DensInterface::connected() const { return connected_; }
+bool DensInterface::deviceUnrecognized() const { return deviceUnrecognized_; }
 
 QString DensInterface::projectName() const { return projectName_; }
 QString DensInterface::version() const { return version_; }
@@ -275,6 +263,57 @@ void DensInterface::readData()
 {
     while (serialPort_->canReadLine()) {
         const QByteArray line = serialPort_->readLine();
+        if (connecting_) {
+            // In connecting mode we expect to only receive very specific
+            // information from the device. Anything else will cause the
+            // connection check to fail.
+            DensCommand response = DensCommand::parse(line);
+            if (response.isDensity()) {
+                // Density responses are the only thing the device can send
+                // without first receiving a command or mode change request.
+                // Therefore, we need to ignore those here.
+                continue;
+            } else if (response.isValid()
+                        && response.category() == DensCommand::CategorySystem
+                        && response.type() == DensCommand::TypeGet
+                        && response.action() == QLatin1String("V")) {
+                // System version responses are the only thing expected and
+                // handled in this state, so pre-validate the response type
+                // before calling the normal parsing code.
+
+                // Save and clear old values, in case the parsing failed
+                QString oldProjectName = projectName_;
+                QString oldVersion = version_;
+                projectName_ = QString();
+                version_ = QString();
+
+                // Call the normal command parser
+                readCommandResponse(response);
+
+                if (!projectName_.isEmpty() && !version_.isEmpty()) {
+                    connecting_ = false;
+                    connected_ = true;
+                    emit connectionOpened();
+                    emit systemVersionResponse();
+                } else {
+                    // Failing to cleanly parse the version response should
+                    // be treated like a connection failure
+                    projectName_ = oldProjectName;
+                    version_ = oldVersion;
+                    qWarning() << "Unexpected version response:" << line;
+                    deviceUnrecognized_ = true;
+                    disconnectFromDevice();
+                }
+            } else {
+                // Any response other than what is explicitly expected should
+                // be treated as a connection failure
+                qWarning() << "Unexpected response:" << line;
+                deviceUnrecognized_ = true;
+                disconnectFromDevice();
+            }
+            return;
+        }
+
         if (multilinePending_) {
             if (line == "]]\r\n") {
                 multilineResponse_.setBuffer(multilineBuffer_);
@@ -402,7 +441,9 @@ void DensInterface::readSystemResponse(const DensCommand &response)
             if (args.length() > 1) {
                 version_ = args.at(1);
             }
-            emit systemVersionResponse();
+            if (!connecting_) {
+                emit systemVersionResponse();
+            }
         } else if (response.action() == QLatin1String("B")) {
             if (args.length() > 0) {
                 buildDate_ = QDateTime::fromString(args.at(0), "yyyy-MM-dd hh:mm");
@@ -518,13 +559,13 @@ void DensInterface::readDiagnosticsResponse(const DensCommand &response)
     }
 }
 
-void DensInterface::sendCommand(const DensCommand &command)
+bool DensInterface::sendCommand(const DensCommand &command)
 {
     if (!serialPort_ || !serialPort_->isOpen() || !command.isValid()) {
-        return;
+        return false;
     }
 
     QByteArray commandBytes = command.toString().toLatin1();
     commandBytes.append("\r\n");
-    serialPort_->write(commandBytes);
+    return serialPort_->write(commandBytes) != -1;
 }

@@ -26,6 +26,8 @@ private slots:
     void closeConnection();
     void about();
 
+    void onConnectionOpened();
+    void onConnectionClosed();
     void onConnectionError();
 
     void onDensityReading(DensInterface::DensityType type, float dValue, float rawValue, float corrValue);
