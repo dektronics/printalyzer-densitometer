@@ -5,10 +5,10 @@ $Descr USLetter 11000 8500
 encoding utf-8
 Sheet 1 1
 Title "Printalyzer Densitometer - Main Board"
-Date "2021-09-09"
-Rev "B"
-Comp "Dektronics"
-Comment1 "Derek Konigsberg"
+Date "2021-??-??"
+Rev "C*"
+Comp "Dektronics, Inc."
+Comment1 "Derek Konigsberg <dkonigsberg@dektronics.com>"
 Comment2 ""
 Comment3 ""
 Comment4 ""

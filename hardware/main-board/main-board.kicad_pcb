@@ -1,4 +1,4 @@
-(kicad_pcb (version 20171130) (host pcbnew 5.1.10-88a1d61d58~90~ubuntu21.04.1)
+(kicad_pcb (version 20171130) (host pcbnew 5.1.12-84ad8e8a86~92~ubuntu21.04.1)
 
   (general
     (thickness 1.6)
@@ -12,10 +12,10 @@
   (page USLetter)
   (title_block
     (title "Printalyzer Densitometer - Main Board")
-    (date 2021-09-09)
-    (rev B)
-    (company Dektronics)
-    (comment 1 "Derek Konigsberg")
+    (date 2021-??-??)
+    (rev C*)
+    (company "Dektronics, Inc.")
+    (comment 1 "Derek Konigsberg <dkonigsberg@dektronics.com>")
   )
 
   (layers
@@ -261,7 +261,7 @@
 
   (module lib_fp:OSHW-logo_5mm (layer B.Cu) (tedit 5F9323E8) (tstamp 613ABEBE)
     (at 136.906 48.514)
-    (fp_text reference G*** (at 0 -2.65176) (layer B.SilkS) hide
+    (fp_text reference G4 (at 0 -2.65176) (layer B.SilkS) hide
       (effects (font (size 0.22606 0.22606) (thickness 0.04318)) (justify mirror))
     )
     (fp_text value OSHW-logo_5mm (at 0 2.65176) (layer B.SilkS) hide
@@ -346,7 +346,7 @@
     (fp_text reference LOGO (at 0 2) (layer B.SilkS) hide
       (effects (font (size 1.524 1.524) (thickness 0.3048)) (justify mirror))
     )
-    (fp_text value G*** (at 0 -2.3) (layer B.SilkS) hide
+    (fp_text value G3 (at 0 -2.3) (layer B.SilkS) hide
       (effects (font (size 1.524 1.524) (thickness 0.3048)) (justify mirror))
     )
     (fp_circle (center -7.21 -1.19) (end -7.16 -1.19) (layer B.SilkS) (width 0.15))
@@ -1091,7 +1091,7 @@
 
   (module lib_fp:densitometer-logo-16_9mm (layer B.Cu) (tedit 0) (tstamp 60C5F870)
     (at 124.25 70.976)
-    (fp_text reference G*** (at 0 0) (layer B.SilkS) hide
+    (fp_text reference G2 (at 0 0) (layer B.SilkS) hide
       (effects (font (size 1.524 1.524) (thickness 0.3)) (justify mirror))
     )
     (fp_text value LOGO (at 0.75 0) (layer B.SilkS) hide
@@ -1892,7 +1892,7 @@
 
   (module lib_fp:Printalyzer-logo-16_9mm (layer B.Cu) (tedit 0) (tstamp 60627953)
     (at 122.809 74.676)
-    (fp_text reference G*** (at 0 0) (layer B.SilkS) hide
+    (fp_text reference G1 (at 0 0) (layer B.SilkS) hide
       (effects (font (size 1.524 1.524) (thickness 0.3)) (justify mirror))
     )
     (fp_text value LOGO (at 0.75 0) (layer B.SilkS) hide
@@ -4636,7 +4636,7 @@
     (arrow2a (pts (xy 146 33.500001) (xy 144.873496 32.91358)))
     (arrow2b (pts (xy 146 33.500001) (xy 144.873496 34.086422)))
   )
-  (gr_text "Rev: B\n2021-09-09" (at 114.284 67.077 180) (layer B.SilkS) (tstamp 60C7CE92)
+  (gr_text "Rev: C*\n2021-??-??" (at 114.284 67.077 180) (layer B.SilkS) (tstamp 60C7CE92)
     (effects (font (size 0.8128 0.8128) (thickness 0.1524)) (justify left mirror))
   )
   (gr_line (start 113.815 68.578) (end 113.815 65.53) (layer B.SilkS) (width 0.1524) (tstamp 60C7CE95))
@@ -4826,7 +4826,7 @@
   (gr_line (start 116.967 77.724) (end 116.967 74.676) (layer F.SilkS) (width 0.1524))
   (gr_line (start 107.823 77.724) (end 116.967 77.724) (layer F.SilkS) (width 0.1524))
   (gr_line (start 107.823 74.676) (end 107.823 77.724) (layer F.SilkS) (width 0.1524))
-  (gr_text "Rev: B\n2021-09-09" (at 108.331 76.2) (layer F.SilkS)
+  (gr_text "Rev: C*\n2021-??-??" (at 108.331 76.2) (layer F.SilkS)
     (effects (font (size 0.8128 0.8128) (thickness 0.1524)) (justify left))
   )
   (gr_arc (start 60 60) (end 60 79) (angle -180) (layer Dwgs.User) (width 0.15))

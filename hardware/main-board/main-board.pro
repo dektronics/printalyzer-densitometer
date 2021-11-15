@@ -1,4 +1,4 @@
-update=Thu 09 Sep 2021 12:13:26 PM PDT
+update=Mon 15 Nov 2021 09:34:17 AM PST
 version=1
 last_client=kicad
 [general]
@@ -264,7 +264,7 @@ dPairGap=0.25
 dPairViaGap=0.25
 [schematic_editor]
 version=1
-PageLayoutDescrFile=
+PageLayoutDescrFile=/home/octo/devel/densitometer/hardware/modules/dektronics-layout.kicad_wks
 PlotDirectoryName=
 SubpartIdSeparator=0
 SubpartFirstId=65
