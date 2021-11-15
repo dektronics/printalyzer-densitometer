@@ -320,28 +320,28 @@ $EndComp
 $Comp
 L Device:R_Small R8
 U 1 1 60572A35
-P 2750 2200
-F 0 "R8" H 2809 2246 50  0000 L CNN
-F 1 "2K" H 2809 2155 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 2750 2200 50  0001 C CNN
-F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 2750 2200 50  0001 C CNN
-F 4 "RES SMD 2K OHM 5% 1/10W 0603" H 2750 2200 50  0001 C CNN "Description"
-F 5 "Vishay Dale" H 2750 2200 50  0001 C CNN "Manufacturer"
-F 6 "CRCW06032K00JNEA" H 2750 2200 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 2750 2200 50  0001 C CNN "Supplier"
-F 8 "541-2.0KGCT-ND" H 2750 2200 50  0001 C CNN "Supplier PN"
-	1    2750 2200
+P 2750 2300
+F 0 "R8" H 2809 2346 50  0000 L CNN
+F 1 "2K" H 2809 2255 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 2750 2300 50  0001 C CNN
+F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 2750 2300 50  0001 C CNN
+F 4 "RES SMD 2K OHM 5% 1/10W 0603" H 2750 2300 50  0001 C CNN "Description"
+F 5 "Vishay Dale" H 2750 2300 50  0001 C CNN "Manufacturer"
+F 6 "CRCW06032K00JNEA" H 2750 2300 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 2750 2300 50  0001 C CNN "Supplier"
+F 8 "541-2.0KGCT-ND" H 2750 2300 50  0001 C CNN "Supplier PN"
+	1    2750 2300
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0113
 U 1 1 60575ED8
-P 4175 2825
-F 0 "#PWR0113" H 4175 2575 50  0001 C CNN
-F 1 "GND" H 4180 2652 50  0000 C CNN
-F 2 "" H 4175 2825 50  0001 C CNN
-F 3 "" H 4175 2825 50  0001 C CNN
-	1    4175 2825
+P 4175 2925
+F 0 "#PWR0113" H 4175 2675 50  0001 C CNN
+F 1 "GND" H 4180 2752 50  0000 C CNN
+F 2 "" H 4175 2925 50  0001 C CNN
+F 3 "" H 4175 2925 50  0001 C CNN
+	1    4175 2925
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -379,72 +379,72 @@ Text Label 2650 1150 0    50   ~ 0
 RESET
 Wire Wire Line
 	2650 1150 2900 1150
-Text Label 5325 2350 2    50   ~ 0
+Text Label 5225 2350 2    50   ~ 0
 USB_D+
-Text Label 5325 2250 2    50   ~ 0
+Text Label 5225 2250 2    50   ~ 0
 USB_D-
 Wire Wire Line
-	4875 2250 5325 2250
+	4775 2250 5225 2250
 Wire Wire Line
-	4875 2350 5325 2350
-Text Label 5325 2550 2    50   ~ 0
+	4775 2350 5225 2350
+Text Label 5225 2550 2    50   ~ 0
 SWCLK
 Wire Wire Line
-	4875 2550 5325 2550
+	4775 2550 5225 2550
 Wire Wire Line
-	5325 2450 4875 2450
-Text Label 3275 2550 0    50   ~ 0
+	5225 2450 4775 2450
+Text Label 3275 2650 0    50   ~ 0
 I2C1_SDA
-Text Label 3275 2450 0    50   ~ 0
+Text Label 3275 2550 0    50   ~ 0
 I2C1_SCL
-Text Label 5325 2150 2    50   ~ 0
+Text Label 5225 2150 2    50   ~ 0
 USART1_RX
-Text Label 5325 2050 2    50   ~ 0
+Text Label 5225 2050 2    50   ~ 0
 USART1_TX
 Wire Wire Line
-	5325 2150 4875 2150
+	5225 2150 4775 2150
 Wire Wire Line
-	5325 2050 4875 2050
+	5225 2050 4775 2050
 $Comp
 L Device:R_Small R7
 U 1 1 605A5840
-P 2500 2200
-F 0 "R7" H 2559 2246 50  0000 L CNN
-F 1 "2K" H 2559 2155 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 2500 2200 50  0001 C CNN
-F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 2500 2200 50  0001 C CNN
-F 4 "RES SMD 2K OHM 5% 1/10W 0603" H 2500 2200 50  0001 C CNN "Description"
-F 5 "Vishay Dale" H 2500 2200 50  0001 C CNN "Manufacturer"
-F 6 "CRCW06032K00JNEA" H 2500 2200 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 2500 2200 50  0001 C CNN "Supplier"
-F 8 "541-2.0KGCT-ND" H 2500 2200 50  0001 C CNN "Supplier PN"
-	1    2500 2200
+P 2500 2300
+F 0 "R7" H 2559 2346 50  0000 L CNN
+F 1 "2K" H 2559 2255 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 2500 2300 50  0001 C CNN
+F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 2500 2300 50  0001 C CNN
+F 4 "RES SMD 2K OHM 5% 1/10W 0603" H 2500 2300 50  0001 C CNN "Description"
+F 5 "Vishay Dale" H 2500 2300 50  0001 C CNN "Manufacturer"
+F 6 "CRCW06032K00JNEA" H 2500 2300 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 2500 2300 50  0001 C CNN "Supplier"
+F 8 "541-2.0KGCT-ND" H 2500 2300 50  0001 C CNN "Supplier PN"
+	1    2500 2300
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:+3.3V #PWR0120
 U 1 1 605A5D9E
-P 2500 2050
-F 0 "#PWR0120" H 2500 1900 50  0001 C CNN
-F 1 "+3.3V" H 2515 2223 50  0000 C CNN
-F 2 "" H 2500 2050 50  0001 C CNN
-F 3 "" H 2500 2050 50  0001 C CNN
-	1    2500 2050
+P 2500 2150
+F 0 "#PWR0120" H 2500 2000 50  0001 C CNN
+F 1 "+3.3V" H 2515 2323 50  0000 C CNN
+F 2 "" H 2500 2150 50  0001 C CNN
+F 3 "" H 2500 2150 50  0001 C CNN
+	1    2500 2150
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	2750 2450 2750 2300
+	2750 2550 2750 2400
 Wire Wire Line
-	2500 2550 2500 2300
+	2500 2650 2500 2400
 Wire Wire Line
-	2500 2550 3675 2550
+	2500 2650 3675 2650
 Wire Wire Line
-	2500 2100 2500 2050
+	2500 2200 2500 2150
 Wire Wire Line
-	2750 2100 2750 2050
+	2750 2200 2750 2150
 Wire Wire Line
-	2750 2050 2500 2050
-Connection ~ 2500 2050
+	2750 2150 2500 2150
+Connection ~ 2500 2150
 $Comp
 L Device:R_Small R6
 U 1 1 605AAD1E
@@ -461,7 +461,7 @@ F 8 "541-10KGCT-ND" H 9775 5825 50  0001 C CNN "Supplier PN"
 	1    9775 5825
 	1    0    0    -1  
 $EndComp
-Text Label 5325 2450 2    50   ~ 0
+Text Label 5225 2450 2    50   ~ 0
 SWDIO
 Text Label 2175 1675 2    50   ~ 0
 I2C1_SCL
@@ -573,12 +573,12 @@ Wire Wire Line
 	2325 6875 2325 6825
 Wire Wire Line
 	2325 6825 2925 6825
-Text Label 5325 1350 2    50   ~ 0
+Text Label 5225 1350 2    50   ~ 0
 RLED_EN
 Text Label 575  4275 0    50   ~ 0
 RLED_EN
 Wire Wire Line
-	4875 1350 5325 1350
+	4775 1350 5225 1350
 Wire Wire Line
 	575  4275 925  4275
 $Comp
@@ -682,9 +682,9 @@ Wire Wire Line
 	10125 1075 10400 1075
 Text Label 10400 1775 2    50   ~ 0
 BTN2
-Text Label 5325 1250 2    50   ~ 0
+Text Label 5225 1250 2    50   ~ 0
 BTN1
-Text Label 5325 1150 2    50   ~ 0
+Text Label 5225 1150 2    50   ~ 0
 BTN2
 $Comp
 L Device:R_Small R5
@@ -800,13 +800,13 @@ Connection ~ 2675 6725
 $Comp
 L power:PWR_FLAG #FLG0101
 U 1 1 6060C0D7
-P 4550 900
-F 0 "#FLG0101" H 4550 975 50  0001 C CNN
-F 1 "PWR_FLAG" H 4550 1073 50  0001 C CNN
-F 2 "" H 4550 900 50  0001 C CNN
-F 3 "~" H 4550 900 50  0001 C CNN
-	1    4550 900 
-	0    1    1    0   
+P 4500 850
+F 0 "#FLG0101" H 4500 925 50  0001 C CNN
+F 1 "PWR_FLAG" H 4500 1023 50  0001 C CNN
+F 2 "" H 4500 850 50  0001 C CNN
+F 3 "~" H 4500 850 50  0001 C CNN
+	1    4500 850 
+	-1   0    0    1   
 $EndComp
 $Comp
 L power:PWR_FLAG #FLG0102
@@ -1706,20 +1706,20 @@ F 3 "~" H 7500 2275 50  0001 C CNN
 $EndComp
 Text Label 3275 2050 0    50   ~ 0
 DISP_~RES
-Text Label 5325 1450 2    50   ~ 0
+Text Label 5225 1450 2    50   ~ 0
 TLED_EN
 Text Label 3275 1850 0    50   ~ 0
 BTN3
 Text Label 3275 1750 0    50   ~ 0
 BTN4
-Text Label 5325 1950 2    50   ~ 0
+Text Label 5225 1950 2    50   ~ 0
 BTN5
 Wire Wire Line
-	4875 1450 5325 1450
+	4775 1450 5225 1450
 Wire Wire Line
 	3275 1850 3675 1850
 Wire Wire Line
-	4875 1950 5325 1950
+	4775 1950 5225 1950
 Wire Wire Line
 	7800 1275 7800 1375
 Text Label 7675 975  2    50   Italic 0
@@ -1749,22 +1749,22 @@ Wire Wire Line
 Connection ~ 6250 2575
 Wire Wire Line
 	6250 2575 6250 2775
-Text Label 5325 1550 2    50   Italic 0
+Text Label 5225 1550 2    50   Italic 0
 DISP_~CS
-Text Label 5325 1750 2    50   Italic 0
+Text Label 5225 1750 2    50   Italic 0
 DISP_D~C
-Text Label 5325 1650 2    50   Italic 0
+Text Label 5225 1650 2    50   Italic 0
 DISP_SCK
-Text Label 5325 1850 2    50   Italic 0
+Text Label 5225 1850 2    50   Italic 0
 DISP_MOSI
 Wire Wire Line
-	5325 1550 4875 1550
+	5225 1550 4775 1550
 Wire Wire Line
-	5325 1650 4875 1650
+	5225 1650 4775 1650
 Wire Wire Line
-	4875 1750 5325 1750
+	4775 1750 5225 1750
 Wire Wire Line
-	5325 1850 4875 1850
+	5225 1850 4775 1850
 Wire Wire Line
 	3275 2050 3675 2050
 $Comp
@@ -2303,64 +2303,27 @@ F 8 "497-5238-1-ND" H 9325 1275 50  0001 C CNN "Supplier PN"
 	1    9325 1275
 	0    1    1    0   
 $EndComp
-$Comp
-L MCU_ST_STM32L0:STM32L072KBUx U2
-U 1 1 612A38DC
-P 4275 1850
-F 0 "U2" H 3825 2700 50  0000 C CNN
-F 1 "STM32L072KBU6" H 4850 975 50  0000 C CNN
-F 2 "Package_DFN_QFN:QFN-32-1EP_5x5mm_P0.5mm_EP3.45x3.45mm" H 3775 1050 50  0001 R CNN
-F 3 "http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/DM00141133.pdf" H 4275 1850 50  0001 C CNN
-F 4 "IC MCU 32BIT 128KB FLSH 32UFQFPN" H 4275 1850 50  0001 C CNN "Description"
-F 5 "STMicroelectronics" H 4275 1850 50  0001 C CNN "Manufacturer"
-F 6 "STM32L072KBU6" H 4275 1850 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 4275 1850 50  0001 C CNN "Supplier"
-F 8 "497-18581-ND" H 4275 1850 50  0001 C CNN "Supplier PN"
-	1    4275 1850
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	3275 1750 3675 1750
 Wire Wire Line
-	5325 1250 4875 1250
+	5225 1250 4775 1250
 Wire Wire Line
-	5325 1150 4875 1150
+	5225 1150 4775 1150
 Wire Wire Line
 	3675 1350 3275 1350
 Wire Wire Line
-	4175 2750 4175 2800
+	4175 2850 4175 2900
 Wire Wire Line
-	4275 2750 4275 2800
+	4275 2850 4275 2900
 Wire Wire Line
-	4275 2800 4175 2800
-Connection ~ 4175 2800
+	4275 2900 4175 2900
+Connection ~ 4175 2900
 Wire Wire Line
-	4175 2800 4175 2825
-Wire Wire Line
-	4375 2750 4375 2800
-Wire Wire Line
-	4375 2800 4275 2800
-Connection ~ 4275 2800
-Wire Wire Line
-	4475 2750 4475 2800
-Wire Wire Line
-	4475 2800 4375 2800
-Connection ~ 4375 2800
-Text Label 3275 2350 0    50   ~ 0
+	4175 2900 4175 2925
+Text Label 3275 2450 0    50   ~ 0
 TSL_INT
 NoConn ~ 3675 2150
 NoConn ~ 3675 2250
-$Comp
-L power:+3.3VA #PWR0134
-U 1 1 615D7E16
-P 4550 850
-F 0 "#PWR0134" H 4550 700 50  0001 C CNN
-F 1 "+3.3VA" H 4565 1023 50  0000 C CNN
-F 2 "" H 4550 850 50  0001 C CNN
-F 3 "" H 4550 850 50  0001 C CNN
-	1    4550 850 
-	1    0    0    -1  
-$EndComp
 $Comp
 L power:+3.3V #PWR0135
 U 1 1 615D8FC9
@@ -2379,17 +2342,6 @@ Wire Wire Line
 Wire Wire Line
 	4275 850  4175 850 
 Connection ~ 4175 850 
-Wire Wire Line
-	4475 950  4475 850 
-Wire Wire Line
-	4475 850  4275 850 
-Connection ~ 4275 850 
-Wire Wire Line
-	4375 950  4375 900 
-Wire Wire Line
-	4375 900  4550 900 
-Wire Wire Line
-	4550 900  4550 850 
 $Comp
 L Device:C_Small C5
 U 1 1 6057751B
@@ -2561,28 +2513,6 @@ F 8 "1276-1006-1-ND" H 4650 3325 50  0001 C CNN "Supplier PN"
 	1    4650 3325
 	1    0    0    -1  
 $EndComp
-Connection ~ 4650 3225
-Wire Wire Line
-	4650 3225 5025 3225
-$Comp
-L Device:C_Small C24
-U 1 1 616FF63F
-P 5025 3325
-F 0 "C24" H 5117 3371 50  0000 L CNN
-F 1 "0.1uF" H 5117 3280 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0603_1608Metric" H 5025 3325 50  0001 C CNN
-F 3 "https://media.digikey.com/pdf/Data%20Sheets/Samsung%20PDFs/CL_Series_MLCC_ds.pdf" H 5025 3325 50  0001 C CNN
-F 4 "CAP CER 0.1UF 25V X7R 0603" H 5025 3325 50  0001 C CNN "Description"
-F 5 "Samsung Electro-Mechanics" H 5025 3325 50  0001 C CNN "Manufacturer"
-F 6 "CL10B104KA8NNNC" H 5025 3325 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 5025 3325 50  0001 C CNN "Supplier"
-F 8 "1276-1006-1-ND" H 5025 3325 50  0001 C CNN "Supplier PN"
-	1    5025 3325
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	4650 3425 5025 3425
-Connection ~ 4650 3425
 Wire Wire Line
 	3575 3175 3575 3225
 $Comp
@@ -2596,7 +2526,6 @@ F 3 "" H 3575 3175 50  0001 C CNN
 	1    3575 3175
 	1    0    0    -1  
 $EndComp
-Connection ~ 4550 900 
 Text Label 2175 1525 2    50   ~ 0
 TSL_INT
 Wire Wire Line
@@ -2604,30 +2533,30 @@ Wire Wire Line
 $Comp
 L Device:R_Small R16
 U 1 1 61993F5C
-P 3000 2200
-F 0 "R16" H 3059 2246 50  0000 L CNN
-F 1 "10K" H 3059 2155 50  0000 L CNN
-F 2 "Resistor_SMD:R_0603_1608Metric" H 3000 2200 50  0001 C CNN
-F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 3000 2200 50  0001 C CNN
-F 4 "RES SMD 10K OHM 5% 1/10W 0603" H 3000 2200 50  0001 C CNN "Description"
-F 5 "Vishay Dale" H 3000 2200 50  0001 C CNN "Manufacturer"
-F 6 "CRCW060310K0JNEA" H 3000 2200 50  0001 C CNN "Manufacturer PN"
-F 7 "Digi-Key" H 3000 2200 50  0001 C CNN "Supplier"
-F 8 "541-10KGCT-ND" H 3000 2200 50  0001 C CNN "Supplier PN"
-	1    3000 2200
+P 3000 2300
+F 0 "R16" H 3059 2346 50  0000 L CNN
+F 1 "10K" H 3059 2255 50  0000 L CNN
+F 2 "Resistor_SMD:R_0603_1608Metric" H 3000 2300 50  0001 C CNN
+F 3 "https://www.vishay.com/docs/20035/dcrcwe3.pdf" H 3000 2300 50  0001 C CNN
+F 4 "RES SMD 10K OHM 5% 1/10W 0603" H 3000 2300 50  0001 C CNN "Description"
+F 5 "Vishay Dale" H 3000 2300 50  0001 C CNN "Manufacturer"
+F 6 "CRCW060310K0JNEA" H 3000 2300 50  0001 C CNN "Manufacturer PN"
+F 7 "Digi-Key" H 3000 2300 50  0001 C CNN "Supplier"
+F 8 "541-10KGCT-ND" H 3000 2300 50  0001 C CNN "Supplier PN"
+	1    3000 2300
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	2750 2450 3675 2450
+	2750 2550 3675 2550
 Wire Wire Line
-	3000 2350 3675 2350
+	3000 2450 3675 2450
 Wire Wire Line
-	3000 2100 3000 2050
+	3000 2200 3000 2150
 Wire Wire Line
-	3000 2050 2750 2050
-Connection ~ 2750 2050
+	3000 2150 2750 2150
+Connection ~ 2750 2150
 Wire Wire Line
-	3000 2350 3000 2300
+	3000 2450 3000 2400
 Text Label 3275 1350 0    50   ~ 0
 BOOT0
 $Comp
@@ -2765,14 +2694,48 @@ Wire Wire Line
 Wire Wire Line
 	9775 5925 9775 6025
 $Comp
-L power:GND #PWR?
+L power:GND #PWR0112
 U 1 1 61375218
 P 9775 6025
-F 0 "#PWR?" H 9775 5775 50  0001 C CNN
+F 0 "#PWR0112" H 9775 5775 50  0001 C CNN
 F 1 "GND" H 9780 5852 50  0000 C CNN
 F 2 "" H 9775 6025 50  0001 C CNN
 F 3 "" H 9775 6025 50  0001 C CNN
 	1    9775 6025
 	1    0    0    -1  
 $EndComp
+$Comp
+L MCU_ST_STM32L0:STM32L072KZTx U2
+U 1 1 619429DB
+P 4275 1850
+F 0 "U2" H 3850 2725 50  0000 C CNN
+F 1 "STM32L072KZT6" H 4625 875 50  0000 C CNN
+F 2 "Package_QFP:LQFP-32_7x7mm_P0.8mm" H 3775 950 50  0001 R CNN
+F 3 "http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/DM00141133.pdf" H 4275 1850 50  0001 C CNN
+F 4 "IC MCU 32BIT 192KB FLASH 32LQFP" H 4275 1850 50  0001 C CNN "Description"
+F 5 "STMicroelectronics" H 4275 1850 50  0001 C CNN "Manufacturer"
+F 6 "STM32L072KZT6" H 4275 1850 50  0001 C CNN "Manufacturer PN"
+F 7 "Mouser" H 4275 1850 50  0001 C CNN "Supplier"
+F 8 "511-STM32L072KZT6" H 4275 1850 50  0001 C CNN "Supplier PN"
+	1    4275 1850
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3VA #PWR0134
+U 1 1 615D7E16
+P 4500 850
+F 0 "#PWR0134" H 4500 700 50  0001 C CNN
+F 1 "+3.3VA" H 4515 1023 50  0000 C CNN
+F 2 "" H 4500 850 50  0001 C CNN
+F 3 "" H 4500 850 50  0001 C CNN
+	1    4500 850 
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4500 850  4375 850 
+Wire Wire Line
+	4375 850  4375 950 
+Connection ~ 4500 850 
+NoConn ~ 4775 2650
+NoConn ~ 3675 2350
 $EndSCHEMATC
