@@ -1,11 +1,13 @@
 Configuration	densitometer
 STM32CubeMX 	6.3.0
-Date	08/27/2021
+Date	11/15/2021
 MCU	STM32L072KBUx
 
 
 
 PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC	Single-ended	ADC_TempSens_Input	VP_ADC_TempSens_Input
+ADC	Vrefint Channel	ADC_Vref_Input	VP_ADC_Vref_Input
 I2C1	I2C	I2C1_SCL	PB6
 I2C1	I2C	I2C1_SDA	PB7
 SPI1	Transmit Only Master	SPI1_MOSI	PA7
@@ -46,6 +48,8 @@ Pin Nb	PINs	FUNCTIONs	LABELs
 28	PB6	I2C1_SCL	
 29	PB7	I2C1_SDA	
 PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC	Single-ended	ADC_TempSens_Input	VP_ADC_TempSens_Input
+ADC	Vrefint Channel	ADC_Vref_Input	VP_ADC_Vref_Input
 I2C1	I2C	I2C1_SCL	PB6
 I2C1	I2C	I2C1_SDA	PB7
 SPI1	Transmit Only Master	SPI1_MOSI	PA7
