@@ -2667,7 +2667,7 @@ U 1 1 619429DB
 P 6700 1875
 F 0 "U2" H 6275 2750 50  0000 C CNN
 F 1 "STM32L072KZT6" H 7050 900 50  0000 C CNN
-F 2 "Package_QFP:LQFP-32_7x7mm_P0.8mm" H 6200 975 50  0001 R CNN
+F 2 "lib_fp:ST_LQFP32" H 6200 975 50  0001 R CNN
 F 3 "http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/DM00141133.pdf" H 6700 1875 50  0001 C CNN
 F 4 "IC MCU 32BIT 192KB FLASH 32LQFP" H 6700 1875 50  0001 C CNN "Description"
 F 5 "STMicroelectronics" H 6700 1875 50  0001 C CNN "Manufacturer"
@@ -2701,7 +2701,7 @@ U 1 1 61A785B0
 P 1125 4925
 F 0 "J1" H 1125 5700 50  0000 C CNN
 F 1 "USB_C_Receptacle_USB2.0" H 1650 4150 50  0000 C CNN
-F 2 "Connector_USB:USB_C_Receptacle_Palconn_UTC16-G" H 1275 4925 50  0001 C CNN
+F 2 "lib_fp:USB_C_Receptacle_GCT_USB4105" H 1275 4925 50  0001 C CNN
 F 3 "https://gct.co/files/specs/usb4105-spec.pdf" H 1275 4925 50  0001 C CNN
 F 4 "CONN RCP USB2.0 TYP C 24P SMD RA" H 1125 4925 50  0001 C CNN "Description"
 F 5 "GCT" H 1125 4925 50  0001 C CNN "Manufacturer"
