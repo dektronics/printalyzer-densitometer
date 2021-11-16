@@ -110,3 +110,7 @@ this directory's `.gitignore` file.
 ### EVQP7-LC-01P
 * Status: Not included (Download requires registration, terms of use restrictive)
 * Source: Manufacturer <https://www3.panasonic.biz/ac/ae/search_num/index.jsp?c=detail&part_no=EVQP7L01P>
+
+### USB4105-15-A-120
+* Status: Included (Terms unspecified, downloaded from vendor page linked from Digi-Key product page)
+* Source: Manufacturer <https://gct.co/connector/digi-key/usb4105>
