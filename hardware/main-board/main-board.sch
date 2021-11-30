@@ -5,8 +5,8 @@ $Descr USLegal 14000 8500
 encoding utf-8
 Sheet 1 1
 Title "Printalyzer Densitometer - Main Board"
-Date "2021-??-??"
-Rev "C*"
+Date "2021-11-30"
+Rev "C"
 Comp "Dektronics, Inc."
 Comment1 "Derek Konigsberg <dkonigsberg@dektronics.com>"
 Comment2 ""
