@@ -28,3 +28,4 @@ fp-info-cache
 # Output directories
 **/gerber
 **/bom
+build
