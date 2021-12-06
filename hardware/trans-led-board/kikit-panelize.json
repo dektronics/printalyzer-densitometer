@@ -1,11 +1,10 @@
 // KiKit panelization for the Printalizer Densitometer Transmission LED Board
-// This produces a 117x155mm sized panel containing 32 boards
+// This produces a 96x142mm sized panel containing 32 boards
 {
     "layout": {
         "type": "grid",
         "rows": 4,
         "cols": 8,
-        "space": "3mm",
         "rotation": "0deg",
         "renamenet": "Board_{n}-{orig}",
         "renameref": "{orig}"
@@ -14,19 +13,13 @@
         "type": "auto",
         "tolerance": "5mm"
     },
-    "tabs": {
-        "type": "fixed",
-        "vwidth": "5mm",
-        "hwidth": "10mm",
-        "vcount": 1,
-        "hcount": 1
-    },
     "cuts": {
         "type": "vcuts"
     },
     "framing": {
         "type": "railstb",
-        "width": "5mm"
+        "width": "5mm",
+        "space": "0mm"
     },
     "tooling": {
         "type": "4hole",
