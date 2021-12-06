@@ -1,6 +1,6 @@
 Configuration	densitometer
-STM32CubeMX 	6.3.0
-Date	11/15/2021
+STM32CubeMX 	6.4.0
+Date	12/06/2021
 MCU	STM32L072KZTx
 
 
@@ -96,7 +96,7 @@ SOFTWARE PROJECT
 
 Project Settings : 
 Project Name : densitometer
-Project Folder : /home/octo/devel/densitometer/docs/cube
+Project Folder : /home/octo/devel/densitometer-cube/firmware_c
 Toolchain / IDE : STM32CubeIDE
 Firmware Package Name and Version : STM32Cube FW_L0 V1.12.1
 

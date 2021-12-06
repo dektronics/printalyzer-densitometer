@@ -1,6 +1,8 @@
 # Printalyzer Densitometer
 
-![Printalyzer Densitometer Logo](https://github.com/dkonigsberg/printalyzer-densitometer/blob/master/docs/images/dens-logo.png?raw=true)
+![Printalyzer Densitometer Logo](docs/images/dens-logo.png)
+
+![Printalyzer Densitometer Device](docs/images/dens-device.png)
 
 ## Introduction
 
@@ -27,13 +29,20 @@ The "hardware" directory contains [KiCad](https://www.kicad.org/) projects
 with the complete circuit schematics, bill-of-materials, and
 PCB layouts.
 
+_**The hardware design is currently marked as Revision C, and has a variety
+of changes intended to go into the final pre-production device.**_
+
 ### Software
 The "software" directory contains all the source code for the firmware
 that runs on the hardware.
 
+_**The software is still designed to run on Revision B hardware, because
+Revision C prototypes have not yet been constructed. Once they are available,
+the software will be updated accordingly.**_
+
 ### Models
 The "models" directory contains any CAD models and related resources
-necessary to physically assemble the project.
+necessary to physically assemble the device.
 
 ## License
 Individual directories will contain LICENSE files as needed, with relevant
