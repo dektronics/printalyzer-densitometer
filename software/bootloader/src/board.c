@@ -8,6 +8,7 @@
 
 typedef void (*jump_function_t)(void); /*!< Function pointer definition */
 
+extern IWDG_HandleTypeDef hiwdg;
 extern CRC_HandleTypeDef hcrc;
 #ifdef HAL_UART_MODULE_ENABLED
 extern UART_HandleTypeDef huart1;
@@ -252,15 +253,19 @@ void board_flash_write(uint32_t addr, const uint8_t *data, uint32_t len)
     }
 
     /* Only write if the data has changed */
+    HAL_IWDG_Refresh(&hiwdg);
     if (memcmp((void*)addr, data, len) != 0) {
         HAL_FLASH_Unlock();
 
+        HAL_IWDG_Refresh(&hiwdg);
         if (flash_erase(addr, len)) {
+            HAL_IWDG_Refresh(&hiwdg);
             flash_write(addr, data, len);
         }
 
         HAL_FLASH_Lock();
     }
+    HAL_IWDG_Refresh(&hiwdg);
 
     /* Estimate and display progress */
     uint8_t progress = (uint8_t)((((addr + len) - BOARD_FLASH_APP_START) * 128UL) / (BOARD_FLASH_APP_SIZE * 4UL));
@@ -270,6 +275,7 @@ void board_flash_write(uint32_t addr, const uint8_t *data, uint32_t len)
 #endif
         progress_state = progress;
     }
+    HAL_IWDG_Refresh(&hiwdg);
 }
 
 void indicator_set(uint32_t state)

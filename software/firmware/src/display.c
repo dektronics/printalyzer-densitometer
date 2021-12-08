@@ -10,6 +10,7 @@
 #include "display_assets.h"
 #include "keypad.h"
 #include "cdc_handler.h"
+#include "util.h"
 
 static u8g2_t u8g2;
 static uint8_t display_contrast = 0x7F;
@@ -82,6 +83,7 @@ static void display_capture_screenshot_callback(const char *s)
     size_t len = strlen(s);
     if (s > 0) {
         cdc_write(s, len);
+        watchdog_refresh();
     }
 }
 

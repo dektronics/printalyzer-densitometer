@@ -3,6 +3,7 @@
 #define LOG_TAG "state_controller"
 #include <elog.h>
 
+#include "stm32l0xx_hal.h"
 #include <printf.h>
 #include <cmsis_os.h>
 

@@ -5,6 +5,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+extern IWDG_HandleTypeDef hiwdg;
+
 void vApplicationMallocFailedHook(void)
 {
     log_e("Malloc failed!");
@@ -21,4 +23,13 @@ void vApplicationStackOverflowHook(xTaskHandle pxTask, char *pcTaskName)
     taskDISABLE_INTERRUPTS();
     __ASM volatile("BKPT #01");
     while (1) { }
+}
+
+void vApplicationIdleHook(void)
+{
+    /*
+     * Kicking the watchdog here mostly protects against a task hogging the
+     * whole system and preventing the scheduler from doing its thing.
+     */
+    HAL_IWDG_Refresh(&hiwdg);
 }

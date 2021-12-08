@@ -5,6 +5,7 @@
 #include "board_api.h"
 #include "uf2.h"
 
+IWDG_HandleTypeDef hiwdg;
 CRC_HandleTypeDef hcrc;
 #ifdef HAL_SPI_MODULE_ENABLED
 SPI_HandleTypeDef hspi1;
@@ -14,6 +15,7 @@ UART_HandleTypeDef huart1;
 #endif
 
 static void system_clock_config(void);
+static void iwdg_init(void);
 static void usart1_uart_init(void);
 static void usart1_uart_deinit(void);
 static void gpio_init(void);
@@ -43,9 +45,11 @@ void system_clock_config(void)
      * Initialize the RCC Oscillators according to the specified parameters
      * in the RCC_OscInitTypeDef structure.
      */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSI48;
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_LSI
+        | RCC_OSCILLATORTYPE_HSI48;
     RCC_OscInitStruct.HSIState = RCC_HSI_ON;
     RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+    RCC_OscInitStruct.LSIState = RCC_LSI_ON;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
@@ -70,6 +74,22 @@ void system_clock_config(void)
     PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
+        error_handler();
+    }
+}
+
+void iwdg_init(void)
+{
+    /*
+     * Configure the independent watchdog with a 2 second
+     * timeout. This is a generous amount of time, and
+     * mostly useful for catching a total system lockup.
+     */
+    hiwdg.Instance = IWDG;
+    hiwdg.Init.Prescaler = IWDG_PRESCALER_16;
+    hiwdg.Init.Window = 4095;
+    hiwdg.Init.Reload = 4095;
+    if (HAL_IWDG_Init(&hiwdg) != HAL_OK) {
         error_handler();
     }
 }
@@ -249,6 +269,7 @@ bool check_start_bootloader()
             BL_LOG_STR("Falling through button check\r\n");
             break;
         }
+        HAL_IWDG_Refresh(&hiwdg);
     }
     if (button_counter >= 10) {
         BL_LOG_STR("Buttons held, going to bootloader\r\n");
@@ -274,6 +295,13 @@ void start_application()
     gpio_deinit();
     usart1_uart_deinit();
 
+    /* Save startup data into RTC backup registers */
+    __HAL_RCC_PWR_CLK_ENABLE();
+    HAL_PWR_EnableBkUpAccess();
+    RTC->BKP0R = (RCC->CSR & 0xFF000000UL); /* Reset flags */
+    HAL_PWR_DisableBkUpAccess();
+    __HAL_RCC_PWR_CLK_DISABLE();
+
     /* Start the application */
     board_app_jump();
 }
@@ -289,6 +317,9 @@ int main(void)
     /* Configure the system clock */
     system_clock_config();
 
+    /* Initialize the watchdog */
+    iwdg_init();
+
     /* Initialize the debug UART */
     usart1_uart_init();
 
@@ -296,15 +327,20 @@ int main(void)
     gpio_init();
     crc_init();
 
+    HAL_IWDG_Refresh(&hiwdg);
+
     BL_LOG_STR("---- Densitometer Bootloader ----\r\n");
 
     if (!check_start_bootloader()) {
         BL_LOG_STR("Starting application\r\n");
+        HAL_IWDG_Refresh(&hiwdg);
         start_application();
         while(1) { }
     }
 
     BL_LOG_STR("Initializing bootloader\r\n");
+
+    HAL_IWDG_Refresh(&hiwdg);
 
     /* Initialize additional peripherals needed for the bootloader */
     spi1_init();
@@ -316,13 +352,18 @@ int main(void)
     /* Initialize the TinyUSB stack */
     tusb_init();
 
+    HAL_IWDG_Refresh(&hiwdg);
+
     /* Initialize the display */
     board_display_init();
     indicator_set(STATE_BOOTLOADER_STARTED);
 
+    HAL_IWDG_Refresh(&hiwdg);
+
     /* Main loop */
     while (1) {
         tud_task();
+        HAL_IWDG_Refresh(&hiwdg);
     }
 }
 

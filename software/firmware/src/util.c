@@ -1,6 +1,14 @@
 #include "util.h"
 
 #include <string.h>
+#include "stm32l0xx_hal.h"
+
+extern IWDG_HandleTypeDef hiwdg;
+
+void watchdog_refresh()
+{
+    HAL_IWDG_Refresh(&hiwdg);
+}
 
 osStatus_t hal_to_os_status(HAL_StatusTypeDef hal_status)
 {

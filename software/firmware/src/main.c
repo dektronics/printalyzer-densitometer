@@ -20,6 +20,7 @@
 #define END_ADDRESS 0x0801FFFBUL
 #define APP_SIZE ((uint32_t)(((END_ADDRESS - APP_ADDRESS) + 3UL) / 4UL))
 
+IWDG_HandleTypeDef hiwdg;
 ADC_HandleTypeDef hadc;
 DMA_HandleTypeDef hdma_adc;
 I2C_HandleTypeDef hi2c1;
@@ -27,7 +28,11 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart1;
 
+static uint32_t startup_bkp0r = 0;
+
 static void system_clock_config(void);
+static void read_startup_flags(void);
+static void iwdg_init(void);
 static void usart1_uart_init(void);
 static void logger_init(void);
 static void gpio_init(void);
@@ -58,9 +63,11 @@ void system_clock_config(void)
      * Initialize the RCC Oscillators according to the specified parameters
      * in the RCC_OscInitTypeDef structure.
      */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSI48;
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_LSI
+        | RCC_OSCILLATORTYPE_HSI48;
     RCC_OscInitStruct.HSIState = RCC_HSI_ON;
     RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+    RCC_OscInitStruct.LSIState = RCC_LSI_ON;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
@@ -89,6 +96,32 @@ void system_clock_config(void)
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
         error_handler();
     }
+}
+
+void read_startup_flags(void)
+{
+    __HAL_RCC_PWR_CLK_ENABLE();
+    HAL_PWR_EnableBkUpAccess();
+    startup_bkp0r = RTC->BKP0R;
+    RTC->BKP0R = 0;
+    HAL_PWR_DisableBkUpAccess();
+    __HAL_RCC_PWR_CLK_DISABLE();
+
+    if (startup_bkp0r == 0) {
+        startup_bkp0r = RCC->CSR & 0xFF000000UL;
+    }
+}
+
+void iwdg_init(void)
+{
+    hiwdg.Instance = IWDG;
+    hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+    hiwdg.Init.Window = 4095;
+    hiwdg.Init.Reload = 4095;
+    if (HAL_IWDG_Init(&hiwdg) != HAL_OK) {
+        error_handler();
+    }
+    __HAL_DBGMCU_FREEZE_IWDG();
 }
 
 void usart1_uart_init(void)
@@ -376,6 +409,29 @@ void startup_log_messages(void)
     log_i("Build date: %s", app_descriptor->build_date);
     log_i("Build describe: %s", app_descriptor->build_describe);
     log_i("Build checksum: %08lX", __bswap32(app_descriptor->crc32));
+
+    if (startup_bkp0r & RCC_CSR_PINRSTF) {
+        log_i("Pin reset");
+    }
+    if (startup_bkp0r & RCC_CSR_PORRSTF) {
+        log_i("Power on reset");
+    }
+    if (startup_bkp0r & RCC_CSR_SFTRSTF) {
+        log_i("Software reset");
+    }
+    if (startup_bkp0r & RCC_CSR_OBLRSTF) {
+        log_i("Options bytes loading reset");
+    }
+    if (startup_bkp0r & RCC_CSR_IWDGRSTF) {
+        log_i("IWDG reset");
+    }
+    if (startup_bkp0r & RCC_CSR_WWDGRSTF) {
+        log_i("WWDG reset");
+    }
+    if (startup_bkp0r & RCC_CSR_LPWRRSTF) {
+        log_i("Low-Power reset");
+    }
+
     log_i("-----------------------");
 }
 
@@ -390,6 +446,12 @@ int main(void)
     /* Configure the system clock */
     system_clock_config();
 
+    /* Read startup flags set by the bootloader */
+    read_startup_flags();
+
+    /* Initialize the watchdog */
+    iwdg_init();
+
     /* Initialize the debug UART */
     usart1_uart_init();
 
@@ -401,6 +463,8 @@ int main(void)
     dma_init();
     adc_init();
     usb_init();
+
+    HAL_IWDG_Refresh(&hiwdg);
 
     /* Initialize the FreeRTOS scheduler */
     osKernelInitialize();
@@ -418,6 +482,8 @@ int main(void)
 
     /* Print the initial startup messages */
     startup_log_messages();
+
+    HAL_IWDG_Refresh(&hiwdg);
 
     /* Create the main task */
     task_main_init();
