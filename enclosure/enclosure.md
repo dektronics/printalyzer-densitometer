@@ -131,10 +131,12 @@ are still necessary for the assembly of the device.
 
 * M2 x 4mm thread forming screws (x2)
   * McMaster-Carr PN: 90380A324
-* M2 x 8mm flat head black screws (x4)
-  * McMaster-Carr PN: 91698A204
+* M2 x 5mm thread forming screws (x6)
+  * McMaster-Carr PN: 90380A325
 * M2 x 6mm thread forming screws (x4)
   * McMaster-Carr PN: 99461A915 (Stainless Steel) or 90380A326 (Zinc-Plated Steel)
+* M2 x 8mm flat head black screws (x4)
+  * McMaster-Carr PN: 91698A204
 * M3 x 20mm low-profile socket head partially threaded screws (x2)
   * McMaster-Carr PN: 93070A076
 * Torsion Spring, 180 deg Right-Hand wound
