@@ -40,13 +40,11 @@ _**The software is still designed to run on Revision B hardware, because
 Revision C prototypes have not yet been constructed. Once they are available,
 the software will be updated accordingly.**_
 
-### Models
-The "models" directory contains any CAD models and related resources
+### Enclosure
+The "enclosure" directory contains any CAD models and related resources
 necessary to physically assemble the device.
 
 ## License
 Individual directories will contain LICENSE files as needed, with relevant
 details. Generally, the hardware will be CC BY-SA and the software will be
 BSD 3-Clause. However, external resources may have their own individual license terms.
-
-## Credits
