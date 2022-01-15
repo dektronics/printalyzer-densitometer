@@ -12,10 +12,10 @@ GERBERS = $(addprefix build/, $(PANELS:=-gerber.zip))
 
 all: $(GERBERS) build/web/index.html
 
-build/main-board-panel.kicad_pcb: main-board/main-board.kicad_pcb build
+build/main-board-panel.kicad_pcb: main-board/main-board.kicad_pcb main-board/kikit-panelize.json build
 	$(KIKIT) panelize -p main-board/kikit-panelize.json $< $@
 
-build/trans-led-board-panel.kicad_pcb: trans-led-board/trans-led-board.kicad_pcb build
+build/trans-led-board-panel.kicad_pcb: trans-led-board/trans-led-board.kicad_pcb trans-led-board/kikit-panelize.json build
 	$(KIKIT) panelize -p trans-led-board/kikit-panelize.json $< $@
 
 %-gerber: %.kicad_pcb
