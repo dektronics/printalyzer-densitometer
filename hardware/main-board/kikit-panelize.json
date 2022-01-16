@@ -41,14 +41,14 @@
     },
     "text": {
         "type": "simple",
-        "text": "Printalyzer Densitometer Main Board",
-        "anchor": "tl",
-        "hoffset": "20mm",
+        "text": "${TITLE} Panel",
+        "anchor": "mt",
         "voffset": "2.5mm",
-        "hjustify": "left"
+        "hjustify": "center"
     },
     "post": {
-        "copperfill": true,
-        "millradius": "1mm"
+        "millradius": "1mm",
+        "script": "tools/kikit-post.py",
+        "scriptarg": "main-board/main-board.kicad_pcb"
     }
 }

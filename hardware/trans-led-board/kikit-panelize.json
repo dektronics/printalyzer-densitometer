@@ -36,14 +36,14 @@
     },
     "text": {
         "type": "simple",
-        "text": "Printalyzer Densitometer Transmission LED Board",
-        "anchor": "tl",
-        "hoffset": "20mm",
+        "text": "${TITLE} Panel",
+        "anchor": "mt",
         "voffset": "2.5mm",
-        "hjustify": "left"
+        "hjustify": "center"
     },
     "post": {
-        "type": "auto",
-        "millradius": "1mm"
+        "millradius": "1mm",
+        "script": "tools/kikit-post.py",
+        "scriptarg": "trans-led-board/trans-led-board.kicad_pcb"
     }
 }
