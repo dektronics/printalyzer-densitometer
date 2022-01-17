@@ -5,7 +5,7 @@
         "type": "grid",
         "rows": 4,
         "cols": 2,
-        "hspace": "5mm",
+        "hspace": "4mm",
         "vspace": "3mm",
         "rotation": "0deg",
         "alternation": "cols",
@@ -24,7 +24,8 @@
     },
     "framing": {
         "type": "railstb",
-        "width": "5mm"
+        "width": "5mm",
+        "space": "3mm"
     },
     "tooling": {
         "type": "4hole",
