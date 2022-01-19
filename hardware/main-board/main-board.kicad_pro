@@ -399,7 +399,7 @@
       "netlist": "",
       "specctra_dsn": "",
       "step": "",
-      "vrml": ""
+      "vrml": "main-board.wrl"
     },
     "page_layout_descr_file": ""
   },
