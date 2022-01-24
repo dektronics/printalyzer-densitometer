@@ -106,6 +106,10 @@ These are components that are not included in the PCB's bill-of-materials,
 but are ordered from the same kinds of vendors and are necessary to assemble
 a complete device.
 
+* Button caps (x4)
+  * **E-Switch 2SBLK**
+  * Mouser PN: 612-2SBLK
+  * _Alternatively, the taller E-Switch 1SWHT or 1SBLK may be used instead._
 * 1.3" OLED Display Screen
   * **ER-OLED013A1-1W**
   * https://www.buydisplay.com/white-1-3-inch-oled-i2c-arduino-ssd1306-display-module-connector-fpc
@@ -153,3 +157,6 @@ are still necessary for the assembly of the device.
   * Available from a variety of vendors
 * Silicone adhesive
   * **Chipquik NCS10G**
+* Foam mounting tape (3/4"x 15ft)
+  * **3M VHB 3/4-5-4991**
+  * McMaster-Carr PN: 8127A88
