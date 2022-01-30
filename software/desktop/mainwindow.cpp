@@ -149,6 +149,7 @@ void MainWindow::onOpenConnectionDialogFinished(int result)
         serialPort_->setStopBits(p.stopBits);
         serialPort_->setFlowControl(p.flowControl);
         if (serialPort_->open(QIODevice::ReadWrite)) {
+            serialPort_->setDataTerminalReady(true);
             if (densInterface_->connectToDevice(serialPort_)) {
                 ui->actionConnect->setEnabled(false);
                 ui->actionDisconnect->setEnabled(true);
