@@ -146,6 +146,12 @@ void gpio_init(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+    /* Configure unused GPIO pins: PA2 PA3 */
+    GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_3;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
     /* Configure GPIO pins: DISP_CS_Pin DISP_DC_Pin */
     GPIO_InitStruct.Pin = DISP_CS_Pin | DISP_DC_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -178,6 +184,7 @@ void gpio_deinit(void)
     /* De-initialize GPIO pins */
     HAL_GPIO_DeInit(GPIOC, BTN4_Pin | BTN3_Pin);
     HAL_GPIO_DeInit(GPIOA, BTN2_Pin | BTN1_Pin | BTN5_Pin);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2 | GPIO_PIN_3);
     HAL_GPIO_DeInit(GPIOA, DISP_CS_Pin | DISP_DC_Pin);
     HAL_GPIO_DeInit(DISP_RES_GPIO_Port, DISP_RES_Pin);
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_1 | GPIO_PIN_4);

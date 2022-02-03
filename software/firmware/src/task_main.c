@@ -118,7 +118,7 @@ void task_main_run(void *argument)
     display_clear();
 
     /* Initialize the light source */
-    light_init(&htim2, TIM_CHANNEL_3, TIM_CHANNEL_4);
+    light_init(&htim2, TIM_CHANNEL_2, TIM_CHANNEL_1);
 
     /* Load system settings */
     settings_init();

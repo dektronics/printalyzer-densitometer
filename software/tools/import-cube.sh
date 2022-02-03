@@ -49,7 +49,7 @@ cp "${CUBEDIR}/"*.ld "${PROJDIR}/"
 # Project core sources
 #
 mkdir -p "${PROJDIR}/src/system"
-cp "${CUBEDIR}/Core/Startup/"startup_stm32l072kbux.s "${PROJDIR}/src/system/"
+cp "${CUBEDIR}/Core/Startup/"startup_stm32l072kztx.s "${PROJDIR}/src/system/"
 cp "${CUBEDIR}/Core/Inc/"stm32l0xx*.h "${PROJDIR}/src/system/"
 cp "${CUBEDIR}/Core/Src/"stm32l0xx*.c "${PROJDIR}/src/system/"
 cp "${CUBEDIR}/Core/Src/"sys*.c "${PROJDIR}/src/system/"

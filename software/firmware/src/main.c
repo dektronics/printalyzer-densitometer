@@ -16,10 +16,6 @@
 #include "task_sensor.h"
 #include "app_descriptor.h"
 
-#define APP_ADDRESS 0x08004000UL
-#define END_ADDRESS 0x0801FFFBUL
-#define APP_SIZE ((uint32_t)(((END_ADDRESS - APP_ADDRESS) + 3UL) / 4UL))
-
 IWDG_HandleTypeDef hiwdg;
 ADC_HandleTypeDef hadc;
 DMA_HandleTypeDef hdma_adc;
@@ -185,6 +181,12 @@ void gpio_init(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+    /* Configure GPIO pins: PA2 PA3 */
+    GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_3;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
     /* Configure GPIO pins: DISP_CS_Pin DISP_DC_Pin */
     GPIO_InitStruct.Pin = DISP_CS_Pin | DISP_DC_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -280,10 +282,10 @@ void tim2_init(void)
     sConfigOC.Pulse = 64;
     sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
     sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-    if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK) {
+    if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK) {
         error_handler();
     }
-    if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_4) != HAL_OK) {
+    if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK) {
         error_handler();
     }
 

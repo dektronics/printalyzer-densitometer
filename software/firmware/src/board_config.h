@@ -21,9 +21,9 @@
 #define BTN5_EXTI_IRQn      EXTI4_15_IRQn
 
 /* Pin mapping for LED drivers */
-#define RLED_EN_Pin         GPIO_PIN_2
-#define RLED_EN_GPIO_Port   GPIOA
-#define TLED_EN_Pin         GPIO_PIN_3
+#define RLED_EN_Pin         GPIO_PIN_3
+#define RLED_EN_GPIO_Port   GPIOB
+#define TLED_EN_Pin         GPIO_PIN_15
 #define TLED_EN_GPIO_Port   GPIOA
 
 /* Pin mapping for display */

@@ -153,7 +153,7 @@ uint32_t board_flash_size(void)
 static bool is_blank(uint32_t addr, uint32_t size)
 {
     for (uint32_t i = 0; i < size; i += sizeof(uint32_t)) {
-        if (*(uint32_t*)(addr + i) != 0xffffffff) {
+        if (*(uint32_t*)(addr + i) != 0x00000000UL) {
             return false;
         }
     }
@@ -204,6 +204,11 @@ __USED __RAM_FUNC void flash_write(uint32_t dst, const uint8_t *src, int len)
         if (status != HAL_OK) {
             BL_LOG_STR("Failed to write flash at address\r\n");
             BL_LOG_HEX(dst + i);
+            BL_LOG_HEX(status);
+
+            uint32_t ferror;
+            HAL_FLASHEx_GetError(&ferror);
+            BL_LOG_HEX(ferror);
         }
     }
 
