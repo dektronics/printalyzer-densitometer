@@ -43,6 +43,9 @@
 #define BOARD_FLASH_APP_START  0
 #endif
 
+// Use favicon.ico + autorun.inf (only works with windows)
+// define TINYUF2_FAVICON_HEADER to enable this feature
+
 //--------------------------------------------------------------------+
 // Basic API
 //--------------------------------------------------------------------+
@@ -180,11 +183,11 @@ void board_display_init(void);
 //--------------------------------------------------------------------+
 
 enum {
-    STATE_BOOTLOADER_STARTED = 0,
-    STATE_USB_PLUGGED,
-    STATE_USB_UNPLUGGED,
-    STATE_WRITING_STARTED,
-    STATE_WRITING_FINISHED
+    STATE_BOOTLOADER_STARTED = 0,///< STATE_BOOTLOADER_STARTED
+    STATE_USB_PLUGGED,           ///< STATE_USB_PLUGGED
+    STATE_USB_UNPLUGGED,         ///< STATE_USB_UNPLUGGED
+    STATE_WRITING_STARTED,       ///< STATE_WRITING_STARTED
+    STATE_WRITING_FINISHED       ///< STATE_WRITING_FINISHED
 };
 
 /**

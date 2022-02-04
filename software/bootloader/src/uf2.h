@@ -40,7 +40,7 @@ SOFTWARE.
 //--------------------------------------------------------------------+
 
 // Version is passed by makefile
-#define UF2_VERSION         "0.5.2-11"
+#define UF2_VERSION         "0.8.0-34"
 
 // The largest flash size that is supported by the board, in bytes, default is 4MB
 // Flash size is constrained by RAM, a 4MB size requires 2kB RAM, see MAX_BLOCKS
@@ -48,11 +48,13 @@ SOFTWARE.
 #ifndef CFG_UF2_FLASH_SIZE
     #define CFG_UF2_FLASH_SIZE          (4*1024*1024)
 #endif
+
 // Number of 512-byte blocks in the exposed filesystem, default is just under 32MB
 // The filesystem needs space for the current file, text files, uploaded file, and FAT
 #ifndef CFG_UF2_NUM_BLOCKS
     #define CFG_UF2_NUM_BLOCKS          (0x10109)
 #endif
+
 // Sectors per FAT cluster, must be increased proportionally for larger filesystems
 #ifndef CFG_UF2_SECTORS_PER_CLUSTER
     #define CFG_UF2_SECTORS_PER_CLUSTER (1)
