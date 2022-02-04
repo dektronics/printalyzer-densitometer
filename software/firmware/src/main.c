@@ -390,7 +390,7 @@ void startup_log_messages(void)
     const app_descriptor_t *app_descriptor = app_descriptor_get();
     uint32_t hal_ver = HAL_GetHalVersion();
     uint8_t hal_ver_code = ((uint8_t)(hal_ver)) & 0x0F;
-    uint8_t *uniqueId = (uint8_t*)UID_BASE;
+    uint16_t *flash_size = (uint16_t*)(FLASHSIZE_BASE);
 
     log_i("\033[0m");
     log_i("---- %s Startup ----", app_descriptor->project_name);
@@ -402,11 +402,12 @@ void startup_log_messages(void)
     log_i("FreeRTOS: %s", tskKERNEL_VERSION_NUMBER);
     log_i("Device ID: 0x%lX", HAL_GetDEVID());
     log_i("Revision ID: 0x%lX", HAL_GetREVID());
+    log_i("Flash size: %dk", *flash_size);
     log_i("SysClock: %ldMHz", HAL_RCC_GetSysClockFreq() / 1000000);
-    log_i("Unique ID: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-        uniqueId[0], uniqueId[1], uniqueId[2], uniqueId[3], uniqueId[4],
-        uniqueId[5], uniqueId[6], uniqueId[7], uniqueId[8], uniqueId[9],
-        uniqueId[10], uniqueId[11]);
+    log_i("Unique ID: %08lX%08lX%08lX",
+        __bswap32(HAL_GetUIDw0()),
+        __bswap32(HAL_GetUIDw1()),
+        __bswap32(HAL_GetUIDw2()));
     log_i("App version: %s", app_descriptor->version);
     log_i("Build date: %s", app_descriptor->build_date);
     log_i("Build describe: %s", app_descriptor->build_describe);

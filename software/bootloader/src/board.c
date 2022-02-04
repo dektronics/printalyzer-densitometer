@@ -123,11 +123,15 @@ void board_dfu_complete(void)
     NVIC_SystemReset();
 }
 
-uint8_t board_usb_get_serial(uint8_t serial_id[16])
+uint8_t board_usb_get_serial(uint8_t *serial_id)
 {
-    uint8_t const len = 12;
-    memcpy(serial_id, STM32_UUID, len);
-    return len;
+    const uint32_t deviceserial0 = HAL_GetUIDw0();
+    const uint32_t deviceserial1 = HAL_GetUIDw1();
+    const uint32_t deviceserial2 = HAL_GetUIDw2();
+    memcpy(serial_id, &deviceserial0, 4);
+    memcpy(serial_id + 4, &deviceserial1, 4);
+    memcpy(serial_id + 8, &deviceserial2, 4);
+    return 12;
 }
 
 void board_flash_init(void)

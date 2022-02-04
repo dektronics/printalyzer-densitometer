@@ -26,7 +26,7 @@
  */
 
 #include "tusb.h"
-#include "stm32l072xx.h"
+#include "stm32l0xx_hal.h"
 #include "printf.h"
 
 /*
@@ -172,9 +172,9 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
         chr_count = 1;
     } else if (index == 3) {
         /* Transform the device's unique ID into a USB device serial number */
-        const uint32_t deviceserial0 = *(uint32_t *)(UID_BASE);
-        const uint32_t deviceserial1 = *(uint32_t *)(UID_BASE + 0x4);
-        const uint32_t deviceserial2 = *(uint32_t *)(UID_BASE + 0x8);
+        const uint32_t deviceserial0 = HAL_GetUIDw0();
+        const uint32_t deviceserial1 = HAL_GetUIDw1();
+        const uint32_t deviceserial2 = HAL_GetUIDw2();
         uint32_to_utf16(_desc_str + 1, deviceserial0, 8);
         uint32_to_utf16(_desc_str + 9, deviceserial1, 8);
         uint32_to_utf16(_desc_str + 17, deviceserial2, 8);

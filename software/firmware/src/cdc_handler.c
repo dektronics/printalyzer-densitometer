@@ -417,12 +417,7 @@ bool cdc_process_command_system(const cdc_command_t *cmd)
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "UID") == 0) {
-        uint8_t *uniqueId = (uint8_t*)UID_BASE;
-
-        sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-            uniqueId[0], uniqueId[1], uniqueId[2], uniqueId[3], uniqueId[4],
-            uniqueId[5], uniqueId[6], uniqueId[7], uniqueId[8], uniqueId[9],
-            uniqueId[10], uniqueId[11]);
+        sprintf(buf, "%08lX%08lX%08lX", HAL_GetUIDw0(), HAL_GetUIDw1(), HAL_GetUIDw2());
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "ISEN") == 0) {

@@ -153,7 +153,7 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
         uint8_t serial_len;
 
         serial_len = board_usb_get_serial(serial_id);
-        chr_count = 2*serial_len;
+        chr_count = 2 * serial_len;
 
         for (uint8_t i = 0; i < serial_len; i++) {
             for (uint8_t j = 0; j < 2; j++) {
