@@ -32,7 +32,7 @@
 
 //--------------------------------------------------------------------+
 // Low Level MCU header include. TinyUSB stack and example should be
-// platform independent and mostly doens't need to include this file.
+// platform independent and mostly doesn't need to include this file.
 // However there are still certain situation where this file is needed:
 // - FreeRTOSConfig.h to set up correct clock and NVIC interrupts for ARM Cortex
 // - SWO logging for Cortex M with ITM_SendChar() / ITM_ReceiveChar()
@@ -98,6 +98,9 @@
 #elif CFG_TUSB_MCU == OPT_MCU_MSP430x5xx
   #include "msp430.h"
 
+#elif CFG_TUSB_MCU == OPT_MCU_MSP432E4
+  #include "msp.h"
+
 #elif CFG_TUSB_MCU == OPT_MCU_VALENTYUSB_EPTRI
   // no header needed
 
@@ -125,7 +128,7 @@
 #elif CFG_TUSB_MCU == OPT_MCU_RP2040
   #include "pico.h"
   
-#elif CFG_TUSB_MCU == OPT_MCU_EFM32GG || CFG_TUSB_MCU == OPT_MCU_EFM32GG11 || CFG_TUSB_MCU == OPT_MCU_EFM32GG12
+#elif CFG_TUSB_MCU == OPT_MCU_EFM32GG
   #include "em_device.h"
 
 #elif CFG_TUSB_MCU == OPT_MCU_RX63X || CFG_TUSB_MCU == OPT_MCU_RX65X
@@ -136,6 +139,16 @@
 
 #elif CFG_TUSB_MCU == OPT_MCU_MM32F327X
   #include "mm32_device.h"
+
+#elif CFG_TUSB_MCU == OPT_MCU_XMC4000
+  #include "xmc_device.h"
+
+#elif CFG_TUSB_MCU == OPT_MCU_TM4C123
+  #include "TM4C123.h"
+
+#elif TU_CHECK_MCU(OPT_MCU_BCM2711, OPT_MCU_BCM2835, OPT_MCU_BCM2837)
+  // no header needed
+
 #else
   #error "Missing MCU header"
 #endif

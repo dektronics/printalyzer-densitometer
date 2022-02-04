@@ -53,12 +53,38 @@
 // USBH-HCD common data structure
 //--------------------------------------------------------------------+
 
-typedef struct {
-  //------------- port -------------//
+// device0 struct must be strictly a subset of normal device struct
+typedef struct
+{
+  // port
   uint8_t rhport;
   uint8_t hub_addr;
   uint8_t hub_port;
   uint8_t speed;
+
+  volatile struct TU_ATTR_PACKED
+  {
+    uint8_t connected    : 1;
+    uint8_t addressed    : 1;
+    uint8_t configured   : 1;
+    uint8_t suspended    : 1;
+  };
+} usbh_dev0_t;
+
+typedef struct {
+  // port
+  uint8_t rhport;
+  uint8_t hub_addr;
+  uint8_t hub_port;
+  uint8_t speed;
+
+  volatile struct TU_ATTR_PACKED
+  {
+    uint8_t connected    : 1;
+    uint8_t addressed    : 1;
+    uint8_t configured   : 1;
+    uint8_t suspended    : 1;
+  };
 
   //------------- device descriptor -------------//
   uint16_t vid;
@@ -73,14 +99,6 @@ typedef struct {
   // uint8_t interface_count; // bNumInterfaces alias
 
   //------------- device -------------//
-  struct TU_ATTR_PACKED
-  {
-    uint8_t connected    : 1;
-    uint8_t addressed    : 1;
-    uint8_t configured   : 1;
-    uint8_t suspended    : 1;
-  };
-
   volatile uint8_t state;            // device state, value from enum tusbh_device_state_t
 
   uint8_t itf2drv[16];               // map interface number to driver (0xff is invalid)
@@ -102,16 +120,6 @@ typedef struct {
 #endif
 
 } usbh_device_t;
-
-typedef struct
-{
-  uint8_t rhport;
-  uint8_t hub_addr;
-  uint8_t hub_port;
-  uint8_t speed;
-
-  volatile uint8_t connected;
-} usbh_dev0_t;
 
 
 //--------------------------------------------------------------------+
@@ -533,10 +541,12 @@ void process_device_unplugged(uint8_t rhport, uint8_t hub_addr, uint8_t hub_port
         usbh_class_drivers[drv_id].close(dev_addr);
       }
 
+      hcd_device_close(rhport, dev_addr);
+
+      // release all endpoints associated with the device
       memset(dev->itf2drv, DRVID_INVALID, sizeof(dev->itf2drv)); // invalid mapping
       memset(dev->ep2drv , DRVID_INVALID, sizeof(dev->ep2drv )); // invalid mapping
-
-      hcd_device_close(rhport, dev_addr);
+      tu_memclr(dev->ep_status, sizeof(dev->ep_status));
 
       dev->state = TUSB_DEVICE_STATE_UNPLUG;
     }
@@ -894,11 +904,10 @@ static bool enum_get_9byte_config_desc_complete(uint8_t dev_addr, tusb_control_r
   TU_ASSERT(XFER_RESULT_SUCCESS == result);
 
   // TODO not enough buffer to hold configuration descriptor
-  tusb_desc_configuration_t const * desc_config = (tusb_desc_configuration_t const*) _usbh_ctrl_buf;
-  uint16_t total_len;
+  uint8_t const * desc_config = _usbh_ctrl_buf;
 
   // Use offsetof to avoid pointer to the odd/misaligned address
-  memcpy(&total_len, (uint8_t*) desc_config + offsetof(tusb_desc_configuration_t, wTotalLength), 2);
+  uint16_t const total_len = tu_le16toh( tu_unaligned_read16(desc_config + offsetof(tusb_desc_configuration_t, wTotalLength)) );
 
   TU_ASSERT(total_len <= CFG_TUH_ENUMERATION_BUFSIZE);
 
@@ -1165,7 +1174,7 @@ static bool usbh_edpt_control_open(uint8_t dev_addr, uint8_t max_packet_size)
     .bDescriptorType  = TUSB_DESC_ENDPOINT,
     .bEndpointAddress = 0,
     .bmAttributes     = { .xfer = TUSB_XFER_CONTROL },
-    .wMaxPacketSize   = { .size = max_packet_size },
+    .wMaxPacketSize   = max_packet_size,
     .bInterval        = 0
   };
 
