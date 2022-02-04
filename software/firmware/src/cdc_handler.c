@@ -417,7 +417,10 @@ bool cdc_process_command_system(const cdc_command_t *cmd)
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "UID") == 0) {
-        sprintf(buf, "%08lX%08lX%08lX", HAL_GetUIDw0(), HAL_GetUIDw1(), HAL_GetUIDw2());
+        sprintf(buf, "%08lX%08lX%08lX",
+            __bswap32(HAL_GetUIDw0()),
+            __bswap32(HAL_GetUIDw1()),
+            __bswap32(HAL_GetUIDw2()));
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "ISEN") == 0) {
