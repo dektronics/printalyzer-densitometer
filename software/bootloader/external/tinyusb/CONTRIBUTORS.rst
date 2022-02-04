@@ -110,7 +110,7 @@ Notable contributors
 `Rafael Silva <https://github.com/perigoso>`__
 ----------------------------------------------
 
--  Add new DCD port for Silabs EFM32GG12 with SLTB009A board
+-  Port DCD Synopsys to support Silabs EFM32GG12 with SLTB009A board
 -  Rewrite documentation in rst and setup for readthedocs
 
 
@@ -152,6 +152,12 @@ Notable contributors
 
 -  Add new class driver for DFU Runtime
 
+
+`Tian Yunhao <https://github.com/t123yh>`__
+-------------------------------------------
+
+-  Add new DCD port for Allwinner F1C100S/F1C200S
+-  Add support for osal_rtx4
 
 `Timon Skerutsch <https://github.com/PTS93>`__
 ----------------------------------------------
