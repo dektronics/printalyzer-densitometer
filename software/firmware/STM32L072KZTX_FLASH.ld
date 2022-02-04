@@ -64,11 +64,11 @@ SECTIONS
   .start_fill :
   {
     . = ALIGN(4);
-    BYTE(0xFF);
+    BYTE(0x00);
     . = ALIGN(4);
-    BYTE(0xFF);
+    BYTE(0x00);
     . = ALIGN(4);
-  } > FLASH =0xFF
+  } >FLASH =0x00
 
   /* The program code and other data into "FLASH" Rom type memory */
   .text :
@@ -160,10 +160,10 @@ SECTIONS
   /* Make sure the gap before .app_descriptor is filled correctly */
   .end_fill :
   {
-    FILL(0xFF);
-    BYTE(0xFF);
+    FILL(0x00);
+    BYTE(0x00);
     . = ORIGIN(FLASH) + LENGTH(FLASH) - 256;
-  } > FLASH
+  } >FLASH
 
   /* Application descriptor structure fixed at a known location */
   .app_descriptor :

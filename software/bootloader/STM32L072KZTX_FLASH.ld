@@ -64,11 +64,11 @@ SECTIONS
   .start_fill :
   {
     . = ALIGN(4);
-    BYTE(0xFF);
+    BYTE(0x00);
     . = ALIGN(4);
-    BYTE(0xFF);
+    BYTE(0x00);
     . = ALIGN(4);
-  } > FLASH =0xFF
+  } > FLASH =0x00
 
   /* The program code and other data into "FLASH" Rom type memory */
   .text :
@@ -160,10 +160,11 @@ SECTIONS
   /* Pad out to the full reserved size */
   .end_fill :
   {
-    FILL(0xFF);
-    BYTE(0xFF);
+    FILL(0x00);
+    BYTE(0x00);
     . = ORIGIN(FLASH) + LENGTH(FLASH);
   } > FLASH
+
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);
   .bss :
