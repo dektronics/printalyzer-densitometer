@@ -18,6 +18,7 @@ typedef enum {
     STATE_CALIBRATION_TRANSMISSION_ZERO,
     STATE_CALIBRATION_TRANSMISSION_CAL_HI,
     STATE_REMOTE,
+    STATE_SUSPEND,
     STATE_MAX
 } state_identifier_t;
 
@@ -49,5 +50,7 @@ void state_controller_init();
 void state_controller_loop();
 
 void state_controller_set_next_state(state_controller_t *controller, state_identifier_t next_state);
+
+void state_controller_set_home_state(state_controller_t *controller, state_identifier_t home_state);
 
 #endif /* STATE_CONTROLLER_H */

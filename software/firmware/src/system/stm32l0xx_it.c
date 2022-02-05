@@ -20,7 +20,10 @@
 #include "stm32l0xx_it.h"
 #include <tusb.h>
 
+#include "state_suspend.h"
+
 extern DMA_HandleTypeDef hdma_adc;
+extern RTC_HandleTypeDef hrtc;
 extern TIM_HandleTypeDef htim6;
 
 /******************************************************************************/
@@ -132,6 +135,14 @@ __attribute__((used)) void HardFault_HandlerC(unsigned long *hardfault_args)
 /******************************************************************************/
 
 /**
+ * Handles the RTC global interrupt through EXTI lines 17, 19 and 20 and LSE CSS interrupt through EXTI line 19.
+ */
+void RTC_IRQHandler(void)
+{
+    HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
+}
+
+/**
  * Handles the EXTI line 0 and line 1 interrupts.
  */
 void EXTI0_1_IRQHandler(void)
@@ -172,5 +183,14 @@ void TIM6_DAC_IRQHandler(void)
  */
 void USB_IRQHandler(void)
 {
+    /* Capture the value of the wakeup bit */
+    bool is_wakeup = (USB->ISTR & USB_ISTR_WKUP) != 0x00U;
+
+    /* Run the TinyUSB interrupt handler */
     tud_int_handler(0);
+
+    /* Notify the suspend state handler if a USB wakeup occurred */
+    if (is_wakeup) {
+        state_suspend_usb_wakeup_handler();
+    }
 }

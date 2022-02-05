@@ -3,11 +3,15 @@
 #include <string.h>
 #include "stm32l0xx_hal.h"
 
+#ifdef HAL_IWDG_MODULE_ENABLED
 extern IWDG_HandleTypeDef hiwdg;
+#endif
 
 void watchdog_refresh()
 {
+#ifdef HAL_IWDG_MODULE_ENABLED
     HAL_IWDG_Refresh(&hiwdg);
+#endif
 }
 
 osStatus_t hal_to_os_status(HAL_StatusTypeDef hal_status)

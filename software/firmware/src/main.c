@@ -1,3 +1,4 @@
+#include "main.h"
 #include "stm32l0xx_hal.h"
 
 #define LOG_TAG "main"
@@ -15,8 +16,13 @@
 #include "task_main.h"
 #include "task_sensor.h"
 #include "app_descriptor.h"
+#include "state_suspend.h"
+#include "util.h"
 
+#ifdef HAL_IWDG_MODULE_ENABLED
 IWDG_HandleTypeDef hiwdg;
+#endif
+RTC_HandleTypeDef hrtc;
 ADC_HandleTypeDef hadc;
 DMA_HandleTypeDef hdma_adc;
 I2C_HandleTypeDef hi2c1;
@@ -26,9 +32,9 @@ UART_HandleTypeDef huart1;
 
 static uint32_t startup_bkp0r = 0;
 
-static void system_clock_config(void);
 static void read_startup_flags(void);
 static void iwdg_init(void);
+static void rtc_init(void);
 static void usart1_uart_init(void);
 static void logger_init(void);
 static void gpio_init(void);
@@ -85,9 +91,10 @@ void system_clock_config(void)
     }
 
     PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_I2C1
-        | RCC_PERIPHCLK_USB;
+        | RCC_PERIPHCLK_RTC | RCC_PERIPHCLK_USB;
     PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
     PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
+    PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
     PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
         error_handler();
@@ -96,12 +103,15 @@ void system_clock_config(void)
 
 void read_startup_flags(void)
 {
-    __HAL_RCC_PWR_CLK_ENABLE();
-    HAL_PWR_EnableBkUpAccess();
+    /*
+     * Startup flags are stored in the RTC backup domain registers.
+     * Since the backup domain is configured as part of the system
+     * clock configuration that occurs prior to this function,
+     * it should be left alone here.
+     */
+
     startup_bkp0r = RTC->BKP0R;
     RTC->BKP0R = 0;
-    HAL_PWR_DisableBkUpAccess();
-    __HAL_RCC_PWR_CLK_DISABLE();
 
     if (startup_bkp0r == 0) {
         startup_bkp0r = RCC->CSR & 0xFF000000UL;
@@ -110,6 +120,7 @@ void read_startup_flags(void)
 
 void iwdg_init(void)
 {
+#ifdef HAL_IWDG_MODULE_ENABLED
     hiwdg.Instance = IWDG;
     hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
     hiwdg.Init.Window = 4095;
@@ -118,6 +129,23 @@ void iwdg_init(void)
         error_handler();
     }
     __HAL_DBGMCU_FREEZE_IWDG();
+#endif
+}
+
+void rtc_init(void)
+{
+    /* Initialize RTC Only */
+    hrtc.Instance = RTC;
+    hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+    hrtc.Init.AsynchPrediv = 127;
+    hrtc.Init.SynchPrediv = 255;
+    hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+    hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
+    hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+    hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+    if (HAL_RTC_Init(&hrtc) != HAL_OK) {
+        error_handler();
+    }
 }
 
 void usart1_uart_init(void)
@@ -155,6 +183,38 @@ void logger_init(void)
     elog_start();
 }
 
+void gpio_button_config(void)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    /* Configure GPIO pins: BTN4_Pin BTN3_Pin */
+    GPIO_InitStruct.Pin = BTN4_Pin | BTN3_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    /* Configure GPIO pins: BTN2_Pin BTN1_Pin BTN5_Pin */
+    GPIO_InitStruct.Pin = BTN2_Pin | BTN1_Pin | BTN5_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+}
+
+void gpio_button_unconfig(void)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    /* Configure GPIO pins: BTN4_Pin BTN3_Pin */
+    GPIO_InitStruct.Pin = BTN4_Pin | BTN3_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    /* Configure GPIO pins: BTN2_Pin BTN1_Pin BTN5_Pin */
+    GPIO_InitStruct.Pin = BTN2_Pin | BTN1_Pin | BTN5_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+}
+
 void gpio_init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -169,17 +229,8 @@ void gpio_init(void)
     HAL_GPIO_WritePin(DISP_DC_GPIO_Port, DISP_DC_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(DISP_RES_GPIO_Port, DISP_RES_Pin, GPIO_PIN_RESET);
 
-    /* Configure GPIO pins: BTN4_Pin BTN3_Pin */
-    GPIO_InitStruct.Pin = BTN4_Pin | BTN3_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-    /* Configure GPIO pins: BTN2_Pin BTN1_Pin BTN5_Pin */
-    GPIO_InitStruct.Pin = BTN2_Pin | BTN1_Pin | BTN5_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    /* Configure GPIO pins for BTN[1..5] */
+    gpio_button_config();
 
     /* Configure GPIO pins: PA2 PA3 */
     GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_3;
@@ -467,7 +518,10 @@ int main(void)
     adc_init();
     usb_init();
 
-    HAL_IWDG_Refresh(&hiwdg);
+    watchdog_refresh();
+
+    /* Initialize the RTC */
+    rtc_init();
 
     /* Initialize the FreeRTOS scheduler */
     osKernelInitialize();
@@ -486,7 +540,7 @@ int main(void)
     /* Print the initial startup messages */
     startup_log_messages();
 
-    HAL_IWDG_Refresh(&hiwdg);
+    watchdog_refresh();
 
     /* Create the main task */
     task_main_init();
@@ -524,6 +578,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (htim->Instance == TIM6) {
         HAL_IncTick();
     }
+}
+
+void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
+{
+    UNUSED(hrtc);
+    state_suspend_rtc_wakeup_handler();
 }
 
 void error_handler(void)

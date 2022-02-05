@@ -4,8 +4,7 @@
 #include "stm32l0xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
-
-extern IWDG_HandleTypeDef hiwdg;
+#include "util.h"
 
 void vApplicationMallocFailedHook(void)
 {
@@ -31,5 +30,5 @@ void vApplicationIdleHook(void)
      * Kicking the watchdog here mostly protects against a task hogging the
      * whole system and preventing the scheduler from doing its thing.
      */
-    HAL_IWDG_Refresh(&hiwdg);
+    watchdog_refresh();
 }

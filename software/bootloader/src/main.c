@@ -5,7 +5,9 @@
 #include "board_api.h"
 #include "uf2.h"
 
+#ifdef HAL_IWDG_MODULE_ENABLED
 IWDG_HandleTypeDef hiwdg;
+#endif
 CRC_HandleTypeDef hcrc;
 #ifdef HAL_SPI_MODULE_ENABLED
 SPI_HandleTypeDef hspi1;
@@ -80,6 +82,7 @@ void system_clock_config(void)
 
 void iwdg_init(void)
 {
+#ifdef HAL_IWDG_MODULE_ENABLED
     /*
      * Configure the independent watchdog with a 2 second
      * timeout. This is a generous amount of time, and
@@ -92,6 +95,7 @@ void iwdg_init(void)
     if (HAL_IWDG_Init(&hiwdg) != HAL_OK) {
         error_handler();
     }
+#endif
 }
 
 void usart1_uart_init(void)
@@ -276,7 +280,7 @@ bool check_start_bootloader()
             BL_LOG_STR("Falling through button check\r\n");
             break;
         }
-        HAL_IWDG_Refresh(&hiwdg);
+        board_watchdog_refresh();
     }
     if (button_counter >= 10) {
         BL_LOG_STR("Buttons held, going to bootloader\r\n");
@@ -334,20 +338,20 @@ int main(void)
     gpio_init();
     crc_init();
 
-    HAL_IWDG_Refresh(&hiwdg);
+    board_watchdog_refresh();
 
     BL_LOG_STR("---- Densitometer Bootloader ----\r\n");
 
     if (!check_start_bootloader()) {
         BL_LOG_STR("Starting application\r\n");
-        HAL_IWDG_Refresh(&hiwdg);
+        board_watchdog_refresh();
         start_application();
         while(1) { }
     }
 
     BL_LOG_STR("Initializing bootloader\r\n");
 
-    HAL_IWDG_Refresh(&hiwdg);
+    board_watchdog_refresh();
 
     /* Initialize additional peripherals needed for the bootloader */
     spi1_init();
@@ -359,18 +363,18 @@ int main(void)
     /* Initialize the TinyUSB stack */
     tusb_init();
 
-    HAL_IWDG_Refresh(&hiwdg);
+    board_watchdog_refresh();
 
     /* Initialize the display */
     board_display_init();
     indicator_set(STATE_BOOTLOADER_STARTED);
 
-    HAL_IWDG_Refresh(&hiwdg);
+    board_watchdog_refresh();
 
     /* Main loop */
     while (1) {
         tud_task();
-        HAL_IWDG_Refresh(&hiwdg);
+        board_watchdog_refresh();
     }
 }
 

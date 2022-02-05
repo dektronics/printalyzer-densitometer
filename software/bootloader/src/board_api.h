@@ -51,6 +51,11 @@
 //--------------------------------------------------------------------+
 
 /**
+ * Refresh the watchdog timer
+ */
+void board_watchdog_refresh();
+
+/**
  * Send characters to UART for debugging
  */
 void board_uart_write_str(const char *msg);

@@ -11,10 +11,12 @@
 #include "state_measure.h"
 #include "state_main_menu.h"
 #include "state_remote.h"
+#include "state_suspend.h"
 
 struct __state_controller_t {
     state_identifier_t current_state;
     state_identifier_t next_state;
+    state_identifier_t home_state;
 };
 
 static state_controller_t state_controller = {0};
@@ -32,6 +34,7 @@ void state_controller_init()
 {
     state_controller.current_state = STATE_MAX;
     state_controller.next_state = STATE_HOME;
+    state_controller.home_state = STATE_REFLECTION_DISPLAY;
 
     state_map[STATE_HOME] = state_home();
     state_map[STATE_REFLECTION_DISPLAY] = state_reflection_display();
@@ -40,6 +43,7 @@ void state_controller_init()
     state_map[STATE_TRANSMISSION_MEASURE] = state_transmission_measure();
     state_map[STATE_MAIN_MENU] = state_main_menu();
     state_map[STATE_REMOTE] = state_remote();
+    state_map[STATE_SUSPEND] = state_suspend();
 }
 
 void state_controller_loop()
@@ -96,6 +100,12 @@ void state_controller_set_next_state(state_controller_t *controller, state_ident
     controller->next_state = next_state;
 }
 
+void state_controller_set_home_state(state_controller_t *controller, state_identifier_t home_state)
+{
+    if (!controller) { return; }
+    controller->home_state = home_state;
+}
+
 state_t *state_home()
 {
     return (state_t *)&state_home_data;
@@ -107,5 +117,5 @@ void state_home_process(state_t *state_base, state_controller_t *controller)
      * The home state does not really do anything. It just decides which
      * of the main device states to start in.
      */
-    state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
+    state_controller_set_next_state(controller, controller->home_state);
 }

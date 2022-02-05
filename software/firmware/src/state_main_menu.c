@@ -35,7 +35,6 @@ typedef enum {
 
 typedef struct {
     state_t base;
-    state_identifier_t last_display_state;
     uint8_t home_option;
     uint8_t cal_option;
     uint8_t cal_sub_option;
@@ -51,7 +50,6 @@ static state_main_menu_t state_main_menu_data = {
         .state_process = state_main_menu_process,
         .state_exit = NULL
     },
-    .last_display_state = STATE_HOME,
     .home_option = 1,
     .cal_option = 1,
     .cal_sub_option = 1,
@@ -81,9 +79,6 @@ state_t *state_main_menu()
 void state_main_menu_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
 {
     state_main_menu_t *state = (state_main_menu_t *)state_base;
-    if (prev_state == STATE_REFLECTION_DISPLAY || prev_state == STATE_TRANSMISSION_DISPLAY) {
-        state->last_display_state = prev_state;
-    }
     state->home_option = 1;
     state->cal_option = 1;
     state->cal_sub_option = 1;
@@ -136,7 +131,7 @@ void main_menu_home(state_main_menu_t *state, state_controller_t *controller)
     } else if (state->home_option == 3) {
         state->menu_state = MAIN_MENU_ABOUT;
     } else {
-        state_controller_set_next_state(controller, state->last_display_state);
+        state_controller_set_next_state(controller, STATE_HOME);
     }
 }
 
@@ -158,7 +153,7 @@ void main_menu_calibration(state_main_menu_t *state, state_controller_t *control
     } else if (state->cal_option == 4) {
         state->menu_state = MAIN_MENU_CALIBRATION_SENSOR_SLOPE;
     } else if (state->cal_option == UINT8_MAX) {
-        state_controller_set_next_state(controller, state->last_display_state);
+        state_controller_set_next_state(controller, STATE_HOME);
     } else {
         state->menu_state = MAIN_MENU_HOME;
         state->cal_option = 1;
@@ -283,7 +278,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
     } while (option > 0 && option != UINT8_MAX);
 
     if (option == UINT8_MAX) {
-        state_controller_set_next_state(controller, state->last_display_state);
+        state_controller_set_next_state(controller, STATE_HOME);
     } else {
         state->menu_state = MAIN_MENU_CALIBRATION;
     }
@@ -392,7 +387,7 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
     } while (option > 0 && option != UINT8_MAX);
 
     if (option == UINT8_MAX) {
-        state_controller_set_next_state(controller, state->last_display_state);
+        state_controller_set_next_state(controller, STATE_HOME);
     } else {
         state->menu_state = MAIN_MENU_CALIBRATION;
     }
@@ -430,7 +425,7 @@ void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controlle
     if (state->cal_sub_option == 9) {
         state->menu_state = MAIN_MENU_CALIBRATION_SENSOR_GAIN_RUN;
     } else if (state->cal_sub_option == UINT8_MAX) {
-        state_controller_set_next_state(controller, state->last_display_state);
+        state_controller_set_next_state(controller, STATE_HOME);
     } else if (state->cal_sub_option == 0) {
         state->menu_state = MAIN_MENU_CALIBRATION;
         state->cal_sub_option = 1;
@@ -467,7 +462,7 @@ void main_menu_calibration_sensor_gain_run(state_main_menu_t *state, state_contr
         state->menu_state = MAIN_MENU_CALIBRATION;
 
     } else if (option == UINT8_MAX) {
-        state_controller_set_next_state(controller, state->last_display_state);
+        state_controller_set_next_state(controller, STATE_HOME);
     } else {
         state->menu_state = MAIN_MENU_CALIBRATION;
     }
@@ -525,7 +520,7 @@ void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controll
         buf);
 
     if (state->cal_sub_option == UINT8_MAX) {
-        state_controller_set_next_state(controller, state->last_display_state);
+        state_controller_set_next_state(controller, STATE_HOME);
     } else if (state->cal_sub_option == 0) {
         state->menu_state = MAIN_MENU_CALIBRATION;
         state->cal_sub_option = 1;
@@ -633,7 +628,7 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
             if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
                 break;
             } else if (keypad_event.pressed && keypad_event.key == KEYPAD_FORCE_TIMEOUT) {
-                state_controller_set_next_state(controller, state->last_display_state);
+                state_controller_set_next_state(controller, STATE_HOME);
                 break;
             }
         }
@@ -727,7 +722,7 @@ void main_menu_about(state_main_menu_t *state, state_controller_t *controller)
 
     uint8_t option = display_message(buf, NULL, NULL, " OK ");
     if (option == UINT8_MAX) {
-        state_controller_set_next_state(controller, state->last_display_state);
+        state_controller_set_next_state(controller, STATE_HOME);
     } else {
         state->menu_state = MAIN_MENU_HOME;
     }

@@ -67,6 +67,7 @@ void state_reflection_display_entry(state_t *state_base, state_controller_t *con
     state->menu_pending = false;
     state->up_repeat = 0;
     state->down_repeat = 0;
+    state_controller_set_home_state(controller, STATE_REFLECTION_DISPLAY);
 }
 
 void state_reflection_display_process(state_t *state_base, state_controller_t *controller)
@@ -159,6 +160,7 @@ void state_transmission_display_entry(state_t *state_base, state_controller_t *c
     state->menu_pending = false;
     state->up_repeat = 0;
     state->down_repeat = 0;
+    state_controller_set_home_state(controller, STATE_TRANSMISSION_DISPLAY);
 }
 
 void state_transmission_display_process(state_t *state_base, state_controller_t *controller)
