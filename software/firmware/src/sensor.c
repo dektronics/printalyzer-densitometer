@@ -185,7 +185,7 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
     return ret;
 }
 
-#if TEST_LIGHT_CAL
+#ifdef TEST_LIGHT_CAL
 osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_calibration_callback_t callback, void *user_data)
 {
     osStatus_t ret = osOK;

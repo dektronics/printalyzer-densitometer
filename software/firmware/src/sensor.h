@@ -61,7 +61,7 @@ typedef void (*sensor_read_callback_t)(void *user_data);
  */
 osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data);
 
-#if TEST_LIGHT_CAL
+#ifdef TEST_LIGHT_CAL
 /**
  * Run the sensor light source calibration process.
  *
