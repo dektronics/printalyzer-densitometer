@@ -175,9 +175,16 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
         log_d("High -> %f %f", gain_high_ch0, gain_high_ch1);
         log_d("Max -> %f %f", gain_max_ch0, gain_max_ch1);
 
-        settings_set_cal_gain(TSL2591_GAIN_MEDIUM, gain_med_ch0, gain_med_ch1);
-        settings_set_cal_gain(TSL2591_GAIN_HIGH, gain_high_ch0, gain_high_ch1);
-        settings_set_cal_gain(TSL2591_GAIN_MAXIMUM, gain_max_ch0, gain_max_ch1);
+        settings_cal_gain_t cal_gain = {0};
+        cal_gain.ch0_medium = gain_med_ch0;
+        cal_gain.ch1_medium = gain_med_ch1;
+        cal_gain.ch0_high = gain_high_ch0;
+        cal_gain.ch1_high = gain_high_ch1;
+        cal_gain.ch0_maximum = gain_max_ch0;
+        cal_gain.ch1_maximum = gain_max_ch1;
+        if (settings_set_cal_gain(&cal_gain)) {
+            log_i("Gain calibration saved");
+        }
     } else {
         log_e("Gain calibration failed");
     }
@@ -308,12 +315,6 @@ osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_ca
     log_d("Slope = %f", slope);
     log_d("Intercept = %f", intercept);
     log_d("Drop factor = %f", drop_factor);
-
-    if (light_source == SENSOR_LIGHT_TRANSMISSION) {
-        settings_set_cal_transmission_led_factor(drop_factor);
-    } else {
-        settings_set_cal_reflection_led_factor(drop_factor);
-    }
 
     /*
      * Correction formula is:
@@ -638,6 +639,7 @@ bool sensor_is_reading_saturated(const sensor_reading_t *reading)
 
 void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_basic, float *ch1_basic)
 {
+    settings_cal_gain_t cal_gain;
     float ch0_gain;
     float ch1_gain;
     float atime_ms;
@@ -649,7 +651,8 @@ void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_
     }
 
     /* Get the gain value from sensor calibration */
-    settings_get_cal_gain(reading->gain, &ch0_gain, &ch1_gain);
+    settings_get_cal_gain(&cal_gain);
+    settings_get_cal_gain_fields(&cal_gain, reading->gain, &ch0_gain, &ch1_gain);
 
     /*
      * Integration time is uncalibrated, due to the assumption that all
@@ -670,22 +673,22 @@ void sensor_convert_to_basic_counts(const sensor_reading_t *reading, float *ch0_
 
 float sensor_apply_slope_calibration(float basic_reading)
 {
-    float b0, b1, b2;
+    settings_cal_slope_t cal_slope;
 
-    settings_get_cal_slope(&b0, &b1, &b2);
+    bool valid = settings_get_cal_slope(&cal_slope);
 
     if (isnanf(basic_reading) || isinff(basic_reading) || basic_reading <= 0.0F) {
         log_w("Cannot apply slope correction to invalid reading: %f", basic_reading);
         return basic_reading;
     }
 
-    if (isnanf(b0) || isinff(b0) || isnanf(b1) || isinff(b1) || isnanf(b2) || isinff(b2)) {
-        log_w("Invalid slope calibration values: %f, %f, %f", b0, b1, b2);
+    if (!valid) {
+        log_w("Invalid slope calibration values");
         return basic_reading;
     }
 
     float l_reading = log10f(basic_reading);
-    float l_expected = b0 + (b1 * l_reading) + (b2 * powf(l_reading, 2.0F));
+    float l_expected = cal_slope.b0 + (cal_slope.b1 * l_reading) + (cal_slope.b2 * powf(l_reading, 2.0F));
     float corr_reading = powf(10.0F, l_expected);
 
     return corr_reading;

@@ -544,11 +544,19 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
     else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "GAIN") == 0) {
         char buf[128];
         float gain_val[8] = {0};
+        settings_cal_gain_t cal_gain;
 
-        gain_val[0] = 1.0F; gain_val[1] = 1.0F;
-        settings_get_cal_gain(TSL2591_GAIN_MEDIUM, &gain_val[2], &gain_val[3]);
-        settings_get_cal_gain(TSL2591_GAIN_HIGH, &gain_val[4], &gain_val[5]);
-        settings_get_cal_gain(TSL2591_GAIN_MAXIMUM, &gain_val[6], &gain_val[7]);
+        settings_get_cal_gain(&cal_gain);
+
+        gain_val[0] = 1.0F;
+        gain_val[1] = 1.0F;
+        gain_val[2] = cal_gain.ch0_medium;
+        gain_val[3] = cal_gain.ch1_medium;
+        gain_val[4] = cal_gain.ch0_high;
+        gain_val[5] = cal_gain.ch1_high;
+        gain_val[6] = cal_gain.ch0_maximum;
+        gain_val[7] = cal_gain.ch1_maximum;
+
         encode_f32_array_response(buf, gain_val, 8);
 
         cdc_send_command_response(cmd, buf);
@@ -557,36 +565,32 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         float gain_val[6] = {0};
         size_t n = decode_f32_array_args(cmd->args, gain_val, 8);
         if (n == 6) {
-            settings_set_cal_gain(TSL2591_GAIN_MEDIUM, gain_val[0], gain_val[1]);
-            settings_set_cal_gain(TSL2591_GAIN_HIGH, gain_val[2], gain_val[3]);
-            settings_set_cal_gain(TSL2591_GAIN_MAXIMUM, gain_val[4], gain_val[5]);
+            settings_cal_gain_t cal_gain = {0};
+            cal_gain.ch0_medium = gain_val[0];
+            cal_gain.ch1_medium = gain_val[1];
+            cal_gain.ch0_high = gain_val[2];
+            cal_gain.ch1_high = gain_val[3];
+            cal_gain.ch0_maximum = gain_val[4];
+            cal_gain.ch1_maximum = gain_val[5];
 
-            cdc_send_command_response(cmd, "OK");
+            if (settings_set_cal_gain(&cal_gain)) {
+                cdc_send_command_response(cmd, "OK");
+            } else {
+                cdc_send_command_response(cmd, "ERR");
+            }
+
             return true;
         }
     }
-#ifdef TEST_LIGHT_CAL
-    else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "LR") == 0) {
-        char buf[64];
-        float value;
-        settings_get_cal_reflection_led_factor(&value);
-        sprintf_(buf, "%f", value);
-        cdc_send_command_response(cmd, buf);
-        return true;
-    } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "LT") == 0) {
-        char buf[64];
-        float value;
-        settings_get_cal_transmission_led_factor(&value);
-        sprintf_(buf, "%f", value);
-        cdc_send_command_response(cmd, buf);
-        return true;
-    }
-#endif
     else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "SLOPE") == 0) {
         char buf[64];
+        settings_cal_slope_t cal_slope;
         float slope_val[3] = {0};
 
-        settings_get_cal_slope(&slope_val[0], &slope_val[1], &slope_val[2]);
+        settings_get_cal_slope(&cal_slope);
+        slope_val[0] = cal_slope.b0;
+        slope_val[1] = cal_slope.b1;
+        slope_val[2] = cal_slope.b2;
         encode_f32_array_response(buf, slope_val, 3);
 
         cdc_send_command_response(cmd, buf);
@@ -595,16 +599,29 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         float slope_val[3] = {0};
         size_t n = decode_f32_array_args(cmd->args, slope_val, 3);
         if (n == 3) {
-            settings_set_cal_slope(slope_val[0], slope_val[1], slope_val[2]);
-            cdc_send_command_response(cmd, "OK");
+            settings_cal_slope_t cal_slope = {0};
+            cal_slope.b0 = slope_val[0];
+            cal_slope.b1 = slope_val[1];
+            cal_slope.b2 = slope_val[2];
+
+            if (settings_set_cal_slope(&cal_slope)) {
+                cdc_send_command_response(cmd, "OK");
+            } else {
+                cdc_send_command_response(cmd, "ERR");
+            }
             return true;
         }
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "REFL") == 0) {
         char buf[64];
+        settings_cal_reflection_t cal_reflection;
         float refl_val[4] = {0};
 
-        settings_get_cal_reflection_lo(&refl_val[0], &refl_val[1]);
-        settings_get_cal_reflection_hi(&refl_val[2], &refl_val[3]);
+        settings_get_cal_reflection(&cal_reflection);
+        refl_val[0] = cal_reflection.lo_d;
+        refl_val[1] = cal_reflection.lo_value;
+        refl_val[2] = cal_reflection.hi_d;
+        refl_val[3] = cal_reflection.hi_value;
+
         encode_f32_array_response(buf, refl_val, 4);
 
         cdc_send_command_response(cmd, buf);
@@ -613,19 +630,31 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         float refl_val[4] = {0};
         size_t n = decode_f32_array_args(cmd->args, refl_val, 4);
         if (n == 4) {
-            settings_set_cal_reflection_lo(refl_val[0], refl_val[1]);
-            settings_set_cal_reflection_hi(refl_val[2], refl_val[3]);
+            settings_cal_reflection_t cal_reflection = {0};
+            cal_reflection.lo_d = refl_val[0];
+            cal_reflection.lo_value = refl_val[1];
+            cal_reflection.hi_d = refl_val[2];
+            cal_reflection.hi_value = refl_val[3];
 
-            cdc_send_command_response(cmd, "OK");
+            if (settings_set_cal_reflection(&cal_reflection)) {
+                cdc_send_command_response(cmd, "OK");
+            } else {
+                cdc_send_command_response(cmd, "ERR");
+            }
+
             return true;
         }
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "TRAN") == 0) {
         char buf[64];
+        settings_cal_transmission_t cal_transmission;
         float tran_val[4] = {0};
 
+        settings_get_cal_transmission(&cal_transmission);
         tran_val[0] = 0.0F;
-        settings_get_cal_transmission_zero(&tran_val[1]);
-        settings_get_cal_transmission_hi(&tran_val[2], &tran_val[3]);
+        tran_val[1] = cal_transmission.zero_value;
+        tran_val[2] = cal_transmission.hi_d;
+        tran_val[3] = cal_transmission.hi_value;
+
         encode_f32_array_response(buf, tran_val, 4);
 
         cdc_send_command_response(cmd, buf);
@@ -634,10 +663,17 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
         float tran_val[4] = {0};
         size_t n = decode_f32_array_args(cmd->args, tran_val, 4);
         if (n == 4 && tran_val[0] < 0.001F) {
-            settings_set_cal_transmission_zero(tran_val[1]);
-            settings_set_cal_transmission_hi(tran_val[2], tran_val[3]);
+            settings_cal_transmission_t cal_transmission = {0};
+            cal_transmission.zero_value = tran_val[1];
+            cal_transmission.hi_d = tran_val[2];
+            cal_transmission.hi_value = tran_val[3];
 
-            cdc_send_command_response(cmd, "OK");
+            if (settings_set_cal_transmission(&cal_transmission)) {
+                cdc_send_command_response(cmd, "OK");
+            } else {
+                cdc_send_command_response(cmd, "ERR");
+            }
+
             return true;
         }
     }

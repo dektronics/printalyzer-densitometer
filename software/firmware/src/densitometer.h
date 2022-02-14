@@ -27,9 +27,26 @@ void densitometer_transmission_clear_zero();
 bool densitometer_transmission_has_zero();
 float densitometer_transmission_get_last_reading();
 
-densitometer_result_t densitometer_calibrate_reflection_lo(float cal_lo_d, sensor_read_callback_t callback, void *user_data);
-densitometer_result_t densitometer_calibrate_reflection_hi(float cal_hi_d, sensor_read_callback_t callback, void *user_data);
-densitometer_result_t densitometer_calibrate_transmission_zero(sensor_read_callback_t callback, void *user_data);
-densitometer_result_t densitometer_calibrate_transmission_hi(float cal_hi_d, sensor_read_callback_t callback, void *user_data);
+/**
+ * Measure a reflection calibration target.
+ * This should be called to measure both the CAL-LO and CAL-HI targets to
+ * populate the settings_cal_reflection_t structure.
+ *
+ * @param cal_value Adjusted raw measurement to save as a calibration value
+ * @param callback Called periodically during the measurement loop
+ * @return Result code for the measurement process
+ */
+densitometer_result_t densitometer_calibrate_reflection(float *cal_value, sensor_read_callback_t callback, void *user_data);
+
+/**
+ * Measure a transmission calibration target.
+ * This should be called to measure both the ZERO and CAL-HI targets to
+ * populate the settings_cal_transmission_t structure.
+ *
+ * @param cal_value Adjusted raw measurement to save as a calibration value
+ * @param callback Called periodically during the measurement loop
+ * @return Result code for the measurement process
+ */
+densitometer_result_t densitometer_calibrate_transmission(float *cal_value, sensor_read_callback_t callback, void *user_data);
 
 #endif /* DENSITOMETER_H */
