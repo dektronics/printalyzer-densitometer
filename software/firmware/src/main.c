@@ -130,6 +130,7 @@ void iwdg_init(void)
     if (HAL_IWDG_Init(&hiwdg) != HAL_OK) {
         error_handler();
     }
+    __HAL_RCC_DBGMCU_CLK_ENABLE();
     __HAL_DBGMCU_FREEZE_IWDG();
 #endif
 }

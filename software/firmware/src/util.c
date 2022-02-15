@@ -14,6 +14,22 @@ void watchdog_refresh()
 #endif
 }
 
+void watchdog_slow()
+{
+#ifdef HAL_IWDG_MODULE_ENABLED
+    hiwdg.Init.Prescaler = IWDG_PRESCALER_16;
+    HAL_IWDG_Init(&hiwdg);
+#endif
+}
+
+void watchdog_normal()
+{
+#ifdef HAL_IWDG_MODULE_ENABLED
+    hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+    HAL_IWDG_Init(&hiwdg);
+#endif
+}
+
 osStatus_t hal_to_os_status(HAL_StatusTypeDef hal_status)
 {
     switch (hal_status) {

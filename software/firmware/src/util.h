@@ -13,7 +13,22 @@
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #endif
 
+/**
+ * Refresh the watchdog timer
+ */
 void watchdog_refresh();
+
+/**
+ * Slow down the watchdog
+ * This should only be used in a few very specific situations, where the
+ * alternative is to refresh it inside of a tight loop.
+ */
+void watchdog_slow();
+
+/**
+ * Return the watchdog to its normal window.
+ */
+void watchdog_normal();
 
 osStatus_t hal_to_os_status(HAL_StatusTypeDef hal_status);
 HAL_StatusTypeDef os_to_hal_status(osStatus_t os_status);

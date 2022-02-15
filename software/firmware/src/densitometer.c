@@ -23,16 +23,7 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
     settings_cal_reflection_t cal_reflection;
 
     /* Get the current calibration values */
-    bool valid = settings_get_cal_reflection(&cal_reflection);
-
-    /* Check that the calibration values are usable */
-    if (!valid || cal_reflection.lo_d < 0.0F || cal_reflection.hi_d <= cal_reflection.lo_d
-        || cal_reflection.lo_value < 0.0F || cal_reflection.hi_value >= cal_reflection.lo_value) {
-
-        log_w("Invalid calibration values");
-        log_w("CAL-LO: D=%.2f, VALUE=%f", cal_reflection.lo_d, cal_reflection.lo_value);
-        log_w("CAL-HI: D=%.2f, VALUE=%f", cal_reflection.hi_d, cal_reflection.hi_value);
-
+    if (!settings_get_cal_reflection(&cal_reflection)) {
         return DENSITOMETER_CAL_ERROR;
     }
 
@@ -110,17 +101,7 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
     settings_cal_transmission_t cal_transmission;
 
     /* Get the current calibration values */
-    bool valid = settings_get_cal_transmission(&cal_transmission);
-
-    /* Check that the calibration values are usable */
-    if (!valid || cal_transmission.zero_value <= 0.0F
-        || cal_transmission.hi_d <= 0.0F || cal_transmission.hi_value <= 0.0F
-        || cal_transmission.hi_value >= cal_transmission.zero_value) {
-
-        log_w("Invalid calibration values");
-        log_w("CAL-ZERO: VALUE=%f", cal_transmission.zero_value);
-        log_w("CAL-HI: D=%.2f, VALUE=%f", cal_transmission.hi_d, cal_transmission.hi_value);
-
+    if (!settings_get_cal_transmission(&cal_transmission)) {
         return DENSITOMETER_CAL_ERROR;
     }
 

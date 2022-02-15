@@ -62,6 +62,14 @@ bool settings_get_cal_gain(settings_cal_gain_t *cal_gain);
 void settings_get_cal_gain_fields(const settings_cal_gain_t *cal_gain, tsl2591_gain_t gain, float *ch0_gain, float *ch1_gain);
 
 /**
+ * Check if the gain calibration values are valid
+ *
+ * @param cal_gain Struct to validate
+ * @return True if valid, false if invalid
+ */
+bool settings_validate_cal_gain(const settings_cal_gain_t *cal_gain);
+
+/**
  * Set the slope calibration values.
  *
  * @param cal_slope Struct populated with values to save
@@ -78,6 +86,14 @@ bool settings_set_cal_slope(const settings_cal_slope_t *cal_slope);
  * @return True if valid values are returned, false otherwise.
  */
 bool settings_get_cal_slope(settings_cal_slope_t *cal_slope);
+
+/**
+ * Check if the slope calibration values are valid
+ *
+ * @param cal_slope Struct to validate
+ * @return True if valid, false if invalid
+ */
+bool settings_validate_cal_slope(const settings_cal_slope_t *cal_slope);
 
 /**
  * Set the reflection density calibration values.
@@ -98,6 +114,14 @@ bool settings_set_cal_reflection(const settings_cal_reflection_t *cal_reflection
 bool settings_get_cal_reflection(settings_cal_reflection_t *cal_reflection);
 
 /**
+ * Check if the reflection calibration values are valid
+ *
+ * @param cal_reflection Struct to validate
+ * @return True if valid, false if invalid
+ */
+bool settings_validate_cal_reflection(const settings_cal_reflection_t *cal_reflection);
+
+/**
  * Set the transmission density calibration values.
  *
  * @param cal_transmission Struct populated with values to save
@@ -114,5 +138,13 @@ bool settings_set_cal_transmission(const settings_cal_transmission_t *cal_transm
  * @return True if valid values are returned, false otherwise.
  */
 bool settings_get_cal_transmission(settings_cal_transmission_t *cal_transmission);
+
+/**
+ * Check if the transmission calibration values are valid
+ *
+ * @param cal_transmission Struct to validate
+ * @return True if valid, false if invalid
+ */
+bool settings_validate_cal_transmission(const settings_cal_transmission_t *cal_transmission);
 
 #endif /* SETTINGS_H */

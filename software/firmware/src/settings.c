@@ -9,101 +9,359 @@
 
 #include "util.h"
 
+extern CRC_HandleTypeDef hcrc;
+
+static HAL_StatusTypeDef settings_read_header(bool *valid);
+static HAL_StatusTypeDef settings_write_header();
+
+static bool settings_init_cal_sensor(bool force_clear);
+static bool settings_clear_cal_sensor();
+static bool settings_init_cal_target(bool force_clear);
+static bool settings_clear_cal_target();
+static bool settings_init_user_settings(bool force_clear);
+static bool settings_clear_user_settings();
+
+static void settings_set_cal_gain_defaults(settings_cal_gain_t *cal_gain);
+static bool settings_load_cal_gain();
+static void settings_set_cal_slope_defaults(settings_cal_slope_t *cal_slope);
+static bool settings_load_cal_slope();
+static void settings_set_cal_reflection_defaults(settings_cal_reflection_t *cal_reflection);
+static bool settings_load_cal_reflection();
+static void settings_set_cal_transmission_defaults(settings_cal_transmission_t *cal_transmission);
+static bool settings_load_cal_transmission();
+
 static HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len);
 static HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, size_t data_len);
+#if 0
 static float settings_read_float(uint32_t address);
 static HAL_StatusTypeDef settings_write_float(uint32_t address, float val);
+#endif
+static uint32_t settings_read_uint32(uint32_t address);
+static HAL_StatusTypeDef settings_write_uint32(uint32_t address, uint32_t val);
 
-#define CONFIG_HEADER (DATA_EEPROM_BASE + 0U)
+/*
+ * Header Page (128b)
+ * Mostly unused at the moment, will be populated if any top-level system
+ * data needs to be stored. Unlike other pages, it begins with a magic
+ * string.
+ */
+#define PAGE_HEADER        (DATA_EEPROM_BASE + 0x0000UL)
+#define PAGE_HEADER_SIZE   (128)
+#define HEADER_MAGIC       (PAGE_HEADER + 0U) /* "DENSITOMETER\0" */
+#define HEADER_START       (PAGE_HEADER + 16U)
+#define HEADER_VERSION     1UL
 
-#define CONFIG_CAL_BASE (DATA_EEPROM_BASE + 128U)
+/*
+ * Sensor Calibration Data (128b)
+ * This page contains data specific to calibration of the sensor behavior
+ * without taking any reference targets into account. It is likely that
+ * the data stored here will be considered part of factory calibration,
+ * unlikely to be performed by a user.
+ */
+#define PAGE_CAL_SENSOR             (DATA_EEPROM_BASE + 0x0080UL)
+#define PAGE_CAL_SENSOR_SIZE        (128)
+#define PAGE_CAL_SENSOR_VERSION     1UL
 
-#define CONFIG_CAL_GAIN_MEDIUM_CH0  (CONFIG_CAL_BASE + 0U)
-#define CONFIG_CAL_GAIN_MEDIUM_CH1  (CONFIG_CAL_BASE + 4U)
-#define CONFIG_CAL_GAIN_HIGH_CH0    (CONFIG_CAL_BASE + 8U)
-#define CONFIG_CAL_GAIN_HIGH_CH1    (CONFIG_CAL_BASE + 12U)
-#define CONFIG_CAL_GAIN_MAXIMUM_CH0 (CONFIG_CAL_BASE + 16U)
-#define CONFIG_CAL_GAIN_MAXIMUM_CH1 (CONFIG_CAL_BASE + 20U)
+#define CONFIG_CAL_GAIN             (PAGE_CAL_SENSOR + 4U)
+#define CONFIG_CAL_GAIN_SIZE        (28U)
 
-#define CONFIG_CAL_REFLECTION_LO_D     (CONFIG_CAL_BASE + 24U)
-#define CONFIG_CAL_REFLECTION_LO_VALUE (CONFIG_CAL_BASE + 28U)
-#define CONFIG_CAL_REFLECTION_HI_D     (CONFIG_CAL_BASE + 32U)
-#define CONFIG_CAL_REFLECTION_HI_VALUE (CONFIG_CAL_BASE + 36U)
+#define CONFIG_CAL_SLOPE            (PAGE_CAL_SENSOR + 32U)
+#define CONFIG_CAL_SLOPE_SIZE       (16U)
 
-#define CONFIG_CAL_TRANSMISSION_ZERO_VALUE (CONFIG_CAL_BASE + 40U)
-#define CONFIG_CAL_TRANSMISSION_HI_D       (CONFIG_CAL_BASE + 44U)
-#define CONFIG_CAL_TRANSMISSION_HI_VALUE   (CONFIG_CAL_BASE + 48U)
+/*
+ * Target Calibration Data (128b)
+ * This page contains data specific to calibration against reference targets
+ * used to ensure the device is providing the correct readings. It is
+ * something end users are expected to update periodically, based on
+ * materials that may be included with the device.
+ */
+#define PAGE_CAL_TARGET                    (DATA_EEPROM_BASE + 0x0100UL)
+#define PAGE_CAL_TARGET_SIZE               (128U)
+#define PAGE_CAL_TARGET_VERSION            1UL
 
-#define CONFIG_CAL_SLOPE_B0 (CONFIG_CAL_BASE + 80U)
-#define CONFIG_CAL_SLOPE_B1 (CONFIG_CAL_BASE + 84U)
-#define CONFIG_CAL_SLOPE_B2 (CONFIG_CAL_BASE + 88U)
+#define CONFIG_CAL_REFLECTION              (PAGE_CAL_TARGET + 4U)
+#define CONFIG_CAL_REFLECTION_SIZE         (20U)
+
+#define CONFIG_CAL_TRANSMISSION            (PAGE_CAL_TARGET + 24U)
+#define CONFIG_CAL_TRANSMISSION_SIZE       (16U)
+
+/*
+ * User Settings (128b)
+ * This page contains any user settings that the device may need to store.
+ */
+#define PAGE_USER_SETTINGS         (DATA_EEPROM_BASE + 0x0180UL)
+#define PAGE_USER_SETTINGS_SIZE    (128)
+#define PAGE_USER_SETTINGS_VERSION 1UL
 
 static settings_cal_gain_t setting_cal_gain = {0};
+static settings_cal_slope_t setting_cal_slope = {0};
 static settings_cal_reflection_t setting_cal_reflection = {0};
 static settings_cal_transmission_t setting_cal_transmission = {0};
-static settings_cal_slope_t setting_cal_slope = {0};
 
 HAL_StatusTypeDef settings_init()
 {
     HAL_StatusTypeDef ret = HAL_OK;
+    bool valid = false;
 
     do {
         log_i("Settings init");
-        uint8_t data[128];
-        ret = settings_read_buffer(CONFIG_HEADER, data, sizeof(data));
+
+        /* Certain EEPROM operations can take a long time */
+        watchdog_slow();
+
+        /* Read and validate the header page */
+        ret = settings_read_header(&valid);
         if (ret != HAL_OK) { break; }
 
+        watchdog_refresh();
+
+        /* Initialize all settings data pages, clearing if header page invalid */
+        if (!settings_init_cal_sensor(!valid)) { break; }
+        if (!settings_init_cal_target(!valid)) { break; }
+        if (!settings_init_user_settings(!valid)) { break; }
+
+        watchdog_refresh();
+
+        /* Initialize the header page if necessary */
+        if (!valid) {
+            ret = settings_write_header();
+            if (ret != HAL_OK) { break; }
+            watchdog_refresh();
+        }
+
+        log_i("Settings loaded");
+
+    } while (0);
+
+    /* Return watchdog to normal window */
+    watchdog_normal();
+
+    return ret;
+}
+
+HAL_StatusTypeDef settings_read_header(bool *valid)
+{
+    HAL_StatusTypeDef ret = HAL_OK;
+    bool is_valid = true;
+    uint8_t data[PAGE_HEADER_SIZE];
+
+    do {
+        /* Read the header into a buffer */
+        ret = settings_read_buffer(PAGE_HEADER, data, sizeof(data));
+        if (ret != HAL_OK) {
+            log_e("Unable to read settings header: %d", ret);
+            break;
+        }
+
+        /* Validate the magic bytes at the start of the header */
         if (memcmp(data, "DENSITOMETER\0", 13) != 0) {
-            log_i("Initializing header");
-            memset(data, 0, sizeof(data));
-            memcpy(data, "DENSITOMETER\0", 13);
-            ret = settings_write_buffer(CONFIG_HEADER, data, sizeof(data));
+            log_w("Invalid magic");
+            is_valid = false;
+            break;
+        }
 
-            /* Initialize Calibration Page */
-            settings_write_float(CONFIG_CAL_GAIN_MEDIUM_CH0, NAN);
-            settings_write_float(CONFIG_CAL_GAIN_MEDIUM_CH1, NAN);
-            settings_write_float(CONFIG_CAL_GAIN_HIGH_CH0, NAN);
-            settings_write_float(CONFIG_CAL_GAIN_HIGH_CH1, NAN);
-            settings_write_float(CONFIG_CAL_GAIN_MAXIMUM_CH0, NAN);
-            settings_write_float(CONFIG_CAL_GAIN_MAXIMUM_CH1, NAN);
-
-            settings_write_float(CONFIG_CAL_SLOPE_B0, NAN);
-            settings_write_float(CONFIG_CAL_SLOPE_B1, NAN);
-            settings_write_float(CONFIG_CAL_SLOPE_B2, NAN);
-
-            settings_write_float(CONFIG_CAL_REFLECTION_LO_D, NAN);
-            settings_write_float(CONFIG_CAL_REFLECTION_LO_VALUE, NAN);
-            settings_write_float(CONFIG_CAL_REFLECTION_HI_D, NAN);
-            settings_write_float(CONFIG_CAL_REFLECTION_HI_VALUE, NAN);
-
-            settings_write_float(CONFIG_CAL_TRANSMISSION_ZERO_VALUE, NAN);
-            settings_write_float(CONFIG_CAL_TRANSMISSION_HI_D, NAN);
-            settings_write_float(CONFIG_CAL_TRANSMISSION_HI_VALUE, NAN);
-        } else {
-            /* Load Calibration Page */
-            setting_cal_gain.ch0_medium = settings_read_float(CONFIG_CAL_GAIN_MEDIUM_CH0);
-            setting_cal_gain.ch1_medium = settings_read_float(CONFIG_CAL_GAIN_MEDIUM_CH1);
-            setting_cal_gain.ch0_high = settings_read_float(CONFIG_CAL_GAIN_HIGH_CH0);
-            setting_cal_gain.ch1_high = settings_read_float(CONFIG_CAL_GAIN_HIGH_CH1);
-            setting_cal_gain.ch0_maximum = settings_read_float(CONFIG_CAL_GAIN_MAXIMUM_CH0);
-            setting_cal_gain.ch1_maximum = settings_read_float(CONFIG_CAL_GAIN_MAXIMUM_CH1);
-
-            setting_cal_slope.b0 = settings_read_float(CONFIG_CAL_SLOPE_B0);
-            setting_cal_slope.b1 = settings_read_float(CONFIG_CAL_SLOPE_B1);
-            setting_cal_slope.b2 = settings_read_float(CONFIG_CAL_SLOPE_B2);
-
-            setting_cal_reflection.lo_d = settings_read_float(CONFIG_CAL_REFLECTION_LO_D);
-            setting_cal_reflection.lo_value = settings_read_float(CONFIG_CAL_REFLECTION_LO_VALUE);
-            setting_cal_reflection.hi_d = settings_read_float(CONFIG_CAL_REFLECTION_HI_D);
-            setting_cal_reflection.hi_value = settings_read_float(CONFIG_CAL_REFLECTION_HI_VALUE);
-
-            setting_cal_transmission.zero_value = settings_read_float(CONFIG_CAL_TRANSMISSION_ZERO_VALUE);
-            setting_cal_transmission.hi_d = settings_read_float(CONFIG_CAL_TRANSMISSION_HI_D);
-            setting_cal_transmission.hi_value = settings_read_float(CONFIG_CAL_TRANSMISSION_HI_VALUE);
+        /* Validate the header version */
+        uint32_t version = copy_to_u32(&data[HEADER_START - PAGE_HEADER]);
+        if (version != HEADER_VERSION) {
+            log_w("Unexpected version: %d", version);
+            /*
+             * When there are multiple versions, then this should be handled
+             * gracefully and shouldn't cause EEPROM validation to fail.
+             * Until then, it is probably okay to treat this as if it were
+             * part of the magic string.
+             */
+            is_valid = false;
+            break;
         }
     } while (0);
 
+    if (ret == HAL_OK) {
+        *valid = is_valid;
+    }
     return ret;
+}
+
+HAL_StatusTypeDef settings_write_header()
+{
+    log_i("Write settings header");
+    HAL_StatusTypeDef ret;
+    uint8_t data[PAGE_HEADER_SIZE];
+
+    /* Fill the page with the magic bytes and version header */
+    memset(data, 0, sizeof(data));
+    memcpy(data, "DENSITOMETER\0", 13);
+    copy_from_u32(&data[HEADER_START - PAGE_HEADER], HEADER_VERSION);
+
+    /* Write the buffer */
+    ret = settings_write_buffer(PAGE_HEADER, data, sizeof(data));
+    if (ret != HAL_OK) {
+        log_e("Unable to write settings header: %d", ret);
+    }
+    return ret;
+}
+
+bool settings_init_cal_sensor(bool force_clear)
+{
+    bool result;
+    /* Initialize all fields to their default values */
+    settings_set_cal_gain_defaults(&setting_cal_gain);
+    settings_set_cal_slope_defaults(&setting_cal_slope);
+
+    /* Load settings if the version matches */
+    uint32_t version = force_clear ? 0 : settings_read_uint32(PAGE_CAL_SENSOR);
+    if (version == PAGE_CAL_SENSOR_VERSION) {
+        /* Version is good, load data with per-field validation */
+        settings_load_cal_gain();
+        settings_load_cal_slope();
+        result = true;
+    } else {
+        /* Version is bad, initialize a blank page */
+        if (!force_clear) {
+            log_w("Unexpected sensor cal version: %d != %d", version, PAGE_CAL_SENSOR_VERSION);
+        }
+        result = settings_clear_cal_sensor();
+    }
+    return result;
+}
+
+bool settings_clear_cal_sensor()
+{
+    log_i("Clearing sensor cal page");
+
+    /* Zero the page version */
+    if (settings_write_uint32(PAGE_CAL_SENSOR, 0UL) != HAL_OK) {
+        return false;
+    }
+
+    /* Write an empty gain cal struct */
+    settings_cal_gain_t cal_gain;
+    settings_set_cal_gain_defaults(&cal_gain);
+    if (!settings_set_cal_gain(&cal_gain)) {
+        return false;
+    }
+
+    /* Write an empty slope cal struct */
+    settings_cal_slope_t cal_slope;
+    settings_set_cal_slope_defaults(&cal_slope);
+    if (!settings_set_cal_slope(&cal_slope)) {
+        return false;
+    }
+
+    /* Write the page version */
+    if (settings_write_uint32(PAGE_CAL_SENSOR, PAGE_CAL_SENSOR_VERSION) != HAL_OK) {
+        return false;
+    }
+
+    return true;
+}
+
+bool settings_init_cal_target(bool force_clear)
+{
+    bool result;
+    /* Initialize all fields to their default values */
+    settings_set_cal_reflection_defaults(&setting_cal_reflection);
+    settings_set_cal_transmission_defaults(&setting_cal_transmission);
+
+    /* Load settings if the version matches */
+    uint32_t version = force_clear ? 0 : settings_read_uint32(PAGE_CAL_TARGET);
+    if (version == PAGE_CAL_TARGET_VERSION) {
+        /* Version is good, load data with per-field validation */
+        settings_load_cal_reflection();
+        settings_load_cal_transmission();
+        result = true;
+    } else {
+        /* Version is bad, initialize a blank page */
+        if (!force_clear) {
+            log_w("Unexpected cal target version: %d != %d", version, PAGE_CAL_TARGET_VERSION);
+        }
+        result = settings_clear_cal_target();
+    }
+
+    return result;
+}
+
+bool settings_clear_cal_target()
+{
+    log_i("Clearing target cal page");
+
+    /* Zero the page version */
+    if (settings_write_uint32(PAGE_CAL_TARGET, 0UL) != HAL_OK) {
+        return false;
+    }
+
+    /* Write an empty reflection cal struct */
+    settings_cal_reflection_t cal_reflection;
+    settings_set_cal_reflection_defaults(&cal_reflection);
+    if (!settings_set_cal_reflection(&cal_reflection)) {
+        return false;
+    }
+
+    /* Write an empty transmission cal struct */
+    settings_cal_transmission_t cal_transmission;
+    settings_set_cal_transmission_defaults(&cal_transmission);
+    if (!settings_set_cal_transmission(&cal_transmission)) {
+        return false;
+    }
+
+    /* Write the page version */
+    if (settings_write_uint32(PAGE_CAL_TARGET, PAGE_CAL_TARGET_VERSION) != HAL_OK) {
+        return false;
+    }
+
+    return true;
+}
+
+bool settings_init_user_settings(bool force_clear)
+{
+    bool result;
+    /* Initialize all fields to their default values */
+    /* There are currently no user settings */
+
+    /* Load settings if the version matches */
+    uint32_t version = force_clear ? 0 : settings_read_uint32(PAGE_USER_SETTINGS);
+    if (version == PAGE_USER_SETTINGS_VERSION) {
+        /* Version is good, load data with per-field validation */
+        /* There are currently no user settings */
+        result = true;
+    } else {
+        /* Version is bad, initialize a blank page */
+        if (!force_clear) {
+            log_w("Unexpected user settings version: %d != %d", version, PAGE_CAL_SENSOR_VERSION);
+        }
+        result = settings_clear_user_settings();
+    }
+    return result;
+}
+
+bool settings_clear_user_settings()
+{
+    log_i("Clearing user settings page");
+
+    /* Zero the entire page */
+    uint8_t data[PAGE_USER_SETTINGS_SIZE];
+    memset(data, 0, sizeof(data));
+    if (settings_write_buffer(PAGE_USER_SETTINGS, data, sizeof(data)) != HAL_OK) {
+        return false;
+    }
+
+    /* Write the page version */
+    if (settings_write_uint32(PAGE_USER_SETTINGS, PAGE_USER_SETTINGS_VERSION) != HAL_OK) {
+        return false;
+    }
+
+    return true;
+}
+
+void settings_set_cal_gain_defaults(settings_cal_gain_t *cal_gain)
+{
+    if (!cal_gain) { return; }
+    memset(cal_gain, 0, sizeof(settings_cal_gain_t));
+    cal_gain->ch0_medium = TSL2591_GAIN_MEDIUM_TYP;
+    cal_gain->ch1_medium = TSL2591_GAIN_MEDIUM_TYP;
+    cal_gain->ch0_high = TSL2591_GAIN_HIGH_TYP;
+    cal_gain->ch1_high = TSL2591_GAIN_HIGH_TYP;
+    cal_gain->ch0_maximum = TSL2591_GAIN_MAXIMUM_CH0_TYP;
+    cal_gain->ch1_maximum = TSL2591_GAIN_MAXIMUM_CH1_TYP;
 }
 
 bool settings_set_cal_gain(const settings_cal_gain_t *cal_gain)
@@ -111,25 +369,18 @@ bool settings_set_cal_gain(const settings_cal_gain_t *cal_gain)
     HAL_StatusTypeDef ret = HAL_OK;
     if (!cal_gain) { return false; }
 
-    do {
-        ret = settings_write_float(CONFIG_CAL_GAIN_MEDIUM_CH0, cal_gain->ch0_medium);
-        if (ret != HAL_OK) { break; }
+    uint8_t buf[CONFIG_CAL_GAIN_SIZE];
+    copy_from_f32(&buf[0], cal_gain->ch0_medium);
+    copy_from_f32(&buf[4], cal_gain->ch1_medium);
+    copy_from_f32(&buf[8], cal_gain->ch0_high);
+    copy_from_f32(&buf[12], cal_gain->ch1_high);
+    copy_from_f32(&buf[16], cal_gain->ch0_maximum);
+    copy_from_f32(&buf[20], cal_gain->ch1_maximum);
 
-        ret = settings_write_float(CONFIG_CAL_GAIN_MEDIUM_CH1, cal_gain->ch1_medium);
-        if (ret != HAL_OK) { break; }
+    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 6);
+    copy_from_u32(&buf[24], crc);
 
-        ret = settings_write_float(CONFIG_CAL_GAIN_HIGH_CH0, cal_gain->ch0_high);
-        if (ret != HAL_OK) { break; }
-
-        ret = settings_write_float(CONFIG_CAL_GAIN_HIGH_CH1, cal_gain->ch1_high);
-        if (ret != HAL_OK) { break; }
-
-        ret = settings_write_float(CONFIG_CAL_GAIN_MAXIMUM_CH0, cal_gain->ch0_maximum);
-        if (ret != HAL_OK) { break; }
-
-        ret = settings_write_float(CONFIG_CAL_GAIN_MAXIMUM_CH1, cal_gain->ch1_maximum);
-        if (ret != HAL_OK) { break; }
-    } while (0);
+    ret = settings_write_buffer(CONFIG_CAL_GAIN, buf, sizeof(buf));
 
     if (ret == HAL_OK) {
         memcpy(&setting_cal_gain, cal_gain, sizeof(settings_cal_gain_t));
@@ -139,50 +390,41 @@ bool settings_set_cal_gain(const settings_cal_gain_t *cal_gain)
     }
 }
 
+bool settings_load_cal_gain()
+{
+    uint8_t buf[CONFIG_CAL_GAIN_SIZE];
+
+    if (settings_read_buffer(CONFIG_CAL_GAIN, buf, sizeof(buf)) != HAL_OK) {
+        return false;
+    }
+
+    uint32_t crc = copy_to_u32(&buf[24]);
+    uint32_t calculated_crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 6);
+
+    if (crc != calculated_crc) {
+        log_w("Invalid cal gain CRC: %08X != %08X", crc, calculated_crc);
+        return false;
+    } else {
+        setting_cal_gain.ch0_medium = copy_to_f32(&buf[0]);
+        setting_cal_gain.ch1_medium = copy_to_f32(&buf[4]);
+        setting_cal_gain.ch0_high = copy_to_f32(&buf[8]);
+        setting_cal_gain.ch1_high = copy_to_f32(&buf[12]);
+        setting_cal_gain.ch0_maximum = copy_to_f32(&buf[16]);
+        setting_cal_gain.ch1_maximum = copy_to_f32(&buf[20]);
+        return true;
+    }
+}
+
 bool settings_get_cal_gain(settings_cal_gain_t *cal_gain)
 {
-    bool valid = true;
     if (!cal_gain) { return false; }
 
     /* Copy over the settings values */
     memcpy(cal_gain, &setting_cal_gain, sizeof(settings_cal_gain_t));
 
-    /* Validate the complete set */
-    do {
-        if (cal_gain->ch0_medium < TSL2591_GAIN_MEDIUM_MIN || cal_gain->ch0_medium > TSL2591_GAIN_MEDIUM_MAX) {
-            valid = false;
-            break;
-        }
-        if (cal_gain->ch1_medium < TSL2591_GAIN_MEDIUM_MIN || cal_gain->ch1_medium > TSL2591_GAIN_MEDIUM_MAX) {
-            valid = false;
-            break;
-        }
-        if (cal_gain->ch0_high < TSL2591_GAIN_HIGH_MIN || cal_gain->ch0_high > TSL2591_GAIN_HIGH_MAX) {
-            valid = false;
-            break;
-        }
-        if (cal_gain->ch1_high < TSL2591_GAIN_HIGH_MIN || cal_gain->ch1_high > TSL2591_GAIN_HIGH_MAX) {
-            valid = false;
-            break;
-        }
-        if (cal_gain->ch0_maximum < TSL2591_GAIN_MAXIMUM_CH0_MIN || cal_gain->ch0_maximum > TSL2591_GAIN_MAXIMUM_CH0_MAX) {
-            valid = false;
-            break;
-        }
-        if (cal_gain->ch1_maximum < TSL2591_GAIN_MAXIMUM_CH1_MIN || cal_gain->ch1_maximum > TSL2591_GAIN_MAXIMUM_CH1_MAX) {
-            valid = false;
-            break;
-        }
-    } while (0);
-
     /* Set default values if validation fails */
-    if (!valid) {
-        cal_gain->ch0_medium = TSL2591_GAIN_MEDIUM_TYP;
-        cal_gain->ch1_medium = TSL2591_GAIN_MEDIUM_TYP;
-        cal_gain->ch0_high = TSL2591_GAIN_HIGH_TYP;
-        cal_gain->ch1_high = TSL2591_GAIN_HIGH_TYP;
-        cal_gain->ch0_maximum = TSL2591_GAIN_MAXIMUM_CH0_TYP;
-        cal_gain->ch1_maximum = TSL2591_GAIN_MAXIMUM_CH1_TYP;
+    if (!settings_validate_cal_gain(cal_gain)) {
+        settings_set_cal_gain_defaults(cal_gain);
         return false;
     } else {
         return true;
@@ -218,21 +460,64 @@ void settings_get_cal_gain_fields(const settings_cal_gain_t *cal_gain, tsl2591_g
     }
 }
 
+bool settings_validate_cal_gain(const settings_cal_gain_t *cal_gain)
+{
+    if (!cal_gain) { return false; }
+
+    /* Validate field numeric properties */
+    if (isnanf(cal_gain->ch0_medium) || isinff(cal_gain->ch0_medium)
+        || isnanf(cal_gain->ch1_medium) || isinff(cal_gain->ch1_medium)) {
+        return false;
+    }
+    if (isnanf(cal_gain->ch0_high) || isinff(cal_gain->ch0_high)
+        || isnanf(cal_gain->ch1_high) || isinff(cal_gain->ch1_high)) {
+        return false;
+    }
+    if (isnanf(cal_gain->ch0_maximum) || isinff(cal_gain->ch0_maximum)
+        || isnanf(cal_gain->ch1_maximum) || isinff(cal_gain->ch1_maximum)) {
+        return false;
+    }
+
+    /* Validate field values */
+    if (cal_gain->ch0_medium < TSL2591_GAIN_MEDIUM_MIN || cal_gain->ch0_medium > TSL2591_GAIN_MEDIUM_MAX
+        || cal_gain->ch1_medium < TSL2591_GAIN_MEDIUM_MIN || cal_gain->ch1_medium > TSL2591_GAIN_MEDIUM_MAX) {
+        return false;
+    }
+    if (cal_gain->ch0_high < TSL2591_GAIN_HIGH_MIN || cal_gain->ch0_high > TSL2591_GAIN_HIGH_MAX
+        || cal_gain->ch1_high < TSL2591_GAIN_HIGH_MIN || cal_gain->ch1_high > TSL2591_GAIN_HIGH_MAX) {
+        return false;
+    }
+    if (cal_gain->ch0_maximum < TSL2591_GAIN_MAXIMUM_CH0_MIN || cal_gain->ch0_maximum > TSL2591_GAIN_MAXIMUM_CH0_MAX
+        || cal_gain->ch1_maximum < TSL2591_GAIN_MAXIMUM_CH1_MIN || cal_gain->ch1_maximum > TSL2591_GAIN_MAXIMUM_CH1_MAX) {
+        return false;
+    }
+
+    return true;
+}
+
+void settings_set_cal_slope_defaults(settings_cal_slope_t *cal_slope)
+{
+    if (!cal_slope) { return; }
+    memset(cal_slope, 0, sizeof(settings_cal_slope_t));
+    cal_slope->b0 = NAN;
+    cal_slope->b1 = NAN;
+    cal_slope->b2 = NAN;
+}
+
 bool settings_set_cal_slope(const settings_cal_slope_t *cal_slope)
 {
     HAL_StatusTypeDef ret = HAL_OK;
     if (!cal_slope) { return false; }
 
-    do {
-        ret = settings_write_float(CONFIG_CAL_SLOPE_B0, cal_slope->b0);
-        if (ret != HAL_OK) { break; }
+    uint8_t buf[CONFIG_CAL_SLOPE_SIZE];
+    copy_from_f32(&buf[0], cal_slope->b0);
+    copy_from_f32(&buf[4], cal_slope->b1);
+    copy_from_f32(&buf[8], cal_slope->b2);
 
-        ret = settings_write_float(CONFIG_CAL_SLOPE_B1, cal_slope->b1);
-        if (ret != HAL_OK) { break; }
+    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 3);
+    copy_from_u32(&buf[12], crc);
 
-        ret = settings_write_float(CONFIG_CAL_SLOPE_B2, cal_slope->b2);
-        if (ret != HAL_OK) { break; }
-    } while (0);
+    ret = settings_write_buffer(CONFIG_CAL_SLOPE, buf, sizeof(buf));
 
     if (ret == HAL_OK) {
         memcpy(&setting_cal_slope, cal_slope, sizeof(settings_cal_slope_t));
@@ -242,39 +527,70 @@ bool settings_set_cal_slope(const settings_cal_slope_t *cal_slope)
     }
 }
 
+bool settings_load_cal_slope()
+{
+    uint8_t buf[CONFIG_CAL_SLOPE_SIZE];
+
+    if (settings_read_buffer(CONFIG_CAL_SLOPE, buf, sizeof(buf)) != HAL_OK) {
+        return false;
+    }
+
+    uint32_t crc = copy_to_u32(&buf[12]);
+    uint32_t calculated_crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 3);
+
+    if (crc != calculated_crc) {
+        log_w("Invalid cal slope CRC: %08X != %08X", crc, calculated_crc);
+        return false;
+    } else {
+        setting_cal_slope.b0 = copy_to_f32(&buf[0]);
+        setting_cal_slope.b1 = copy_to_f32(&buf[4]);
+        setting_cal_slope.b2 = copy_to_f32(&buf[8]);
+        return true;
+    }
+}
+
 bool settings_get_cal_slope(settings_cal_slope_t *cal_slope)
 {
-    bool valid = true;
     if (!cal_slope) { return false; }
 
     /* Copy over the settings values */
     memcpy(cal_slope, &setting_cal_slope, sizeof(settings_cal_slope_t));
 
-    /* Validate the complete set */
-    do {
-        if (isnanf(cal_slope->b0) || isinff(cal_slope->b0)) {
-            valid = false;
-            break;
-        }
-        if (isnanf(cal_slope->b1) || isinff(cal_slope->b1)) {
-            valid = false;
-            break;
-        }
-        if (isnanf(cal_slope->b2) || isinff(cal_slope->b2)) {
-            valid = false;
-            break;
-        }
-    } while (0);
-
     /* Set default values if validation fails */
-    if (!valid) {
-        cal_slope->b0 = NAN;
-        cal_slope->b1 = NAN;
-        cal_slope->b2 = NAN;
+    if (!settings_validate_cal_slope(cal_slope)) {
+        settings_set_cal_slope_defaults(cal_slope);
         return false;
     } else {
         return true;
     }
+}
+
+bool settings_validate_cal_slope(const settings_cal_slope_t *cal_slope)
+{
+    if (!cal_slope) { return false; }
+
+    /* Validate field numeric properties */
+    if (isnanf(cal_slope->b0) || isinff(cal_slope->b0)) {
+        return false;
+    }
+    if (isnanf(cal_slope->b1) || isinff(cal_slope->b1)) {
+        return false;
+    }
+    if (isnanf(cal_slope->b2) || isinff(cal_slope->b2)) {
+        return false;
+    }
+
+    return true;
+}
+
+void settings_set_cal_reflection_defaults(settings_cal_reflection_t *cal_reflection)
+{
+    if (!cal_reflection) { return; }
+    memset(cal_reflection, 0, sizeof(settings_cal_reflection_t));
+    cal_reflection->lo_d = NAN;
+    cal_reflection->lo_value = NAN;
+    cal_reflection->hi_d = NAN;
+    cal_reflection->hi_value = NAN;
 }
 
 bool settings_set_cal_reflection(const settings_cal_reflection_t *cal_reflection)
@@ -282,19 +598,16 @@ bool settings_set_cal_reflection(const settings_cal_reflection_t *cal_reflection
     HAL_StatusTypeDef ret = HAL_OK;
     if (!cal_reflection) { return false; }
 
-    do {
-        ret = settings_write_float(CONFIG_CAL_REFLECTION_LO_D, cal_reflection->lo_d);
-        if (ret != HAL_OK) { break; }
+    uint8_t buf[CONFIG_CAL_REFLECTION_SIZE];
+    copy_from_f32(&buf[0], cal_reflection->lo_d);
+    copy_from_f32(&buf[4], cal_reflection->lo_value);
+    copy_from_f32(&buf[8], cal_reflection->hi_d);
+    copy_from_f32(&buf[12], cal_reflection->hi_value);
 
-        ret = settings_write_float(CONFIG_CAL_REFLECTION_LO_VALUE, cal_reflection->lo_value);
-        if (ret != HAL_OK) { break; }
+    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 4);
+    copy_from_u32(&buf[16], crc);
 
-        ret = settings_write_float(CONFIG_CAL_REFLECTION_HI_D, cal_reflection->hi_d);
-        if (ret != HAL_OK) { break; }
-
-        ret = settings_write_float(CONFIG_CAL_REFLECTION_HI_VALUE, cal_reflection->hi_value);
-        if (ret != HAL_OK) { break; }
-    } while (0);
+    ret = settings_write_buffer(CONFIG_CAL_REFLECTION, buf, sizeof(buf));
 
     if (ret == HAL_OK) {
         memcpy(&setting_cal_reflection, cal_reflection, sizeof(settings_cal_reflection_t));
@@ -304,44 +617,82 @@ bool settings_set_cal_reflection(const settings_cal_reflection_t *cal_reflection
     }
 }
 
+bool settings_load_cal_reflection()
+{
+    uint8_t buf[CONFIG_CAL_REFLECTION_SIZE];
+
+    if (settings_read_buffer(CONFIG_CAL_REFLECTION, buf, sizeof(buf)) != HAL_OK) {
+        return false;
+    }
+
+    uint32_t crc = copy_to_u32(&buf[16]);
+    uint32_t calculated_crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 4);
+
+    if (crc != calculated_crc) {
+        log_w("Invalid cal reflection CRC: %08X != %08X", crc, calculated_crc);
+        return false;
+    } else {
+        setting_cal_reflection.lo_d = copy_to_f32(&buf[0]);
+        setting_cal_reflection.lo_value = copy_to_f32(&buf[4]);
+        setting_cal_reflection.hi_d = copy_to_f32(&buf[8]);
+        setting_cal_reflection.hi_value = copy_to_f32(&buf[12]);
+        return true;
+    }
+}
+
 bool settings_get_cal_reflection(settings_cal_reflection_t *cal_reflection)
 {
-    bool valid = true;
     if (!cal_reflection) { return false; }
 
     /* Copy over the settings values */
     memcpy(cal_reflection, &setting_cal_reflection, sizeof(settings_cal_reflection_t));
 
-    /* Validate the complete set */
-    do {
-        if (isnanf(cal_reflection->lo_d) || isinff(cal_reflection->lo_d)) {
-            valid = false;
-            break;
-        }
-        if (isnanf(cal_reflection->lo_value) || isinff(cal_reflection->lo_value)) {
-            valid = false;
-            break;
-        }
-        if (isnanf(cal_reflection->hi_d) || isinff(cal_reflection->hi_d)) {
-            valid = false;
-            break;
-        }
-        if (isnanf(cal_reflection->hi_value) || isinff(cal_reflection->hi_value)) {
-            valid = false;
-            break;
-        }
-    } while (0);
-
     /* Set default values if validation fails */
-    if (!valid) {
-        cal_reflection->lo_d = NAN;
-        cal_reflection->lo_value = NAN;
-        cal_reflection->hi_d = NAN;
-        cal_reflection->hi_value = NAN;
+    if (!settings_validate_cal_reflection(cal_reflection)) {
+        log_w("Invalid reflection calibration values");
+        log_w("CAL-LO: D=%.2f, VALUE=%f", cal_reflection->lo_d, cal_reflection->lo_value);
+        log_w("CAL-HI: D=%.2f, VALUE=%f", cal_reflection->hi_d, cal_reflection->hi_value);
+        settings_set_cal_reflection_defaults(cal_reflection);
         return false;
     } else {
         return true;
     }
+}
+
+bool settings_validate_cal_reflection(const settings_cal_reflection_t *cal_reflection)
+{
+    if (!cal_reflection) { return false; }
+
+    /* Validate field numeric properties */
+    if (isnanf(cal_reflection->lo_d) || isinff(cal_reflection->lo_d)) {
+        return false;
+    }
+    if (isnanf(cal_reflection->lo_value) || isinff(cal_reflection->lo_value)) {
+        return false;
+    }
+    if (isnanf(cal_reflection->hi_d) || isinff(cal_reflection->hi_d)) {
+        return false;
+    }
+    if (isnanf(cal_reflection->hi_value) || isinff(cal_reflection->hi_value)) {
+        return false;
+    }
+
+    /* Validate field values */
+    if (cal_reflection->lo_d < 0.0F || cal_reflection->hi_d <= cal_reflection->lo_d
+        || cal_reflection->lo_value < 0.0F || cal_reflection->hi_value >= cal_reflection->lo_value) {
+        return false;
+    }
+
+    return true;
+}
+
+void settings_set_cal_transmission_defaults(settings_cal_transmission_t *cal_transmission)
+{
+    if (!cal_transmission) { return; }
+    memset(cal_transmission, 0, sizeof(settings_cal_transmission_t));
+    cal_transmission->zero_value = NAN;
+    cal_transmission->hi_d = NAN;
+    cal_transmission->hi_value = NAN;
 }
 
 bool settings_set_cal_transmission(const settings_cal_transmission_t *cal_transmission)
@@ -349,16 +700,15 @@ bool settings_set_cal_transmission(const settings_cal_transmission_t *cal_transm
     HAL_StatusTypeDef ret = HAL_OK;
     if (!cal_transmission) { return false; }
 
-    do {
-        ret = settings_write_float(CONFIG_CAL_TRANSMISSION_ZERO_VALUE, cal_transmission->zero_value);
-        if (ret != HAL_OK) { break; }
+    uint8_t buf[CONFIG_CAL_TRANSMISSION_SIZE];
+    copy_from_f32(&buf[0], cal_transmission->zero_value);
+    copy_from_f32(&buf[4], cal_transmission->hi_d);
+    copy_from_f32(&buf[8], cal_transmission->hi_value);
 
-        ret = settings_write_float(CONFIG_CAL_TRANSMISSION_HI_D, cal_transmission->hi_d);
-        if (ret != HAL_OK) { break; }
+    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 3);
+    copy_from_u32(&buf[12], crc);
 
-        ret = settings_write_float(CONFIG_CAL_TRANSMISSION_HI_VALUE, cal_transmission->hi_value);
-        if (ret != HAL_OK) { break; }
-    } while (0);
+    ret = settings_write_buffer(CONFIG_CAL_TRANSMISSION, buf, sizeof(buf));
 
     if (ret == HAL_OK) {
         memcpy(&setting_cal_transmission, cal_transmission, sizeof(settings_cal_transmission_t));
@@ -368,39 +718,70 @@ bool settings_set_cal_transmission(const settings_cal_transmission_t *cal_transm
     }
 }
 
+bool settings_load_cal_transmission()
+{
+    uint8_t buf[CONFIG_CAL_TRANSMISSION_SIZE];
+
+    if (settings_read_buffer(CONFIG_CAL_TRANSMISSION, buf, sizeof(buf)) != HAL_OK) {
+        return false;
+    }
+
+    uint32_t crc = copy_to_u32(&buf[12]);
+    uint32_t calculated_crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 3);
+
+    if (crc != calculated_crc) {
+        log_w("Invalid cal transmission CRC: %08X != %08X", crc, calculated_crc);
+        return false;
+    } else {
+        setting_cal_transmission.zero_value = copy_to_f32(&buf[0]);
+        setting_cal_transmission.hi_d = copy_to_f32(&buf[4]);
+        setting_cal_transmission.hi_value = copy_to_f32(&buf[8]);
+        return true;
+    }
+}
+
 bool settings_get_cal_transmission(settings_cal_transmission_t *cal_transmission)
 {
-    bool valid = true;
     if (!cal_transmission) { return false; }
 
     /* Copy over the settings values */
     memcpy(cal_transmission, &setting_cal_transmission, sizeof(settings_cal_transmission_t));
 
-    /* Validate the complete set */
-    do {
-        if (isnanf(cal_transmission->zero_value) || isinff(cal_transmission->zero_value)) {
-            valid = false;
-            break;
-        }
-        if (isnanf(cal_transmission->hi_d) || isinff(cal_transmission->hi_d)) {
-            valid = false;
-            break;
-        }
-        if (isnanf(cal_transmission->hi_value) || isinff(cal_transmission->hi_value)) {
-            valid = false;
-            break;
-        }
-    } while (0);
-
     /* Set default values if validation fails */
-    if (!valid) {
-        cal_transmission->zero_value = NAN;
-        cal_transmission->hi_d = NAN;
-        cal_transmission->hi_value = NAN;
+    if (!settings_validate_cal_transmission(cal_transmission)) {
+        log_w("Invalid transmission calibration values");
+        log_w("CAL-ZERO: VALUE=%f", cal_transmission->zero_value);
+        log_w("CAL-HI: D=%.2f, VALUE=%f", cal_transmission->hi_d, cal_transmission->hi_value);
+        settings_set_cal_transmission_defaults(cal_transmission);
         return false;
     } else {
         return true;
     }
+}
+
+bool settings_validate_cal_transmission(const settings_cal_transmission_t *cal_transmission)
+{
+    if (!cal_transmission) { return false; }
+
+    /* Validate field numeric properties */
+    if (isnanf(cal_transmission->zero_value) || isinff(cal_transmission->zero_value)) {
+        return false;
+    }
+    if (isnanf(cal_transmission->hi_d) || isinff(cal_transmission->hi_d)) {
+        return false;
+    }
+    if (isnanf(cal_transmission->hi_value) || isinff(cal_transmission->hi_value)) {
+        return false;
+    }
+
+    /* Validate field values */
+    if (cal_transmission->zero_value <= 0.0F
+        || cal_transmission->hi_d <= 0.0F || cal_transmission->hi_value <= 0.0F
+        || cal_transmission->hi_value >= cal_transmission->zero_value) {
+        return false;
+    }
+
+    return true;
 }
 
 HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len)
@@ -447,18 +828,31 @@ HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, s
         return ret;
     }
 
-    for (size_t i = 0; i < data_len; i++) {
-        ret = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE, address + i, data[i]);
-        if (ret != HAL_OK) {
-            log_e("EEPROM write error: %d [%d]", ret, i);
-            log_e("FLASH last error: %d", HAL_FLASH_GetError());
-            break;
+    if (address % 4 == 0 && (data_len % 4) == 0) {
+        /* If the buffer can be written in word-sized increments, doing that is a lot faster */
+        for (size_t i = 0; i < data_len; i += 4) {
+            ret = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_WORD, address + i, *(uint32_t *)(data + i));
+            if (ret != HAL_OK) {
+                log_e("EEPROM write error: %d [%d]", ret, i);
+                log_e("FLASH last error: %d", HAL_FLASH_GetError());
+                break;
+            }
+        }
+    } else {
+        for (size_t i = 0; i < data_len; i++) {
+            ret = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE, address + i, data[i]);
+            if (ret != HAL_OK) {
+                log_e("EEPROM write error: %d [%d]", ret, i);
+                log_e("FLASH last error: %d", HAL_FLASH_GetError());
+                break;
+            }
         }
     }
     HAL_FLASHEx_DATAEEPROM_Lock();
     return ret;
 }
 
+#if 0
 float settings_read_float(uint32_t address)
 {
     __IO uint32_t *data = (__IO uint32_t *)(address);
@@ -469,5 +863,19 @@ HAL_StatusTypeDef settings_write_float(uint32_t address, float val)
 {
     uint8_t data[4];
     copy_from_f32(data, val);
+    return settings_write_buffer(address, data, sizeof(data));
+}
+#endif
+
+uint32_t settings_read_uint32(uint32_t address)
+{
+    __IO uint32_t *data = (__IO uint32_t *)(address);
+    return copy_to_u32((uint8_t *)data);
+}
+
+HAL_StatusTypeDef settings_write_uint32(uint32_t address, uint32_t val)
+{
+    uint8_t data[4];
+    copy_from_u32(data, val);
     return settings_write_buffer(address, data, sizeof(data));
 }
