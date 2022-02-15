@@ -22,6 +22,7 @@
 #ifdef HAL_IWDG_MODULE_ENABLED
 IWDG_HandleTypeDef hiwdg;
 #endif
+CRC_HandleTypeDef hcrc;
 RTC_HandleTypeDef hrtc;
 ADC_HandleTypeDef hadc;
 DMA_HandleTypeDef hdma_adc;
@@ -41,6 +42,7 @@ static void gpio_init(void);
 static void i2c1_init(void);
 static void tim2_init(void);
 static void spi1_init(void);
+static void crc_init(void);
 static void dma_init(void);
 static void adc_init(void);
 static void usb_init(void);
@@ -362,6 +364,19 @@ void spi1_init(void)
     }
 }
 
+void crc_init(void)
+{
+    hcrc.Instance = CRC;
+    hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
+    hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+    hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+    hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+    hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_WORDS;
+    if (HAL_CRC_Init(&hcrc) != HAL_OK) {
+        error_handler();
+    }
+}
+
 void dma_init(void)
 {
     /* DMA controller clock enable */
@@ -514,6 +529,7 @@ int main(void)
     i2c1_init();
     tim2_init();
     spi1_init();
+    crc_init();
     dma_init();
     adc_init();
     usb_init();
