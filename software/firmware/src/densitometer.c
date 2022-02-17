@@ -58,7 +58,7 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
 
     /* Clamp the return value to be within an acceptable range */
     if (meas_d < 0.0F) { meas_d = 0.0F; }
-    else if (meas_d > 2.5F) { meas_d = 2.5F; }
+    else if (meas_d > REFLECTION_MAX_D) { meas_d = REFLECTION_MAX_D; }
 
     densitometer_reflection_d = meas_d;
 
