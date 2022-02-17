@@ -1,6 +1,7 @@
 #include "util.h"
 
 #include <string.h>
+#include <math.h>
 #include "stm32l0xx_hal.h"
 
 #ifdef HAL_IWDG_MODULE_ENABLED
@@ -94,4 +95,9 @@ float copy_to_f32(const uint8_t *buf)
     uint32_t int_val = copy_to_u32(buf);
     memcpy(&val, &int_val, sizeof(float));
     return val;
+}
+
+bool is_valid_number(float num)
+{
+    return isnormal(num) || fpclassify(num) == FP_ZERO;
 }

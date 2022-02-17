@@ -4,6 +4,7 @@
 
 #include <printf.h>
 #include <math.h>
+#include <string.h>
 #include <elog.h>
 
 #include "display.h"
@@ -70,6 +71,10 @@ static void main_menu_settings(state_main_menu_t *state, state_controller_t *con
 static void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_about(state_main_menu_t *state, state_controller_t *controller);
 static void sensor_read_callback(void *user_data);
+
+#define DENSITY_BUF_SIZE 5
+
+static void format_density_value(char *buf, float value);
 
 state_t *state_main_menu()
 {
@@ -163,6 +168,8 @@ void main_menu_calibration(state_main_menu_t *state, state_controller_t *control
 void main_menu_calibration_reflection(state_main_menu_t *state, state_controller_t *controller)
 {
     char buf[128];
+    char buf_lo[DENSITY_BUF_SIZE];
+    char buf_hi[DENSITY_BUF_SIZE];
     settings_cal_reflection_t cal_reflection;
     uint8_t option = 1;
 
@@ -171,17 +178,26 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
     settings_get_cal_reflection(&cal_reflection);
 
     do {
+        format_density_value(buf_lo, cal_reflection.lo_d);
+        format_density_value(buf_hi, cal_reflection.hi_d);
+
         sprintf_(buf,
-            "CAL-LO  [%.2f]\n"
-            "CAL-HI  [%.2f]\n"
+            "CAL-LO  [%s]\n"
+            "CAL-HI  [%s]\n"
             "** Measure **",
-            cal_reflection.lo_d, cal_reflection.hi_d);
+            buf_lo, buf_hi);
 
         option = display_selection_list(
             "Reflection", option, buf);
 
         if (option == 1) {
-            uint16_t working_value = lroundf(cal_reflection.lo_d * 100);
+            uint16_t working_value;
+            if (is_valid_number(cal_reflection.lo_d) && cal_reflection.lo_d >= 0.0F) {
+                working_value = lroundf(cal_reflection.lo_d * 100);
+            } else {
+                working_value = 0;
+            }
+
             uint8_t input_option = display_input_value_f1_2(
                 "CAL-LO (White)\n",
                 "D=", &working_value,
@@ -193,7 +209,13 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
             }
 
         } else if (option == 2) {
-            uint16_t working_value = lroundf(cal_reflection.hi_d * 100);
+            uint16_t working_value;
+            if (is_valid_number(cal_reflection.hi_d) && cal_reflection.hi_d >= 0.0F) {
+                working_value = lroundf(cal_reflection.hi_d * 100);
+            } else {
+                working_value = 250;
+            }
+
             uint8_t input_option = display_input_value_f1_2(
                 "CAL-HI (Black)\n",
                 "D=", &working_value,
@@ -206,7 +228,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
 
         } else if (option == 3) {
             densitometer_result_t meas_result = DENSITOMETER_OK;
-            uint8_t meas_option = 0;
+            uint8_t meas_option = 1;
             display_main_elements_t elements = {
                 .title = "Calibrating...",
                 .mode = DISPLAY_MODE_REFLECTION,
@@ -216,6 +238,10 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
 
             do {
                 /* Validate the target densities, just in case */
+                if (!is_valid_number(cal_reflection.lo_d) || !is_valid_number(cal_reflection.hi_d)) {
+                    meas_result = DENSITOMETER_CAL_ERROR;
+                    break;
+                }
                 if (cal_reflection.lo_d < 0.00F || cal_reflection.lo_d > REFLECTION_MAX_D) {
                     meas_result = DENSITOMETER_CAL_ERROR;
                     break;
@@ -229,11 +255,14 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                     break;
                 }
 
-                meas_option = display_message(
-                    "Position\n"
-                    "CAL-LO firmly\n"
-                    "under sensor",
-                    NULL, NULL, " Measure ");
+                do {
+                    meas_option = display_message(
+                        "Position\n"
+                        "CAL-LO firmly\n"
+                        "under sensor",
+                        NULL, NULL, " Measure ");
+                } while (!keypad_is_detect() && meas_option != 0 && meas_option != UINT8_MAX);
+
                 if (meas_option == 1) {
                     elements.density100 = lroundf(cal_reflection.lo_d * 100);
                     elements.frame = 0;
@@ -244,11 +273,14 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                 }
                 if (meas_result != DENSITOMETER_OK) { break; }
 
-                meas_option = display_message(
-                    "Position\n"
-                    "CAL-HI firmly\n"
-                    "under sensor",
-                    NULL, NULL, " Measure ");
+                do {
+                    meas_option = display_message(
+                        "Position\n"
+                        "CAL-HI firmly\n"
+                        "under sensor",
+                        NULL, NULL, " Measure ");
+                } while (!keypad_is_detect() && meas_option != 0 && meas_option != UINT8_MAX);
+
                 if (meas_option == 1) {
                     elements.density100 = lroundf(cal_reflection.hi_d * 100);
                     elements.frame = 0;
@@ -308,6 +340,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
 void main_menu_calibration_transmission(state_main_menu_t *state, state_controller_t *controller)
 {
     char buf[128];
+    char buf_hi[DENSITY_BUF_SIZE];
     settings_cal_transmission_t cal_transmission;
     uint8_t option = 1;
 
@@ -316,16 +349,24 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
     settings_get_cal_transmission(&cal_transmission);
 
     do {
+        format_density_value(buf_hi, cal_transmission.hi_d);
+
         sprintf_(buf,
-            "CAL-HI  [%.2f]\n"
+            "CAL-HI  [%s]\n"
             "** Measure **",
-            cal_transmission.hi_d);
+            buf_hi);
 
         option = display_selection_list(
             "Transmission", option, buf);
 
         if (option == 1) {
-            uint16_t working_value = lroundf(cal_transmission.hi_d * 100);
+            uint16_t working_value;
+            if (is_valid_number(cal_transmission.hi_d) && cal_transmission.hi_d >= 0.0F) {
+                working_value = lroundf(cal_transmission.hi_d * 100);
+            } else {
+                working_value = 300;
+            }
+
             uint8_t input_option = display_input_value_f1_2(
                 "CAL-HI\n",
                 "D=", &working_value,
@@ -338,7 +379,7 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
 
         } else if (option == 2) {
             densitometer_result_t meas_result = DENSITOMETER_OK;
-            uint8_t meas_option = 0;
+            uint8_t meas_option = 1;
             display_main_elements_t elements = {
                 .title = "Calibrating...",
                 .mode = DISPLAY_MODE_TRANSMISSION,
@@ -348,16 +389,23 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
 
             do {
                 /* Validate the target densities, just in case */
+                if (!is_valid_number(cal_transmission.hi_d)) {
+                    meas_result = DENSITOMETER_CAL_ERROR;
+                    break;
+                }
                 if (cal_transmission.hi_d < 0.00F || cal_transmission.hi_d > TRANSMISSION_MAX_D) {
                     meas_result = DENSITOMETER_CAL_ERROR;
                     break;
                 }
 
-                meas_option = display_message(
-                    "Hold device\n"
-                    "firmly closed\n"
-                    "with no film",
-                    NULL, NULL, " Measure ");
+                do {
+                    meas_option = display_message(
+                        "Hold device\n"
+                        "firmly closed\n"
+                        "with no film",
+                        NULL, NULL, " Measure ");
+                } while (!keypad_is_detect() && meas_option != 0 && meas_option != UINT8_MAX);
+
                 if (meas_option == 1) {
                     elements.density100 = 0;
                     elements.frame = 0;
@@ -368,11 +416,14 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
                 }
                 if (meas_result != DENSITOMETER_OK) { break; }
 
-                meas_option = display_message(
-                    "Position\n"
-                    "CAL-HI firmly\n"
-                    "under sensor",
-                    NULL, NULL, " Measure ");
+                do {
+                    meas_option = display_message(
+                        "Position\n"
+                        "CAL-HI firmly\n"
+                        "under sensor",
+                        NULL, NULL, " Measure ");
+                } while (!keypad_is_detect() && meas_option != 0 && meas_option != UINT8_MAX);
+
                 if (meas_option == 1) {
                     elements.density100 = lroundf(cal_transmission.hi_d * 100);
                     elements.frame = 0;
@@ -468,11 +519,11 @@ void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controlle
 
 void main_menu_calibration_sensor_gain_run(state_main_menu_t *state, state_controller_t *controller)
 {
-
     uint8_t option = display_message(
         "Hold device\n"
         "firmly closed\n"
         "with no film", NULL, NULL, " Measure ");
+
     if (option == 1) {
         osStatus_t ret = osOK;
         if (!keypad_is_detect()) { return; }
@@ -539,17 +590,26 @@ void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controll
     char buf[128];
     settings_cal_slope_t cal_slope;
 
-    settings_get_cal_slope(&cal_slope);
+    if (settings_get_cal_slope(&cal_slope)) {
+        sprintf_(buf,
+            "B0 = %.6f\n"
+            "B1 = %.6f\n"
+            "B2 = %.6f",
+            cal_slope.b0, cal_slope.b1, cal_slope.b2);
 
-    sprintf_(buf,
-        "B0 = %.6f\n"
-        "B1 = %.6f\n"
-        "B2 = %.6f",
-        cal_slope.b0, cal_slope.b1, cal_slope.b2);
-
-    state->cal_sub_option = display_selection_list(
-        "Sensor Slope", state->cal_sub_option,
-        buf);
+        state->cal_sub_option = display_selection_list(
+            "Sensor Slope", state->cal_sub_option,
+            buf);
+    } else {
+        state->cal_sub_option = display_message(
+            "Sensor Slope", NULL,
+            "calibration\n"
+            "not set",
+            " OK ");
+        if (state->cal_sub_option == 1) {
+            state->cal_sub_option = 0;
+        }
+    }
 
     if (state->cal_sub_option == UINT8_MAX) {
         state_controller_set_next_state(controller, STATE_HOME);
@@ -766,4 +826,13 @@ void sensor_read_callback(void *user_data)
     elements->frame++;
     if (elements->frame > 2) { elements->frame = 0; }
     display_draw_main_elements(elements);
+}
+
+void format_density_value(char *buf, float value)
+{
+    if (is_valid_number(value) && value >= 0.0F) {
+        snprintf_(buf, DENSITY_BUF_SIZE, "%.2f", value);
+    } else {
+        strncpy(buf, "-.--", DENSITY_BUF_SIZE);
+    }
 }

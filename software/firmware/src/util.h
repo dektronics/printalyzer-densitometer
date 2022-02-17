@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <cmsis_os.h>
 #include "stm32l0xx_hal.h"
 
@@ -37,5 +38,7 @@ void copy_from_u32(uint8_t *buf, uint32_t val);
 uint32_t copy_to_u32(const uint8_t *buf);
 void copy_from_f32(uint8_t *buf, float val);
 float copy_to_f32(const uint8_t *buf);
+
+bool is_valid_number(float num);
 
 #endif /* UTIL_H */
