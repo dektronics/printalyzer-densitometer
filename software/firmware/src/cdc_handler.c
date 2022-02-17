@@ -248,6 +248,7 @@ void cdc_set_connected(bool connected)
                 cdc_remote_active = false;
             }
             reading_format = READING_FORMAT_BASIC;
+            densitometer_set_allow_uncalibrated_measurements(false);
         }
         cdc_host_connected = connected;
     }
@@ -468,6 +469,7 @@ bool cdc_process_command_measurement(const cdc_command_t *cmd)
      * "GM REFL" -> Get last reflection measurement
      * "GM TRAN" -> Get last transmission measurement
      * "SM FORMAT,x" -> Set measurement data format ("BASIC", "EXT")
+     * "SM UNCAL,x" -> Allow uncalibrated readings (0=false, 1=true)
      */
     if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "REFL") == 0) {
         char buf[32];
@@ -486,6 +488,16 @@ bool cdc_process_command_measurement(const cdc_command_t *cmd)
             reading_format = READING_FORMAT_BASIC;
         } else if (strcmp(cmd->args, "EXT") == 0) {
             reading_format = READING_FORMAT_EXT;
+        } else {
+            return false;
+        }
+        cdc_send_command_response(cmd, "OK");
+        return true;
+    } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "UNCAL") == 0) {
+        if (strcmp(cmd->args, "0") == 0) {
+            densitometer_set_allow_uncalibrated_measurements(false);
+        } else if (strcmp(cmd->args, "1") == 0) {
+            densitometer_set_allow_uncalibrated_measurements(true);
         } else {
             return false;
         }

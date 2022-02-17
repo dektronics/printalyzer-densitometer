@@ -231,6 +231,7 @@ void MainWindow::onConnectionOpened()
 {
     qDebug() << "Connection opened";
     densInterface_->sendSetMeasurementFormat(DensInterface::FormatExtended);
+    densInterface_->sendSetAllowUncalibratedMeasurements(true);
     densInterface_->sendGetSystemBuild();
     densInterface_->sendGetSystemDeviceInfo();
     densInterface_->sendGetSystemUID();

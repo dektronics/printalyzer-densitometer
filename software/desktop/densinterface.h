@@ -36,7 +36,8 @@ public slots:
     void sendGetSystemUID();
     void sendGetSystemInternalSensors();
 
-    void sendSetMeasurementFormat(DensityFormat format);
+    void sendSetMeasurementFormat(DensInterface::DensityFormat format);
+    void sendSetAllowUncalibratedMeasurements(bool allow);
 
     void sendGetDiagDisplayScreenshot();
     void sendSetDiagLoggingModeUsb();
@@ -107,8 +108,9 @@ signals:
     void connectionClosed();
     void connectionError();
 
-    void densityReading(DensityType type, float dValue, float rawValue, float corrValue);
+    void densityReading(DensInterface::DensityType type, float dValue, float rawValue, float corrValue);
     void measurementFormatChanged();
+    void allowUncalibratedMeasurementsChanged();
 
     void systemVersionResponse();
     void systemBuildResponse();

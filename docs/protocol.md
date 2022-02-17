@@ -106,6 +106,8 @@ Commands that lack a documented response format will return either `OK` or `ERR`
     * `EXT` - Appends the density, raw basic count, and slope corrected basic count
       sensor readings in the hex encoded format
   * Note: The active format will revert to **BASIC** upon disconnect
+* `SM UNCAL,x` - Allow measurements without target calibration (0=false, 1=true)
+  * Note: This setting will revert to false upon disconnect
 
 ### Calibration Commands
 

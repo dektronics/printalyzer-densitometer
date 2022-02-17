@@ -15,6 +15,8 @@ typedef enum {
     DENSITOMETER_SENSOR_ERROR
 } densitometer_result_t;
 
+void densitometer_set_allow_uncalibrated_measurements(bool allow);
+
 densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t callback, void *user_data);
 void densitometer_reflection_set_zero();
 void densitometer_reflection_clear_zero();

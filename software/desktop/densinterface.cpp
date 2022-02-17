@@ -101,7 +101,7 @@ void DensInterface::sendGetSystemInternalSensors()
     sendCommand(command);
 }
 
-void DensInterface::sendSetMeasurementFormat(DensityFormat format)
+void DensInterface::sendSetMeasurementFormat(DensInterface::DensityFormat format)
 {
     QStringList args;
     if (format == FormatBasic) {
@@ -114,6 +114,19 @@ void DensInterface::sendSetMeasurementFormat(DensityFormat format)
     }
 
     DensCommand command(DensCommand::TypeSet, DensCommand::CategoryMeasurement, "FORMAT", args);
+    sendCommand(command);
+}
+
+void DensInterface::sendSetAllowUncalibratedMeasurements(bool allow)
+{
+    QStringList args;
+    if (allow) {
+        args.append("1");
+    } else {
+        args.append("0");
+    }
+
+    DensCommand command(DensCommand::TypeSet, DensCommand::CategoryMeasurement, "UNCAL", args);
     sendCommand(command);
 }
 
@@ -509,6 +522,11 @@ void DensInterface::readMeasurementResponse(const DensCommand &response)
             && !response.args().isEmpty()
             && response.args().at(0) == QLatin1String("OK")) {
         emit measurementFormatChanged();
+    } else if (response.type() == DensCommand::TypeSet
+               && response.action() == QLatin1String("UNCAL")
+               && !response.args().isEmpty()
+               && response.args().at(0) == QLatin1String("OK")) {
+        emit allowUncalibratedMeasurementsChanged();
     }
 }
 
