@@ -36,10 +36,6 @@ of changes intended to go into the final pre-production device.**_
 The "software" directory contains all the source code for the firmware
 that runs on the hardware.
 
-_**The software is still designed to run on Revision B hardware, because
-Revision C prototypes have not yet been constructed. Once they are available,
-the software will be updated accordingly.**_
-
 ### Enclosure
 The "enclosure" directory contains any CAD models and related resources
 necessary to physically assemble the device.
