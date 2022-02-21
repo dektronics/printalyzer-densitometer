@@ -32,6 +32,7 @@ static bool settings_load_cal_transmission();
 
 static HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len);
 static HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, size_t data_len);
+static HAL_StatusTypeDef settings_erase_page(uint32_t address, size_t len);
 #if 0
 static float settings_read_float(uint32_t address);
 static HAL_StatusTypeDef settings_write_float(uint32_t address, float val);
@@ -136,6 +137,46 @@ HAL_StatusTypeDef settings_init()
     /* Return watchdog to normal window */
     watchdog_normal();
 
+    return ret;
+}
+
+HAL_StatusTypeDef settings_wipe()
+{
+    HAL_StatusTypeDef ret = HAL_OK;
+    log_i("Wiping all EEPROM settings");
+
+    /* Certain EEPROM operations can take a long time */
+    watchdog_slow();
+
+    watchdog_refresh();
+
+    do {
+        /*
+         * Erase starting with the header page, so that the EEPROM will be
+         * considered invalid and will be reinitialized on startup if any
+         * subsequent page clearing operations fail.
+         */
+        ret = settings_erase_page(PAGE_HEADER, PAGE_HEADER_SIZE);
+        watchdog_refresh();
+        if (ret != HAL_OK) { break; }
+
+        ret = settings_erase_page(PAGE_CAL_SENSOR, PAGE_CAL_SENSOR_SIZE);
+        watchdog_refresh();
+        if (ret != HAL_OK) { break; }
+
+        ret = settings_erase_page(PAGE_CAL_TARGET, PAGE_CAL_TARGET_SIZE);
+        watchdog_refresh();
+        if (ret != HAL_OK) { break; }
+
+        ret = settings_erase_page(PAGE_USER_SETTINGS, PAGE_USER_SETTINGS_SIZE);
+        watchdog_refresh();
+        if (ret != HAL_OK) { break; }
+    } while (0);
+
+    /* Return watchdog to normal window */
+    watchdog_normal();
+
+    log_i("Wipe complete");
     return ret;
 }
 
@@ -828,6 +869,12 @@ HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, s
         return ret;
     }
 
+    /* Clear all possible error flags */
+    __HAL_FLASH_CLEAR_FLAG(
+        FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_SIZERR |
+        FLASH_FLAG_OPTVERR | FLASH_FLAG_RDERR | FLASH_FLAG_FWWERR |
+        FLASH_FLAG_NOTZEROERR);
+
     if (address % 4 == 0 && (data_len % 4) == 0) {
         /* If the buffer can be written in word-sized increments, doing that is a lot faster */
         for (size_t i = 0; i < data_len; i += 4) {
@@ -846,6 +893,48 @@ HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, s
                 log_e("FLASH last error: %d", HAL_FLASH_GetError());
                 break;
             }
+        }
+    }
+    HAL_FLASHEx_DATAEEPROM_Lock();
+    return ret;
+}
+
+HAL_StatusTypeDef settings_erase_page(uint32_t address, size_t len)
+{
+    HAL_StatusTypeDef ret = HAL_OK;
+    if (!IS_FLASH_DATA_ADDRESS(address)) {
+        log_e("Invalid EEPROM address");
+        return HAL_ERROR;
+    }
+    if (!IS_FLASH_DATA_ADDRESS((address + len) - 1)) {
+        log_e("Invalid length");
+        return HAL_ERROR;
+    }
+    if (address % 4 != 0 || (len % 4) != 0) {
+        log_e("Erase is not word aligned");
+        return HAL_ERROR;
+    }
+
+    ret = HAL_FLASHEx_DATAEEPROM_Unlock();
+    if (ret != HAL_OK) {
+        log_e("Unable to unlock EEPROM: %d", ret);
+        return ret;
+    }
+
+    /* Clear all possible error flags */
+    __HAL_FLASH_CLEAR_FLAG(
+        FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_SIZERR |
+        FLASH_FLAG_OPTVERR | FLASH_FLAG_RDERR | FLASH_FLAG_FWWERR |
+        FLASH_FLAG_NOTZEROERR);
+
+    log_d("Wiping page: 0x%08lX - 0x%08lX", address, (address + len) - 1);
+
+    for (size_t i = 0; i < len; i += 4) {
+        ret = HAL_FLASHEx_DATAEEPROM_Erase(address + i);
+        if (ret != HAL_OK) {
+            log_e("EEPROM write error: %d [%d]", ret, i);
+            log_e("FLASH last error: %d", HAL_FLASH_GetError());
+            break;
         }
     }
     HAL_FLASHEx_DATAEEPROM_Lock();

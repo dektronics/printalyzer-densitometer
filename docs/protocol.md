@@ -152,5 +152,10 @@ Commands that lack a documented response format will return either `OK` or `ERR`
 * `ID S,STOP` - Invoke sensor stop ***(remote mode)***
 * `SD S,CFG,n,m` - Set sensor gain (n = [0-3]) and integration time (m = [0-5]) ***(remote mode)***
 * `GD S,READING` - Get next sensor reading ***(remote mode)***
+* `ID WIPE,<UID>,<CKSUM>` - Factory reset of configuration memory ***(remote mode)***
+  * `<UIDw2>` is the last 4 bytes of the device UID, in hex format
+  * `<CKSUM>` is the 4 byte checksum of the current firmware image, in hex format
+  * _Note: After acknowledging this command, the device will perform the wipe
+    and then reset itself. The connection will be lost in the process._
 * `SD LOG,U` -> Set logging output to USB CDC device
 * `SD LOG,D` -> Set logging output to debug port UART (default)

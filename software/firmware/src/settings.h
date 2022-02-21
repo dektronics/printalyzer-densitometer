@@ -37,6 +37,8 @@ typedef struct {
 
 HAL_StatusTypeDef settings_init();
 
+HAL_StatusTypeDef settings_wipe();
+
 /**
  * Set the gain calibration values.
  *

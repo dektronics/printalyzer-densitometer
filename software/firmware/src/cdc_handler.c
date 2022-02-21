@@ -707,6 +707,8 @@ bool cdc_process_command_diagnostics(const cdc_command_t *cmd)
      * "SD S,CFG,n,m" -> Set sensor gain (n = [0-3]) and integration time (m = [0-5]) [remote]
      * "GD S,READING" -> Get next sensor reading [remote]
      *
+     * "ID WIPE,UIDw2,CKSUM" -> Factory reset of configuration EEPROM
+     *
      * "SD LOG,U" -> Set logging output to USB CDC device
      * "SD LOG,D" -> Set logging output to debug port UART
      */
@@ -793,6 +795,22 @@ bool cdc_process_command_diagnostics(const cdc_command_t *cmd)
             return true;
         }
 
+        return true;
+    } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "WIPE") == 0 && cdc_remote_active) {
+        char exp_buf[32];
+        const app_descriptor_t *app_descriptor = app_descriptor_get();
+        sprintf(exp_buf, "%08lX,%08lX",
+            __bswap32(HAL_GetUIDw2()),
+            __bswap32(app_descriptor->crc32));
+        if (strncasecmp(exp_buf, cmd->args, sizeof(exp_buf)) == 0) {
+            cdc_send_command_response(cmd, "OK");
+            log_w("Factory EEPROM wipe requested");
+            settings_wipe();
+            osDelay(50);
+            NVIC_SystemReset();
+        } else {
+            cdc_send_command_response(cmd, "ERR");
+        }
         return true;
     } else if (cmd->type == CMD_TYPE_SET && strcmp(cmd->action, "LOG") == 0) {
         if (strcmp(cmd->args, "U") == 0) {
