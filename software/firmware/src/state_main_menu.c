@@ -569,6 +569,11 @@ bool sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, v
         sprintf(buf, "\n"
             "Measuring\n"
             "maximum gain");
+    } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_LED) {
+        sprintf(buf,
+            "Finding gain\n"
+            "measurement\n"
+            "brightness");
     } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_COOLDOWN) {
         sprintf(buf,
             "Waiting\n"
