@@ -6,5 +6,6 @@
         <file>images/settings.png</file>
         <file>images/reflection-icon.png</file>
         <file>images/transmission-icon.png</file>
+        <file>images/logger.png</file>
     </qresource>
 </RCC>

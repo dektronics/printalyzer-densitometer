@@ -12,6 +12,8 @@ class QSerialPort;
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
+class LogWindow;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -24,6 +26,9 @@ private slots:
     void openConnection();
     void onOpenConnectionDialogFinished(int result);
     void closeConnection();
+    void onLogger(bool checked);
+    void onLoggerOpened();
+    void onLoggerClosed();
     void about();
 
     void onConnectionOpened();
@@ -66,6 +71,7 @@ private:
     QLabel *statusLabel_ = nullptr;
     QSerialPort *serialPort_ = nullptr;
     DensInterface *densInterface_ = nullptr;
+    LogWindow *logWindow_ = nullptr;
 };
 
 #endif // MAINWINDOW_H

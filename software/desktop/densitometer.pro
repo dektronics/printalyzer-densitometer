@@ -17,6 +17,8 @@ SOURCES += \
     denscommand.cpp \
     densinterface.cpp \
     floatitemdelegate.cpp \
+    logger.cpp \
+    logwindow.cpp \
     main.cpp \
     mainwindow.cpp \
     slopecalibrationdialog.cpp \
@@ -27,12 +29,15 @@ HEADERS += \
     denscommand.h \
     densinterface.h \
     floatitemdelegate.h \
+    logger.h \
+    logwindow.h \
     mainwindow.h \
     slopecalibrationdialog.h \
     util.h
 
 FORMS += \
     connectdialog.ui \
+    logwindow.ui \
     mainwindow.ui \
     slopecalibrationdialog.ui
 

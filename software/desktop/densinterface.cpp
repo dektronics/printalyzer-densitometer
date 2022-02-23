@@ -347,7 +347,7 @@ void DensInterface::readData()
         }
 
         if (isLogLine(line)) {
-            qDebug() << line;
+            emit diagLogLine(line);
         } else {
             DensCommand response = DensCommand::parse(line);
 

@@ -120,6 +120,7 @@ signals:
     void systemInternalSensors();
 
     void diagDisplayScreenshot(const QByteArray &data);
+    void diagLogLine(const QByteArray &data);
 
     void calGainResponse();
     void calSlopeResponse();

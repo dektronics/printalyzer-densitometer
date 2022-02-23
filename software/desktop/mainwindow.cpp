@@ -11,6 +11,7 @@
 #include "connectdialog.h"
 #include "densinterface.h"
 #include "slopecalibrationdialog.h"
+#include "logwindow.h"
 #include "util.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -19,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
     , statusLabel_(new QLabel)
     , serialPort_(new QSerialPort(this))
     , densInterface_(new DensInterface(this))
+    , logWindow_(new LogWindow(this))
 {
     // Setup initial state of menu items
     ui->setupUi(this);
@@ -77,7 +79,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionDisconnect, &QAction::triggered, this, &MainWindow::closeConnection);
     connect(ui->actionExit, &QAction::triggered, this, &MainWindow::close);
     //connect(ui->actionConfigure, &QAction::triggered, settings_, &SettingsDialog::show);
+    connect(ui->actionLogger, &QAction::triggered, this, &MainWindow::onLogger);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::about);
+
+    // Log window UI signals
+    connect(logWindow_, &LogWindow::opened, this, &MainWindow::onLoggerOpened);
+    connect(logWindow_, &LogWindow::closed, this, &MainWindow::onLoggerClosed);
 
     // Diagnostics UI signals
     connect(ui->refreshSensorsPushButton, &QPushButton::clicked, densInterface_, &DensInterface::sendGetSystemInternalSensors);
@@ -106,6 +113,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(densInterface_, &DensInterface::systemUniqueId, this, &MainWindow::onSystemUniqueId);
     connect(densInterface_, &DensInterface::systemInternalSensors, this, &MainWindow::onSystemInternalSensors);
     connect(densInterface_, &DensInterface::diagDisplayScreenshot, this, &MainWindow::onDiagDisplayScreenshot);
+    connect(densInterface_, &DensInterface::diagLogLine, logWindow_, &LogWindow::appendLogLine);
     connect(densInterface_, &DensInterface::calGainResponse, this, &MainWindow::onCalGainResponse);
     connect(densInterface_, &DensInterface::calSlopeResponse, this, &MainWindow::onCalSlopeResponse);
     connect(densInterface_, &DensInterface::calReflectionResponse, this, &MainWindow::onCalReflectionResponse);
@@ -181,6 +189,33 @@ void MainWindow::closeConnection()
     ui->actionDisconnect->setEnabled(false);
 }
 
+void MainWindow::onLogger(bool checked)
+{
+    if (checked) {
+        logWindow_->show();
+    } else {
+        logWindow_->hide();
+    }
+}
+
+void MainWindow::onLoggerOpened()
+{
+    qDebug() << "Log window opened";
+    ui->actionLogger->setChecked(true);
+    if (densInterface_->connected()) {
+        densInterface_->sendSetDiagLoggingModeUsb();
+    }
+}
+
+void MainWindow::onLoggerClosed()
+{
+    qDebug() << "Log window closed";
+    ui->actionLogger->setChecked(false);
+    if (densInterface_->connected()) {
+        densInterface_->sendSetDiagLoggingModeDebug();
+    }
+}
+
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("About"),
@@ -237,6 +272,10 @@ void MainWindow::onConnectionOpened()
     densInterface_->sendGetSystemUID();
     densInterface_->sendGetSystemInternalSensors();
     refreshButtonState();
+
+    if (logWindow_->isVisible()) {
+        densInterface_->sendSetDiagLoggingModeUsb();
+    }
 }
 
 void MainWindow::onConnectionClosed()

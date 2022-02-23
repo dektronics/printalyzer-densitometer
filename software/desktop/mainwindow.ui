@@ -73,7 +73,6 @@
             <widget class="QLabel" name="readingTypeNameLabel">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -108,7 +107,6 @@
                <property name="font">
                 <font>
                  <pointsize>18</pointsize>
-                 <weight>75</weight>
                  <bold>true</bold>
                 </font>
                </property>
@@ -854,7 +852,7 @@
      <x>0</x>
      <y>0</y>
      <width>592</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -871,6 +869,7 @@
      <string>&amp;Tools</string>
     </property>
     <addaction name="actionConfigure"/>
+    <addaction name="actionLogger"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -966,6 +965,24 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionLogger">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="densitometer.qrc">
+     <normaloff>:/images/logger.png</normaloff>:/images/logger.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Log Window</string>
+   </property>
+   <property name="toolTip">
+    <string>Show log window</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+L</string>
    </property>
   </action>
  </widget>
