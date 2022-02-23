@@ -35,12 +35,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->statusBar->addWidget(statusLabel_);
 
     // Calibration (gain) field validation
-    ui->med0LineEdit->setValidator(util::createFloatValidator(22.0, 27.0, 6));
-    ui->med1LineEdit->setValidator(util::createFloatValidator(22.0, 27.0, 6));
-    ui->high0LineEdit->setValidator(util::createFloatValidator(360.0, 440.0, 6));
-    ui->high1LineEdit->setValidator(util::createFloatValidator(360.0, 440.0, 6));
-    ui->max0LineEdit->setValidator(util::createFloatValidator(8500.0, 9900.0, 6));
-    ui->max1LineEdit->setValidator(util::createFloatValidator(9100.0, 10700.0, 6));
+    ui->med0LineEdit->setValidator(util::createFloatValidator(22.0, 27.0, 6, this));
+    ui->med1LineEdit->setValidator(util::createFloatValidator(22.0, 27.0, 6, this));
+    ui->high0LineEdit->setValidator(util::createFloatValidator(360.0, 440.0, 6, this));
+    ui->high1LineEdit->setValidator(util::createFloatValidator(360.0, 440.0, 6, this));
+    ui->max0LineEdit->setValidator(util::createFloatValidator(8500.0, 9900.0, 6, this));
+    ui->max1LineEdit->setValidator(util::createFloatValidator(9100.0, 10700.0, 6, this));
     connect(ui->med0LineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalGainTextChanged);
     connect(ui->med1LineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalGainTextChanged);
     connect(ui->high0LineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalGainTextChanged);
@@ -49,27 +49,27 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->max1LineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalGainTextChanged);
 
     // Calibration (slope) field validation
-    ui->b0LineEdit->setValidator(util::createFloatValidator(-100.0, 100.0, 6));
-    ui->b1LineEdit->setValidator(util::createFloatValidator(-100.0, 100.0, 6));
-    ui->b2LineEdit->setValidator(util::createFloatValidator(-100.0, 100.0, 6));
+    ui->b0LineEdit->setValidator(util::createFloatValidator(-100.0, 100.0, 6, this));
+    ui->b1LineEdit->setValidator(util::createFloatValidator(-100.0, 100.0, 6, this));
+    ui->b2LineEdit->setValidator(util::createFloatValidator(-100.0, 100.0, 6, this));
     connect(ui->b0LineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalSlopeTextChanged);
     connect(ui->b1LineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalSlopeTextChanged);
     connect(ui->b2LineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalSlopeTextChanged);
 
     // Calibration (reflection density) field validation
-    ui->reflLoDensityLineEdit->setValidator(util::createFloatValidator(0.0, 2.5, 2));
-    ui->reflLoReadingLineEdit->setValidator(util::createFloatValidator(0.0, 500.0, 6));
-    ui->reflHiDensityLineEdit->setValidator(util::createFloatValidator(0.0, 2.5, 2));
-    ui->reflHiReadingLineEdit->setValidator(util::createFloatValidator(0.0, 500.0, 6));
+    ui->reflLoDensityLineEdit->setValidator(util::createFloatValidator(0.0, 2.5, 2, this));
+    ui->reflLoReadingLineEdit->setValidator(util::createFloatValidator(0.0, 500.0, 6, this));
+    ui->reflHiDensityLineEdit->setValidator(util::createFloatValidator(0.0, 2.5, 2, this));
+    ui->reflHiReadingLineEdit->setValidator(util::createFloatValidator(0.0, 500.0, 6, this));
     connect(ui->reflLoDensityLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalReflectionTextChanged);
     connect(ui->reflLoReadingLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalReflectionTextChanged);
     connect(ui->reflHiDensityLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalReflectionTextChanged);
     connect(ui->reflHiReadingLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalReflectionTextChanged);
 
     // Calibration (transmission density) field validation
-    ui->tranLoReadingLineEdit->setValidator(util::createFloatValidator(0.0, 500.0, 6));
-    ui->tranHiDensityLineEdit->setValidator(util::createFloatValidator(0.0, 5.0, 2));
-    ui->tranHiReadingLineEdit->setValidator(util::createFloatValidator(0.0, 500.0, 6));
+    ui->tranLoReadingLineEdit->setValidator(util::createFloatValidator(0.0, 500.0, 6, this));
+    ui->tranHiDensityLineEdit->setValidator(util::createFloatValidator(0.0, 5.0, 2, this));
+    ui->tranHiReadingLineEdit->setValidator(util::createFloatValidator(0.0, 500.0, 6, this));
     connect(ui->tranLoReadingLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalTransmissionTextChanged);
     connect(ui->tranHiDensityLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalTransmissionTextChanged);
     connect(ui->tranHiReadingLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalTransmissionTextChanged);

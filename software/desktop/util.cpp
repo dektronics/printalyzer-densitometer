@@ -77,9 +77,9 @@ void free2DArray(double **array, const size_t rows)
     delete[] array;
 }
 
-QValidator *createFloatValidator(double min, double max, int decimals)
+QValidator *createFloatValidator(double min, double max, int decimals, QObject *parent)
 {
-    QDoubleValidator *validator = new QDoubleValidator(min, max, decimals);
+    QDoubleValidator *validator = new QDoubleValidator(min, max, decimals, parent);
     validator->setNotation(QDoubleValidator::StandardNotation);
     return validator;
 }

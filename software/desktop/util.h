@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+class QObject;
 class QValidator;
 
 namespace util
@@ -21,7 +22,7 @@ float decode_f32(const QString &val);
 double **make2DArray(const size_t rows, const size_t cols);
 void free2DArray(double **array, const size_t rows);
 
-QValidator *createFloatValidator(double min, double max, int decimals);
+QValidator *createFloatValidator(double min, double max, int decimals, QObject *parent = nullptr);
 
 }
 
