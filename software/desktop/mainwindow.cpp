@@ -10,6 +10,7 @@
 
 #include "connectdialog.h"
 #include "densinterface.h"
+#include "remotecontroldialog.h"
 #include "slopecalibrationdialog.h"
 #include "logwindow.h"
 #include "util.h"
@@ -89,6 +90,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Diagnostics UI signals
     connect(ui->refreshSensorsPushButton, &QPushButton::clicked, densInterface_, &DensInterface::sendGetSystemInternalSensors);
     connect(ui->screenshotButton, &QPushButton::clicked, densInterface_, &DensInterface::sendGetDiagDisplayScreenshot);
+    connect(ui->remotePushButton, &QPushButton::clicked, this, &MainWindow::onRemoteControl);
 
     // Calibration UI signals
     connect(ui->calGetAllPushButton, &QPushButton::clicked, this, &MainWindow::onCalGetAllValues);
@@ -229,6 +231,7 @@ void MainWindow::refreshButtonState()
     if (densInterface_->connected()) {
         ui->refreshSensorsPushButton->setEnabled(true);
         ui->screenshotButton->setEnabled(true);
+        ui->remotePushButton->setEnabled(true);
         ui->calGetAllPushButton->setEnabled(true);
         ui->gainGetPushButton->setEnabled(true);
         ui->slopeGetPushButton->setEnabled(true);
@@ -249,6 +252,7 @@ void MainWindow::refreshButtonState()
     } else {
         ui->refreshSensorsPushButton->setEnabled(false);
         ui->screenshotButton->setEnabled(false);
+        ui->remotePushButton->setEnabled(false);
         ui->calGetAllPushButton->setEnabled(false);
         ui->gainGetPushButton->setEnabled(false);
         ui->slopeGetPushButton->setEnabled(false);
@@ -290,6 +294,10 @@ void MainWindow::onConnectionClosed()
         QMessageBox::critical(this, tr("Error"), tr("Unrecognized device"));
     } else {
         statusLabel_->setText(tr("Disconnected"));
+    }
+
+    if (remoteDialog_) {
+        remoteDialog_->close();
     }
 }
 
@@ -562,6 +570,26 @@ void MainWindow::onCalTransmissionResponse()
     ui->tranLoReadingLineEdit->setText(QString::number(densInterface_->calTransmissionLoReading(), 'f', 6));
     ui->tranHiDensityLineEdit->setText(QString::number(densInterface_->calTransmissionHiDensity(), 'f', 2));
     ui->tranHiReadingLineEdit->setText(QString::number(densInterface_->calTransmissionHiReading(), 'f', 6));
+}
+
+void MainWindow::onRemoteControl()
+{
+    if (!densInterface_->connected()) {
+        return;
+    }
+    if (remoteDialog_) {
+        remoteDialog_->setFocus();
+        return;
+    }
+    remoteDialog_ = new RemoteControlDialog(densInterface_, this);
+    connect(remoteDialog_, &QDialog::finished, this, &MainWindow::onRemoteControlFinished);
+    remoteDialog_->show();
+}
+
+void MainWindow::onRemoteControlFinished()
+{
+    remoteDialog_->deleteLater();
+    remoteDialog_ = nullptr;
 }
 
 void MainWindow::onSlopeCalibrationTool()

@@ -35,11 +35,18 @@ public slots:
     void sendGetSystemRtosInfo();
     void sendGetSystemUID();
     void sendGetSystemInternalSensors();
+    void sendInvokeSystemRemoteControl(bool enabled);
 
     void sendSetMeasurementFormat(DensInterface::DensityFormat format);
     void sendSetAllowUncalibratedMeasurements(bool allow);
 
     void sendGetDiagDisplayScreenshot();
+    void sendSetDiagLightRefl(int value);
+    void sendSetDiagLightTran(int value);
+    void sendInvokeDiagSensorStart();
+    void sendInvokeDiagSensorStop();
+    void sendSetDiagSensorConfig(int gain, int integration);
+    void sendGetDiagSensorReading();
     void sendSetDiagLoggingModeUsb();
     void sendSetDiagLoggingModeDebug();
 
@@ -57,6 +64,7 @@ public slots:
 public:
     bool connected() const;
     bool deviceUnrecognized() const;
+    bool remoteControlEnabled() const;
 
     QString projectName() const;
     QString version() const;
@@ -118,8 +126,14 @@ signals:
     void systemRtosResponse();
     void systemUniqueId();
     void systemInternalSensors();
+    void systemRemoteControl(bool enabled);
 
     void diagDisplayScreenshot(const QByteArray &data);
+    void diagLightReflChanged();
+    void diagLightTranChanged();
+    void diagSensorInvoked();
+    void diagSensorChanged();
+    void diagSensorReading(int ch0, int ch1);
     void diagLogLine(const QByteArray &data);
 
     void calGainResponse();
@@ -149,6 +163,7 @@ private:
     bool connecting_;
     bool connected_;
     bool deviceUnrecognized_;
+    bool remoteControlEnabled_;
 
     QString projectName_;
     QString version_;

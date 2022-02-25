@@ -285,6 +285,13 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="remotePushButton">
+             <property name="text">
+              <string>Remote Control</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <spacer name="verticalSpacer_3">
              <property name="orientation">
               <enum>Qt::Vertical</enum>

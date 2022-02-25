@@ -21,6 +21,7 @@ SOURCES += \
     logwindow.cpp \
     main.cpp \
     mainwindow.cpp \
+    remotecontroldialog.cpp \
     slopecalibrationdialog.cpp \
     util.cpp
 
@@ -32,6 +33,7 @@ HEADERS += \
     logger.h \
     logwindow.h \
     mainwindow.h \
+    remotecontroldialog.h \
     slopecalibrationdialog.h \
     util.h
 
@@ -39,6 +41,7 @@ FORMS += \
     connectdialog.ui \
     logwindow.ui \
     mainwindow.ui \
+    remotecontroldialog.ui \
     slopecalibrationdialog.ui
 
 RESOURCES += \

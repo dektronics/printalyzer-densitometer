@@ -12,6 +12,7 @@ DensInterface::DensInterface(QObject *parent)
     , connecting_(false)
     , connected_(false)
     , deviceUnrecognized_(false)
+    , remoteControlEnabled_(false)
     , buildChecksum_(0)
     , freeRtosHeapSize_(0)
     , freeRtosHeapWatermark_(0)
@@ -36,6 +37,7 @@ bool DensInterface::connectToDevice(QSerialPort *serialPort)
     // Set to connecting state
     connecting_ = true;
     deviceUnrecognized_ = false;
+    remoteControlEnabled_ = false;
 
     // Connect to signals for non-blocking command use
     serialPort_ = serialPort;
@@ -60,6 +62,7 @@ void DensInterface::disconnectFromDevice()
     multilinePending_ = false;
     connecting_ = false;
     connected_ = false;
+    remoteControlEnabled_ = false;
     if (notify) {
         emit connectionClosed();
     }
@@ -101,6 +104,15 @@ void DensInterface::sendGetSystemInternalSensors()
     sendCommand(command);
 }
 
+void DensInterface::sendInvokeSystemRemoteControl(bool enabled)
+{
+    QStringList args;
+    args.append(enabled ? "1" : "0");
+
+    DensCommand command(DensCommand::TypeInvoke, DensCommand::CategorySystem, "REMOTE", args);
+    sendCommand(command);
+}
+
 void DensInterface::sendSetMeasurementFormat(DensInterface::DensityFormat format)
 {
     QStringList args;
@@ -133,6 +145,67 @@ void DensInterface::sendSetAllowUncalibratedMeasurements(bool allow)
 void DensInterface::sendGetDiagDisplayScreenshot()
 {
     DensCommand command(DensCommand::TypeGet, DensCommand::CategoryDiagnostics, "DISP");
+    sendCommand(command);
+}
+
+void DensInterface::sendSetDiagLightRefl(int value)
+{
+    if (value < 0) { value = 0; }
+    else if (value > 128) { value = 128; }
+
+    QStringList args;
+    args.append(QString::number(value));
+
+    DensCommand command(DensCommand::TypeSet, DensCommand::CategoryDiagnostics, "LR", args);
+    sendCommand(command);
+}
+
+void DensInterface::sendSetDiagLightTran(int value)
+{
+    if (value < 0) { value = 0; }
+    else if (value > 128) { value = 128; }
+
+    QStringList args;
+    args.append(QString::number(value));
+
+    DensCommand command(DensCommand::TypeSet, DensCommand::CategoryDiagnostics, "LT", args);
+    sendCommand(command);
+}
+
+void DensInterface::sendInvokeDiagSensorStart()
+{
+    DensCommand command(DensCommand::TypeInvoke, DensCommand::CategoryDiagnostics, "S",
+                        QStringList() << "START");
+    sendCommand(command);
+}
+
+void DensInterface::sendInvokeDiagSensorStop()
+{
+    DensCommand command(DensCommand::TypeInvoke, DensCommand::CategoryDiagnostics, "S",
+                        QStringList() << "STOP");
+    sendCommand(command);
+}
+
+void DensInterface::sendSetDiagSensorConfig(int gain, int integration)
+{
+    if (gain < 0) { gain = 0; }
+    else if (gain > 3) { gain = 3; }
+    if (integration < 0) { integration = 0; }
+    else if (integration > 5) { integration = 5; }
+
+    QStringList args;
+    args.append("CFG");
+    args.append(QString::number(gain));
+    args.append(QString::number(integration));
+
+    DensCommand command(DensCommand::TypeSet, DensCommand::CategoryDiagnostics, "S", args);
+    sendCommand(command);
+}
+
+void DensInterface::sendGetDiagSensorReading()
+{
+    DensCommand command(DensCommand::TypeGet, DensCommand::CategoryDiagnostics, "S",
+                        QStringList() << "READING");
     sendCommand(command);
 }
 
@@ -227,6 +300,7 @@ void DensInterface::sendSetCalTransmission(float loDensity, float loReading, flo
 
 bool DensInterface::connected() const { return connected_; }
 bool DensInterface::deviceUnrecognized() const { return deviceUnrecognized_; }
+bool DensInterface::remoteControlEnabled() const { return remoteControlEnabled_; }
 
 QString DensInterface::projectName() const { return projectName_; }
 QString DensInterface::version() const { return version_; }
@@ -512,6 +586,12 @@ void DensInterface::readSystemResponse(const DensCommand &response)
             }
             emit systemInternalSensors();
         }
+    } else if (response.type() == DensCommand::TypeInvoke) {
+        const QStringList args = response.args();
+        if (response.action() == QLatin1String("REMOTE") && args.length() > 0) {
+            remoteControlEnabled_ = (args.at(0) == QLatin1String("1"));
+            emit systemRemoteControl(remoteControlEnabled_);
+        }
     }
 }
 
@@ -569,11 +649,39 @@ void DensInterface::readDiagnosticsResponse(const DensCommand &response)
             && response.action() == QLatin1String("DISP")
             && !response.buffer().isEmpty()) {
         emit diagDisplayScreenshot(response.buffer());
+    } else if (response.type() == DensCommand::TypeSet
+               && response.action() == QLatin1String("LR")
+               && response.args().size() == 1
+               && response.args().at(0) == QLatin1String("OK")) {
+        emit diagLightReflChanged();
+    } else if (response.type() == DensCommand::TypeSet
+               && response.action() == QLatin1String("LT")
+               && response.args().size() == 1
+               && response.args().at(0) == QLatin1String("OK")) {
+        emit diagLightTranChanged();
+    } else if (response.type() == DensCommand::TypeInvoke
+               && response.action() == QLatin1String("S")
+               && response.args().size() == 1
+               && response.args().at(0) == QLatin1String("OK")) {
+        emit diagSensorInvoked();
+    } else if (response.type() == DensCommand::TypeSet
+               && response.action() == QLatin1String("S")
+               && response.args().size() == 1
+               && response.args().at(0) == QLatin1String("OK")) {
+        emit diagSensorChanged();
+    } else if (response.type() == DensCommand::TypeGet
+               && response.action() == QLatin1String("S")
+               && response.args().size() >= 2) {
+        emit diagSensorReading(
+                    response.args().at(0).toInt(),
+                    response.args().at(1).toInt());
     } else if (response.type() == DensCommand::TypeGet
             && response.action() == QLatin1String("LOG")
             && response.args().size() == 1
             && response.args().at(0) == QLatin1String("OK")) {
         qDebug() << "Logging mode changed";
+    } else {
+        qDebug() << response.toString();
     }
 }
 

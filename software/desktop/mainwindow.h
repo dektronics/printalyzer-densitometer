@@ -13,6 +13,7 @@ namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 class LogWindow;
+class RemoteControlDialog;
 
 class MainWindow : public QMainWindow
 {
@@ -61,6 +62,9 @@ private slots:
     void onCalReflectionResponse();
     void onCalTransmissionResponse();
 
+    void onRemoteControl();
+    void onRemoteControlFinished();
+
     void onSlopeCalibrationTool();
     void onSlopeCalibrationToolFinished(int result);
 
@@ -72,6 +76,7 @@ private:
     QSerialPort *serialPort_ = nullptr;
     DensInterface *densInterface_ = nullptr;
     LogWindow *logWindow_ = nullptr;
+    RemoteControlDialog *remoteDialog_ = nullptr;
 };
 
 #endif // MAINWINDOW_H
