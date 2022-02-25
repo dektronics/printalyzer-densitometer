@@ -87,11 +87,34 @@ osStatus_t sensor_light_calibration(sensor_light_t light_source, sensor_light_ca
  * @param light_source Light source to use for target measurement
  * @param ch0_result Channel 0 result, in basic counts
  * @param ch1_result Channel 1 result, in basic counts
- * @return HAL_OK on success
+ * @return osOK on success
  */
 osStatus_t sensor_read_target(sensor_light_t light_source,
     float *ch0_result, float *ch1_result,
     sensor_read_callback_t callback, void *user_data);
+
+/**
+ * Perform a repeatable raw target reading with the sensor.
+ *
+ * This function will turn on the selected LED and take a series of readings,
+ * using the exact sensor settings provided. It will return a result that
+ * averages across the readings. This function is intended to be used
+ * for repeatable device characterization measurements, where initial
+ * conditions are set in advance and data processing happens elsewhere.
+ *
+ * If the sensor is saturated, then the function will return early
+ * with the results set to USHRT_MAX.
+ *
+ * @param light_source Light source to use for target measurement
+ * @param gain Sensor gain
+ * @param time Sensor integration time
+ * @param ch0_result Channel 0 result, in raw sensor counts
+ * @param ch1_result Channel 1 result, in raw sensor counts
+ * @return osOK on success
+ */
+osStatus_t sensor_read_target_raw(sensor_light_t light_source,
+    tsl2591_gain_t gain, tsl2591_time_t time,
+    uint16_t *ch0_result, uint16_t *ch1_result);
 
 /**
  * Check the sensor reading to see if the sensor is saturated.

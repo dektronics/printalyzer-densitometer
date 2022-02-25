@@ -5,6 +5,7 @@
 #include <elog.h>
 
 #include <math.h>
+#include <limits.h>
 #include <cmsis_os.h>
 #include <FreeRTOS.h>
 #include <queue.h>
@@ -448,6 +449,97 @@ osStatus_t sensor_read_target(sensor_light_t light_source,
         log_i("Sensor read complete");
         if (ch0_result) { *ch0_result = ch0_avg; }
         if (ch1_result) { *ch1_result = ch1_avg; }
+    } else {
+        log_e("Sensor read failed: ret=%d", ret);
+        if (ret == osOK) {
+            ret = osError;
+        }
+    }
+    return ret;
+}
+
+osStatus_t sensor_read_target_raw(sensor_light_t light_source,
+    tsl2591_gain_t gain, tsl2591_time_t time,
+    uint16_t *ch0_result, uint16_t *ch1_result)
+{
+    osStatus_t ret = osOK;
+    sensor_reading_t reading;
+    float ch0_sum = 0;
+    float ch1_sum = 0;
+    float ch0_avg = NAN;
+    float ch1_avg = NAN;
+    bool saturated = false;
+
+    if (light_source != SENSOR_LIGHT_OFF
+        && light_source != SENSOR_LIGHT_REFLECTION
+        && light_source != SENSOR_LIGHT_TRANSMISSION) {
+        return osErrorParameter;
+    }
+    if (gain < TSL2591_GAIN_LOW || gain > TSL2591_GAIN_MAXIMUM) {
+        return osErrorParameter;
+    }
+    if (time < TSL2591_TIME_100MS || time > TSL2591_TIME_600MS) {
+        return osErrorParameter;
+    }
+
+    log_i("Starting sensor raw target read");
+
+    do {
+        /* Put the sensor into the configured state */
+        ret = sensor_set_config(gain, time);
+        if (ret != osOK) { break; }
+
+        /* Activate light source synchronized with sensor cycle */
+        ret = sensor_set_light_mode(light_source, /*next_cycle*/true, 128);
+        if (ret != osOK) { break; }
+
+        /* Start the sensor */
+        ret = sensor_start();
+        if (ret != osOK) { break; }
+
+        /* Take the target measurement readings */
+        for (int i = 0; i < SENSOR_TARGET_READ_ITERATIONS; i++) {
+            ret = sensor_get_next_reading(&reading, 2000);
+            if (ret != osOK) { break; }
+            log_v("TSL2591[%d]: CH0=%d, CH1=%d", reading.reading_count, reading.ch0_val, reading.ch1_val);
+
+            /* Make sure we're consistent with our read cycles */
+            if (reading.reading_count != i + 2) {
+                log_e("Unexpected read cycle count: %d", reading.reading_count);
+                ret = osError;
+                break;
+            }
+
+            /* Abort if the sensor is saturated */
+            if (sensor_is_reading_saturated(&reading)) {
+                log_w("Aborting due to sensor saturation");
+                saturated = true;
+                break;
+            }
+
+            /* Accumulate the results */
+            ch0_sum += (float)reading.ch0_val;
+            ch1_sum += (float)reading.ch1_val;
+        }
+        if (ret != osOK) { break; }
+
+        ch0_avg = (ch0_sum / (float)SENSOR_TARGET_READ_ITERATIONS);
+        ch1_avg = (ch1_sum / (float)SENSOR_TARGET_READ_ITERATIONS);
+    } while (0);
+
+    /* Turn off the sensor */
+    sensor_stop();
+    sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+
+    if (ret == osOK) {
+        log_i("Sensor read complete");
+        if (saturated) {
+            if (ch0_result) { *ch0_result = USHRT_MAX; }
+            if (ch1_result) { *ch1_result = USHRT_MAX; }
+        } else {
+            if (ch0_result) { *ch0_result = (uint16_t)lroundf(ch0_avg); }
+            if (ch1_result) { *ch1_result = (uint16_t)lroundf(ch1_avg); }
+        }
     } else {
         log_e("Sensor read failed: ret=%d", ret);
         if (ret == osOK) {

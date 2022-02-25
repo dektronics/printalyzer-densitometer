@@ -155,6 +155,21 @@ Commands that lack a documented response format will return either `OK` or `ERR`
   * Result format: `GD S,<CH0>,<CH1>,<GAIN>,<TIME>`
 * `ID S,STOP` - Invoke sensor stop ***(remote mode)***
 * `SD S,CFG,n,m` - Set sensor gain (n = [0-3]) and integration time (m = [0-5]) ***(remote mode)***
+* `ID READ,<L>,<N>,<M>` - Perform controlled sensor target read ***(remote mode)***
+  * `<L>` - Measurement light source
+    * `0` - Light off
+    * `R` - Reflection light, full power
+    * `T` - Transmission light, full power
+  * `<N>` - Sensor gain (0-3)
+  * `<M>` - Sensor integration time (0-5)
+  * Result format: `ID READ,<CH0>,<CH1>`
+  * Note: This operation behaves similarly to a real measurement, synchronizing
+    read light control to the measurement loop, and averaging across a number
+    of readings. Unlike a real measurement it uses preconfigured gain and
+    integration settings, rather than automatically adjusting them as part
+    of the cycle, and returns raw sensor data. It is intended for use as part of
+    device characterization routines where repeatable measurement conditions
+    are necessary.
 * `ID WIPE,<UID>,<CKSUM>` - Factory reset of configuration memory ***(remote mode)***
   * `<UIDw2>` is the last 4 bytes of the device UID, in hex format
   * `<CKSUM>` is the 4 byte checksum of the current firmware image, in hex format

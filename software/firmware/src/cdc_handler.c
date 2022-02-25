@@ -709,6 +709,8 @@ bool cdc_process_command_diagnostics(const cdc_command_t *cmd)
      * "SD S,CFG,n,m" -> Set sensor gain (n = [0-3]) and integration time (m = [0-5]) [remote]
      * "GD S,READING" -> Get next sensor reading [remote]
      *
+     * "ID READ,L,n,m" -> Perform controlled sensor target read
+     *
      * "ID WIPE,UIDw2,CKSUM" -> Factory reset of configuration EEPROM
      *
      * "SD LOG,U" -> Set logging output to USB CDC device
@@ -783,6 +785,37 @@ bool cdc_process_command_diagnostics(const cdc_command_t *cmd)
             }
         }
         return true;
+    } else if (strcmp(cmd->action, "READ") == 0 && cdc_remote_active && !cdc_remote_sensor_active) {
+        if ((cmd->args[0] == '0' || cmd->args[0] == 'R' || cmd->args[0] == 'T')
+            && cmd->args[1] == ',' && isdigit((unsigned char)cmd->args[2])
+            && cmd->args[3] == ',' && isdigit((unsigned char)cmd->args[4])
+            && cmd->args[5] == '\0') {
+            sensor_light_t light_val;
+            tsl2591_gain_t gain_val = cmd->args[2] - '0';
+            tsl2591_time_t time_val = cmd->args[4] - '0';
+
+            if (cmd->args[0] == 'R') {
+                light_val = SENSOR_LIGHT_REFLECTION;
+            } else if (cmd->args[0] == 'T') {
+                light_val = SENSOR_LIGHT_TRANSMISSION;
+            } else {
+                light_val = SENSOR_LIGHT_OFF;
+            }
+
+            uint16_t ch0_result;
+            uint16_t ch1_result;
+            osStatus_t result = sensor_read_target_raw(light_val, gain_val, time_val,
+                &ch0_result, &ch1_result);
+
+            if (result == osOK) {
+                char buf[64];
+                sprintf(buf, "%d,%d", ch0_result, ch1_result);
+                cdc_send_command_response(cmd, buf);
+            } else {
+                cdc_send_command_response(cmd, "ERR");
+            }
+            return true;
+        }
     } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "WIPE") == 0 && cdc_remote_active) {
         char exp_buf[32];
         const app_descriptor_t *app_descriptor = app_descriptor_get();
