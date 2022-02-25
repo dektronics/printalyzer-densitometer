@@ -4,6 +4,7 @@
 
 Logger::Logger(QWidget *parent)
     : QPlainTextEdit(parent)
+    , autoScroll_(true)
 {
     document()->setMaximumBlockCount(100);
     QPalette p = palette();
@@ -17,6 +18,17 @@ void Logger::putData(const QByteArray &data)
 {
     insertPlainText(data);
 
-    QScrollBar *bar = verticalScrollBar();
-    bar->setValue(bar->maximum());
+    if (autoScroll_) {
+        QScrollBar *bar = verticalScrollBar();
+        bar->setValue(bar->maximum());
+    }
+}
+
+void Logger::setAutoScroll(bool enabled)
+{
+    if (enabled && !autoScroll_) {
+        QScrollBar *bar = verticalScrollBar();
+        bar->setValue(bar->maximum());
+    }
+    autoScroll_ = enabled;
 }

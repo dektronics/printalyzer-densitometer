@@ -23,6 +23,10 @@ signals:
     void opened();
     void closed();
 
+private slots:
+    void onFollowToggled(bool checked);
+    void onClearTriggered();
+
 protected:
     virtual void showEvent(QShowEvent *event);
     virtual void closeEvent(QCloseEvent *event);

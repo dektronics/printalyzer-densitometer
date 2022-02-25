@@ -10,6 +10,9 @@ class Logger : public QPlainTextEdit
 public:
     explicit Logger(QWidget *parent = nullptr);
     void putData(const QByteArray &data);
+    void setAutoScroll(bool enabled);
+private:
+    bool autoScroll_;
 };
 
 #endif // LOGGER_H

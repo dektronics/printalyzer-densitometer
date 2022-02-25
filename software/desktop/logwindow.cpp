@@ -1,6 +1,8 @@
 #include "logwindow.h"
 #include "ui_logwindow.h"
 
+#include <QDebug>
+
 #include "logger.h"
 
 LogWindow::LogWindow(QWidget *parent) :
@@ -11,6 +13,11 @@ LogWindow::LogWindow(QWidget *parent) :
     ui->setupUi(this);
     logger_->setEnabled(true);
     setCentralWidget(logger_);
+
+    ui->actionFollow->setChecked(true);
+
+    connect(ui->actionFollow, &QAction::toggled, this, &LogWindow::onFollowToggled);
+    connect(ui->actionClear, &QAction::triggered, this, &LogWindow::onClearTriggered);
 }
 
 LogWindow::~LogWindow()
@@ -33,4 +40,14 @@ void LogWindow::closeEvent(QCloseEvent *event)
 void LogWindow::appendLogLine(const QByteArray &line)
 {
     logger_->putData(line);
+}
+
+void LogWindow::onFollowToggled(bool checked)
+{
+    logger_->setAutoScroll(checked);
+}
+
+void LogWindow::onClearTriggered()
+{
+    logger_->clear();
 }

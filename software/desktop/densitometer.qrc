@@ -7,5 +7,7 @@
         <file>images/reflection-icon.png</file>
         <file>images/transmission-icon.png</file>
         <file>images/logger.png</file>
+        <file>images/go-bottom.png</file>
+        <file>images/clear.png</file>
     </qresource>
 </RCC>
