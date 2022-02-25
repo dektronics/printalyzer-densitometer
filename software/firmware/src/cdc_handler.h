@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "sensor.h"
+
 void task_cdc_run(void *argument);
 
 /**
@@ -15,6 +17,13 @@ void task_cdc_run(void *argument);
  * @param corr_value The slope corrected sensor reading, in basic counts
  */
 void cdc_send_density_reading(char prefix, float d_value, float raw_value, float corr_value);
+
+/**
+ * Send a message containing raw sensor data for diagnostic purposes
+ *
+ * @param reading Raw sensor reading data
+ */
+void cdc_send_raw_sensor_reading(const sensor_reading_t *reading);
 
 /**
  * Send a message indicating the remote control state being changed

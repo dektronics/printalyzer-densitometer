@@ -46,8 +46,7 @@ The common formats for these response arguments are:
   Line 1
   Line 2
   ...
-  ]]\r\n
-  
+  ]]\r\n  
   ```
 
 
@@ -66,6 +65,7 @@ Redirected log messages have a unique prefix of `L/`, where "L" is the logging l
 By looking for this pattern, they can be filtered out from the rest of the command
 protocol. By default, log messages are not redirected out the USB CDC interface.
 
+Expected log levels include: `A`, `E`, `W`, `I`, `D`, and `V`
 
 ## Commands
 
@@ -149,9 +149,12 @@ Commands that lack a documented response format will return either `OK` or `ERR`
   * Light sources are mutually exclusive. To turn both off, set either to 0.
     To turn on to full brightness, set to 128.
 * `ID S,START` - Invoke sensor start ***(remote mode)***
+  * When the sensor task is started via this diagnostic command, there is an
+    implicit "Get Reading" command every time a result is available. Thus,
+    results are periodically returned as long as the task is running.
+  * Result format: `GD S,<CH0>,<CH1>,<GAIN>,<TIME>`
 * `ID S,STOP` - Invoke sensor stop ***(remote mode)***
 * `SD S,CFG,n,m` - Set sensor gain (n = [0-3]) and integration time (m = [0-5]) ***(remote mode)***
-* `GD S,READING` - Get next sensor reading ***(remote mode)***
 * `ID WIPE,<UID>,<CKSUM>` - Factory reset of configuration memory ***(remote mode)***
   * `<UIDw2>` is the last 4 bytes of the device UID, in hex format
   * `<CKSUM>` is the 4 byte checksum of the current firmware image, in hex format

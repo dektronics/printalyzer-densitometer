@@ -32,7 +32,6 @@ RemoteControlDialog::RemoteControlDialog(DensInterface *densInterface, QWidget *
     connect(ui->sensorStopPushButton, &QPushButton::clicked, this, &RemoteControlDialog::onSensorStopClicked);
     connect(ui->gainComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RemoteControlDialog::onSensorGainIndexChanged);
     connect(ui->intComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RemoteControlDialog::onSensorIntIndexChanged);
-    connect(ui->sensorReadPushButton, &QPushButton::clicked, this, &RemoteControlDialog::onSensorNextReadingClicked);
 
     ledControlState(true);
     sensorControlState(true);
@@ -171,19 +170,12 @@ void RemoteControlDialog::onSensorIntIndexChanged(int index)
     densInterface_->sendSetDiagSensorConfig(ui->gainComboBox->currentIndex(), index);
 }
 
-void RemoteControlDialog::onSensorNextReadingClicked()
-{
-    sensorControlState(false);
-    densInterface_->sendGetDiagSensorReading();
-}
-
 void RemoteControlDialog::sensorControlState(bool enabled)
 {
     ui->sensorStartPushButton->setEnabled(enabled ? !sensorStarted_ : false);
     ui->sensorStopPushButton->setEnabled(enabled ? sensorStarted_ : false);
     ui->gainComboBox->setEnabled(enabled);
     ui->intComboBox->setEnabled(enabled);
-    ui->sensorReadPushButton->setEnabled(enabled ? sensorStarted_ : false);
 }
 
 void RemoteControlDialog::onDiagSensorInvoked()

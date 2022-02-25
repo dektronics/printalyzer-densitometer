@@ -64,6 +64,7 @@ static uint8_t cmd_buffer[CMD_DATA_SIZE];
 static size_t cmd_buffer_len = 0;
 static bool cdc_remote_enabled = false;
 static volatile bool cdc_remote_active = false;
+static volatile bool cdc_remote_sensor_active = false;
 static cdc_reading_format_t reading_format = READING_FORMAT_BASIC;
 
 /* Semaphore used to unblock the task when new data is available */
@@ -246,6 +247,7 @@ void cdc_set_connected(bool connected)
                 task_main_force_state(STATE_HOME);
                 cdc_remote_enabled = false;
                 cdc_remote_active = false;
+                cdc_remote_sensor_active = false;
             }
             reading_format = READING_FORMAT_BASIC;
             densitometer_set_allow_uncalibrated_measurements(false);
@@ -747,6 +749,7 @@ bool cdc_process_command_diagnostics(const cdc_command_t *cmd)
     } else if (strcmp(cmd->action, "S") == 0 && cdc_remote_active) {
         osStatus_t result;
         if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->args, "START") == 0) {
+            cdc_remote_sensor_active = true;
             result = sensor_start();
             if (result == osOK) {
                 cdc_send_command_response(cmd, "OK");
@@ -755,6 +758,7 @@ bool cdc_process_command_diagnostics(const cdc_command_t *cmd)
             }
             return true;
         } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->args, "STOP") == 0) {
+            cdc_remote_sensor_active = false;
             result = sensor_stop();
             if (result == osOK) {
                 cdc_send_command_response(cmd, "OK");
@@ -777,24 +781,7 @@ bool cdc_process_command_diagnostics(const cdc_command_t *cmd)
                     return true;
                 }
             }
-        } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->args, "READING") == 0) {
-            /*
-             * Output format:
-             * CH0 value, CH1 value, Gain setting, Integration time setting
-             */
-            sensor_reading_t reading;
-            result = sensor_get_next_reading(&reading, 1000);
-            if (result == osOK) {
-                char buf[64];
-                sprintf(buf, "%d,%d,%d,%d",
-                    reading.ch0_val, reading.ch1_val, reading.gain, reading.time);
-                cdc_send_command_response(cmd, buf);
-            } else {
-                cdc_send_command_response(cmd, "ERR");
-            }
-            return true;
         }
-
         return true;
     } else if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "WIPE") == 0 && cdc_remote_active) {
         char exp_buf[32];
@@ -926,10 +913,27 @@ void cdc_send_density_reading(char prefix, float d_value, float raw_value, float
     }
 }
 
+void cdc_send_raw_sensor_reading(const sensor_reading_t *reading)
+{
+    if (!cdc_remote_sensor_active || !reading) { return; }
+
+    static const cdc_command_t cmd = {
+        .type = CMD_TYPE_GET,
+        .category = CMD_CATEGORY_DIAGNOSTICS,
+        .action = "S"
+    };
+    char buf[64];
+
+    sprintf(buf, "%d,%d,%d,%d",
+        reading->ch0_val, reading->ch1_val, reading->gain, reading->time);
+    cdc_send_command_response(&cmd, buf);
+}
+
 void cdc_send_remote_state(bool enabled)
 {
     osMutexAcquire(cdc_mutex, portMAX_DELAY);
     cdc_remote_active = enabled && cdc_remote_enabled;
+    cdc_remote_sensor_active = false;
     osMutexRelease(cdc_mutex);
     cdc_command_t cmd = {
         .type = CMD_TYPE_INVOKE,

@@ -41,7 +41,6 @@ private slots:
     void onSensorStopClicked();
     void onSensorGainIndexChanged(int index);
     void onSensorIntIndexChanged(int index);
-    void onSensorNextReadingClicked();
 
 private:
     void ledControlState(bool enabled);

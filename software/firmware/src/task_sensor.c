@@ -14,6 +14,7 @@
 #include "sensor.h"
 #include "light.h"
 #include "util.h"
+#include "cdc_handler.h"
 
 /**
  * Sensor control event types.
@@ -438,6 +439,8 @@ osStatus_t sensor_control_interrupt(const sensor_control_interrupt_params_t *par
             reading.reading_count,
             reading.ch0_val, reading.ch1_val,
             sensor_gain, tsl2591_get_time_value_ms(sensor_time));
+
+        cdc_send_raw_sensor_reading(&reading);
 
         QueueHandle_t queue = (QueueHandle_t)sensor_reading_queue;
         xQueueOverwrite(queue, &reading);

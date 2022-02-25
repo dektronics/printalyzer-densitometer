@@ -46,7 +46,6 @@ public slots:
     void sendInvokeDiagSensorStart();
     void sendInvokeDiagSensorStop();
     void sendSetDiagSensorConfig(int gain, int integration);
-    void sendGetDiagSensorReading();
     void sendSetDiagLoggingModeUsb();
     void sendSetDiagLoggingModeDebug();
 

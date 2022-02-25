@@ -202,13 +202,6 @@ void DensInterface::sendSetDiagSensorConfig(int gain, int integration)
     sendCommand(command);
 }
 
-void DensInterface::sendGetDiagSensorReading()
-{
-    DensCommand command(DensCommand::TypeGet, DensCommand::CategoryDiagnostics, "S",
-                        QStringList() << "READING");
-    sendCommand(command);
-}
-
 void DensInterface::sendSetDiagLoggingModeUsb()
 {
     DensCommand command(DensCommand::TypeSet, DensCommand::CategoryDiagnostics,
