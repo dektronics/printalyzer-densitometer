@@ -202,6 +202,23 @@ void DensInterface::sendSetDiagSensorConfig(int gain, int integration)
     sendCommand(command);
 }
 
+void DensInterface::sendInvokeDiagRead(DensInterface::SensorLight light, int gain, int integration)
+{
+    QStringList args;
+    if (light == SensorLight::SensorLightReflection) {
+        args.append("R");
+    } else if (light == SensorLight::SensorLightTransmission) {
+        args.append("T");
+    } else {
+        args.append("0");
+    }
+    args.append(QString::number(gain));
+    args.append(QString::number(integration));
+
+    DensCommand command(DensCommand::TypeInvoke, DensCommand::CategoryDiagnostics, "READ", args);
+    sendCommand(command);
+}
+
 void DensInterface::sendSetDiagLoggingModeUsb()
 {
     DensCommand command(DensCommand::TypeSet, DensCommand::CategoryDiagnostics,
@@ -665,7 +682,13 @@ void DensInterface::readDiagnosticsResponse(const DensCommand &response)
     } else if (response.type() == DensCommand::TypeGet
                && response.action() == QLatin1String("S")
                && response.args().size() >= 2) {
-        emit diagSensorReading(
+        emit diagSensorGetReading(
+                    response.args().at(0).toInt(),
+                    response.args().at(1).toInt());
+    } else if (response.type() == DensCommand::TypeInvoke
+               && response.action() == QLatin1String("READ")
+               && response.args().size() >= 2) {
+        emit diagSensorInvokeReading(
                     response.args().at(0).toInt(),
                     response.args().at(1).toInt());
     } else if (response.type() == DensCommand::TypeGet

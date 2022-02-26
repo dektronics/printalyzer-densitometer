@@ -25,7 +25,8 @@ private slots:
     void onDiagLightChanged();
     void onDiagSensorInvoked();
     void onDiagSensorChanged();
-    void onDiagSensorReading(int ch0, int ch1);
+    void onDiagSensorGetReading(int ch0, int ch1);
+    void onDiagSensorInvokeReading(int ch0, int ch1);
 
     void onReflOffClicked();
     void onReflOnClicked();
@@ -41,10 +42,13 @@ private slots:
     void onSensorStopClicked();
     void onSensorGainIndexChanged(int index);
     void onSensorIntIndexChanged(int index);
+    void onReflReadClicked();
+    void onTranReadClicked();
 
 private:
     void ledControlState(bool enabled);
     void sensorControlState(bool enabled);
+    void updateSensorReading(int ch0, int ch1);
 
     Ui::RemoteControlDialog *ui;
     DensInterface *densInterface_;

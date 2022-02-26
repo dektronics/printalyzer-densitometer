@@ -24,6 +24,13 @@ public:
     };
     Q_ENUM(DensityFormat)
 
+    enum SensorLight {
+        SensorLightOff,
+        SensorLightReflection,
+        SensorLightTransmission
+    };
+    Q_ENUM(SensorLight)
+
     explicit DensInterface(QObject *parent = nullptr);
     bool connectToDevice(QSerialPort *serialPort);
     void disconnectFromDevice();
@@ -46,6 +53,7 @@ public slots:
     void sendInvokeDiagSensorStart();
     void sendInvokeDiagSensorStop();
     void sendSetDiagSensorConfig(int gain, int integration);
+    void sendInvokeDiagRead(DensInterface::SensorLight light, int gain, int integration);
     void sendSetDiagLoggingModeUsb();
     void sendSetDiagLoggingModeDebug();
 
@@ -132,7 +140,8 @@ signals:
     void diagLightTranChanged();
     void diagSensorInvoked();
     void diagSensorChanged();
-    void diagSensorReading(int ch0, int ch1);
+    void diagSensorGetReading(int ch0, int ch1);
+    void diagSensorInvokeReading(int ch0, int ch1);
     void diagLogLine(const QByteArray &data);
 
     void calGainResponse();
