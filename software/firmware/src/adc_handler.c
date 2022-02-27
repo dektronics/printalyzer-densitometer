@@ -1,6 +1,7 @@
 #include "adc_handler.h"
 
 #include "stm32l0xx_hal.h"
+#include "stm32l0xx_ll_adc.h"
 #include <cmsis_os.h>
 
 #define LOG_TAG "adc"
@@ -12,18 +13,6 @@ extern ADC_HandleTypeDef hadc;
 
 /* Size of buffer to store ADC DMA results */
 #define ADC_BUFFER_SIZE ((uint32_t)2)
-
-/* Internal temperature sensor calibration value TS_CAL1 */
-#define TEMP30_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FF8007A))
-
-/* Internal temperature sensor calibration value TS_CAL2 */
-#define TEMP130_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FF8007E))
-
-/* VDDA value at which the internal temperature sensor was calibrated */
-#define VDDA_TEMP_CAL ((uint32_t) 3000)
-
-/* Internal voltage reference calibration value */
-#define VREFINT_CAL ((uint16_t*) ((uint32_t) 0x1FF80078))
 
 static volatile bool adc_initialized = false;
 static __IO uint16_t adc_converted_values[ADC_BUFFER_SIZE];
@@ -99,14 +88,10 @@ osStatus_t adc_read(adc_readings_t *readings)
         uint32_t temp_meas = adc_converted_values[1];
 
         /* Calculate the VDDA value in mV */
-        uint16_t vdda = (3000U * (uint32_t)(*VREFINT_CAL)) / vref_meas;
+        uint16_t vdda = __LL_ADC_CALC_VREFANALOG_VOLTAGE(vref_meas, LL_ADC_RESOLUTION_12B);
 
         /* Calculate the temperature reading using VDDA */
-        int32_t temperature;
-        temperature = ((temp_meas * vdda / VDDA_TEMP_CAL) - (int32_t) *TEMP30_CAL_ADDR);
-        temperature *= (int32_t)(130 - 30);
-        temperature /= (int32_t)(*TEMP130_CAL_ADDR - *TEMP30_CAL_ADDR);
-        temperature += + 30;
+        int32_t temperature = __LL_ADC_CALC_TEMPERATURE(vdda, temp_meas, LL_ADC_RESOLUTION_12B);
 
         /* Copy the results to the struct */
         readings->temp_c = temperature;
