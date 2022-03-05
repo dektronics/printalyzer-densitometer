@@ -90,6 +90,7 @@ Commands that lack a documented response format will return either `OK` or `ERR`
   * Response: `GS UID,<UID>`
 * `GS ISEN` - Internal sensor readings
   * Response: `GS ISEN,<VDDA>,<Temperature>`
+  * Note: Response elements have unit suffixes appended, so it looks like "3300mV,24.5C"
 * `IS REMOTE,n` - Invoke remote control mode (enable = 1, disable = 0)
   * Response: `IS REMOTE,n`
 

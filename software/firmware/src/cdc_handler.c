@@ -433,7 +433,7 @@ bool cdc_process_command_system(const cdc_command_t *cmd)
          */
         adc_readings_t readings;
         if (adc_read(&readings) == osOK) {
-            sprintf(buf, "%dmV,%dC", readings.vdda_mv, readings.temp_c);
+            sprintf_(buf, "%dmV,%.1fC", readings.vdda_mv, readings.temp_c);
             cdc_send_command_response(cmd, buf);
         } else {
             cdc_send_command_response(cmd, "ERR");

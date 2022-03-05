@@ -108,7 +108,7 @@ osStatus_t adc_read(adc_readings_t *readings)
         temperature += temp_cal1_temp;
 
         /* Round and copy the results to the struct */
-        readings->temp_c = lroundf(temperature);
+        readings->temp_c = temperature;
         readings->vdda_mv = lroundf(vdda);
 
     } while (0);

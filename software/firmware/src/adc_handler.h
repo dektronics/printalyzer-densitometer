@@ -11,7 +11,7 @@
 #include "stm32l0xx_hal.h"
 
 typedef struct {
-    int16_t temp_c;
+    float temp_c;
     uint16_t vdda_mv;
 } adc_readings_t;
 
