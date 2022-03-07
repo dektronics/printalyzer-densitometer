@@ -27,6 +27,7 @@ private slots:
     void onActionCut();
     void onActionCopy();
     void onActionPaste();
+    void onActionDelete();
     void onCalculateResults();
     void onClearReadings();
 

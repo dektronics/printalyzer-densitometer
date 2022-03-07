@@ -4,6 +4,7 @@
 #include <QClipboard>
 #include <QMimeData>
 #include <QStyledItemDelegate>
+#include <QThread>
 #include <QDebug>
 #include <cmath>
 #include "floatitemdelegate.h"
@@ -22,10 +23,12 @@ SlopeCalibrationDialog::SlopeCalibrationDialog(DensInterface *densInterface, QWi
     addAction(ui->actionCut);
     addAction(ui->actionCopy);
     addAction(ui->actionPaste);
+    addAction(ui->actionDelete);
 
     connect(ui->actionCut, &QAction::triggered, this, &SlopeCalibrationDialog::onActionCut);
     connect(ui->actionCopy, &QAction::triggered, this, &SlopeCalibrationDialog::onActionCopy);
     connect(ui->actionPaste, &QAction::triggered, this, &SlopeCalibrationDialog::onActionPaste);
+    connect(ui->actionDelete, &QAction::triggered, this, &SlopeCalibrationDialog::onActionDelete);
 
     connect(ui->calculatePushButton, &QPushButton::clicked, this, &SlopeCalibrationDialog::onCalculateResults);
     connect(ui->clearPushButton, &QPushButton::clicked, this, &SlopeCalibrationDialog::onClearReadings);
@@ -83,35 +86,105 @@ void SlopeCalibrationDialog::onDensityReading(DensInterface::DensityType type, f
 
 void SlopeCalibrationDialog::onActionCut()
 {
-    qDebug() << "Cut";
+    onActionCopy();
+    onActionDelete();
 }
 
 void SlopeCalibrationDialog::onActionCopy()
 {
-    qDebug() << "Copy";
+    QModelIndexList selected = ui->tableView->selectionModel()->selectedIndexes();
+    std::sort(selected.begin(), selected.end());
+
+    int curRow = -1;
+    QString num1;
+    QString num2;
+    QVector<QPair<QString,QString>> numList;
+    bool hasCol1 = false;
+    bool hasCol2 = false;
+
+    for (const QModelIndex &index : qAsConst(selected)) {
+        if (curRow != index.row()) {
+            if (curRow != -1 && (!num1.isEmpty() || !num2.isEmpty())) {
+                numList.append(qMakePair(num1, num2));
+            }
+            num1 = QString();
+            num2 = QString();
+            curRow = index.row();
+        }
+
+        QStandardItem *item = model_->itemFromIndex(index);
+        if (item && index.column() == 0) {
+            num1 = item->text();
+            hasCol1 = true;
+        } else if (item && index.column() == 1) {
+            num2 = item->text();
+            hasCol2 = true;
+        }
+    }
+    if (curRow != -1 && (!num1.isEmpty() || !num2.isEmpty())) {
+        numList.append(qMakePair(num1, num2));
+    }
+
+    QString copiedText;
+    for (const auto &numElement : numList) {
+        if ((hasCol1 || hasCol2) && !copiedText.isEmpty()) {
+#if defined(Q_OS_WIN)
+            copiedText.append(QLatin1String("\r\n"));
+#else
+            copiedText.append(QLatin1String("\n"));
+#endif
+        }
+        if (hasCol1 && hasCol2) {
+            copiedText.append(numElement.first);
+            copiedText.append(QChar('\t'));
+            copiedText.append(numElement.second);
+        } else if (hasCol1) {
+            copiedText.append(numElement.first);
+        } else if (hasCol2) {
+            copiedText.append(numElement.second);
+        }
+    }
+
+    // Move to the clipboard
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(copiedText, QClipboard::Clipboard);
+
+    if (clipboard->supportsSelection()) {
+        clipboard->setText(copiedText, QClipboard::Selection);
+    }
+
+#if defined(Q_OS_UNIX)
+    QThread::msleep(1);
+#endif
 }
 
 void SlopeCalibrationDialog::onActionPaste()
 {
-    qDebug() << "Paste";
-
     // Capture and split the text to be pasted
     const QClipboard *clipboard = QApplication::clipboard();
     const QMimeData *mimeData = clipboard->mimeData();
-    QList<float> numList;
+    QList<QPair<float,float>> numList;
     if (mimeData->hasText()) {
         const QString text = mimeData->text();
         const QStringList elements = text.split(QRegExp("\n|\r\n|\r"), Qt::SkipEmptyParts);
         for (const QString& element : elements) {
+            QStringList rowElements = element.split(QRegExp("[,;]\\s*|\\s+"), Qt::SkipEmptyParts);
             bool ok;
-            float num = element.toFloat(&ok);
-            if (ok) {
-                numList.append(num);
+            float num1 = qQNaN();
+            float num2 = qQNaN();
+            if (rowElements.size() > 0) {
+                num1 = rowElements.at(0).toFloat(&ok);
+                if (!ok) { num1 = qQNaN(); }
+            }
+            if (rowElements.size() > 1) {
+                num2 = rowElements.at(1).toFloat(&ok);
+                if (!ok) { num2 = qQNaN(); }
+            }
+            if (!qIsNaN(num1) || !qIsNaN(num2)) {
+                numList.append(qMakePair(num1, num2));
             }
         }
     }
-
-    //TODO Add support for pasting multi-column text
 
     // Find the upper-left corner of the paste area
     QPair<int, int> ulIndex = upperLeftActiveIndex();
@@ -120,16 +193,39 @@ void SlopeCalibrationDialog::onActionPaste()
 
     // Paste the values
     if (!numList.isEmpty() && row >= 0 && col >= 0) {
-        for (float num : numList) {
+        for (auto numElement : numList) {
             QString numStr;
             if (col == 0) {
-                numStr = QString::number(num, 'f', 2);
+                if (!qIsNaN(numElement.first)) {
+                    numStr = QString::number(numElement.first, 'f', 2);
+                    model_->setItem(row, col, new QStandardItem(numStr));
+                }
+                if (!qIsNaN(numElement.second)) {
+                    numStr = QString::number(numElement.second, 'f', 6);
+                    model_->setItem(row, col + 1, new QStandardItem(numStr));
+                }
             } else {
-                numStr = QString::number(num, 'f', 6);
+                if (!qIsNaN(numElement.first)) {
+                    numStr = QString::number(numElement.first, 'f', 6);
+                    model_->setItem(row, col, new QStandardItem(numStr));
+                } else if (!qIsNaN(numElement.second)) {
+                    numStr = QString::number(numElement.second, 'f', 6);
+                    model_->setItem(row, col, new QStandardItem(numStr));
+                }
             }
-            model_->setItem(row, col, new QStandardItem(numStr));
             row++;
             if (row >= model_->rowCount()) { break; }
+        }
+    }
+}
+
+void SlopeCalibrationDialog::onActionDelete()
+{
+    QModelIndexList selected = ui->tableView->selectionModel()->selectedIndexes();
+    for (const QModelIndex &index : qAsConst(selected)) {
+        QStandardItem *item = model_->itemFromIndex(index);
+        if (item) {
+            item->clearData();
         }
     }
 }
