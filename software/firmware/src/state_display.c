@@ -20,14 +20,23 @@ typedef struct {
     bool menu_pending;
     int up_repeat;
     int down_repeat;
+    state_identifier_t measure_state;
+    state_identifier_t alternate_state;
+    densitometer_t *densitometer;
+    const char *display_title;
+    display_mode_t display_mode;
 } state_display_t;
 
+static void state_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
 static void state_reflection_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
-static void state_reflection_display_process(state_t *state_base, state_controller_t *controller);
+static void state_transmission_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
+
+static void state_display_process(state_t *state_base, state_controller_t *controller);
+
 static state_display_t state_reflection_display_data = {
     .base = {
         .state_entry = state_reflection_display_entry,
-        .state_process = state_reflection_display_process,
+        .state_process = state_display_process,
         .state_exit = NULL
     },
     .display_dirty = true,
@@ -35,15 +44,18 @@ static state_display_t state_reflection_display_data = {
     .is_detect_prev = false,
     .menu_pending = false,
     .up_repeat = 0,
-    .down_repeat = 0
+    .down_repeat = 0,
+    .measure_state = STATE_REFLECTION_MEASURE,
+    .alternate_state = STATE_TRANSMISSION_DISPLAY,
+    .densitometer = NULL,
+    .display_title = "Reflection",
+    .display_mode = DISPLAY_MODE_REFLECTION
 };
 
-static void state_transmission_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
-static void state_transmission_display_process(state_t *state_base, state_controller_t *controller);
 static state_display_t state_transmission_display_data = {
     .base = {
         .state_entry = state_transmission_display_entry,
-        .state_process = state_transmission_display_process,
+        .state_process = state_display_process,
         .state_exit = NULL
     },
     .display_dirty = true,
@@ -51,7 +63,12 @@ static state_display_t state_transmission_display_data = {
     .is_detect_prev = false,
     .menu_pending = false,
     .up_repeat = 0,
-    .down_repeat = 0
+    .down_repeat = 0,
+    .measure_state = STATE_TRANSMISSION_MEASURE,
+    .alternate_state = STATE_REFLECTION_DISPLAY,
+    .densitometer = NULL,
+    .display_title = "Transmission",
+    .display_mode = DISPLAY_MODE_TRANSMISSION
 };
 
 state_t *state_reflection_display()
@@ -59,117 +76,40 @@ state_t *state_reflection_display()
     return (state_t *)&state_reflection_display_data;
 }
 
-void state_reflection_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
-{
-    state_display_t *state = (state_display_t *)state_base;
-    state->display_dirty = true;
-    state->light_dirty = true;
-    state->menu_pending = false;
-    state->up_repeat = 0;
-    state->down_repeat = 0;
-    state_controller_set_home_state(controller, STATE_REFLECTION_DISPLAY);
-}
-
-void state_reflection_display_process(state_t *state_base, state_controller_t *controller)
-{
-    state_display_t *state = (state_display_t *)state_base;
-    bool is_detect = keypad_is_detect();
-    if (is_detect != state->is_detect_prev) {
-        state->light_dirty = true;
-        state->is_detect_prev = is_detect;
-    }
-
-    if (state->light_dirty) {
-        if (is_detect) {
-            sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
-        } else {
-            sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
-        }
-        state->light_dirty = false;
-    }
-
-    keypad_event_t keypad_event;
-    if (keypad_wait_for_event(&keypad_event, STATE_KEYPAD_WAIT) == osOK) {
-        state->display_dirty = true;
-
-        if (state->menu_pending) {
-            if ((keypad_event.keypad_state & (KEYPAD_BUTTON_UP | KEYPAD_BUTTON_DOWN)) == 0) {
-                state->menu_pending = false;
-                state_controller_set_next_state(controller, STATE_MAIN_MENU);
-            }
-        } else {
-            if (is_detect && keypad_is_only_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
-                state_controller_set_next_state(controller, STATE_REFLECTION_MEASURE);
-            } else if (keypad_event.key == KEYPAD_BUTTON_UP) {
-                if (keypad_event.pressed || keypad_event.repeated) {
-                    if (state->up_repeat < 5) {
-                        state->up_repeat++;
-                    } else if (state->up_repeat == 5) {
-                        log_i("Clear zero reflection measurement");
-                        densitometer_reflection_clear_zero();
-                        state->up_repeat++;
-                        state->display_dirty = true;
-                    }
-                } else {
-                    state->up_repeat = 0;
-                    state->display_dirty = true;
-                }
-            } else if (keypad_event.key == KEYPAD_BUTTON_DOWN) {
-                if (keypad_event.pressed || keypad_event.repeated) {
-                    if (state->down_repeat < 5) {
-                        state->down_repeat++;
-                    } else if (state->down_repeat == 5) {
-                        log_i("Setting zero reflection measurement");
-                        densitometer_reflection_set_zero();
-                        state->down_repeat++;
-                        state->display_dirty = true;
-                    }
-                } else {
-                    state->down_repeat = 0;
-                    state->display_dirty = true;
-                }
-            } else if (keypad_is_only_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
-                state_controller_set_next_state(controller, STATE_TRANSMISSION_DISPLAY);
-            }
-
-            if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_UP, KEYPAD_BUTTON_DOWN)) {
-                state->menu_pending = true;
-                state->up_repeat = 0;
-                state->down_repeat = 0;
-            }
-        }
-    }
-
-    if (state->display_dirty) {
-        float reading = densitometer_reflection_get_last_reading();
-        display_main_elements_t elements = {
-            .title = "Reflection",
-            .mode = DISPLAY_MODE_REFLECTION,
-            .density100 = ((!isnanf(reading)) ? lroundf(reading * 100) : 0),
-            .zero_indicator = densitometer_reflection_has_zero()
-        };
-        display_draw_main_elements(&elements);
-        state->display_dirty = false;
-    }
-}
-
 state_t *state_transmission_display()
 {
     return (state_t *)&state_transmission_display_data;
 }
 
-void state_transmission_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
+void state_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
 {
     state_display_t *state = (state_display_t *)state_base;
+
     state->display_dirty = true;
     state->light_dirty = true;
     state->menu_pending = false;
     state->up_repeat = 0;
     state->down_repeat = 0;
-    state_controller_set_home_state(controller, STATE_TRANSMISSION_DISPLAY);
+    state_controller_set_home_state(controller, state_controller_get_current_state(controller));
 }
 
-void state_transmission_display_process(state_t *state_base, state_controller_t *controller)
+void state_reflection_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
+{
+    state_display_entry(state_base, controller, prev_state);
+
+    state_display_t *state = (state_display_t *)state_base;
+    state->densitometer = densitometer_reflection();
+}
+
+void state_transmission_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
+{
+    state_display_entry(state_base, controller, prev_state);
+
+    state_display_t *state = (state_display_t *)state_base;
+    state->densitometer = densitometer_transmission();
+}
+
+void state_display_process(state_t *state_base, state_controller_t *controller)
 {
     state_display_t *state = (state_display_t *)state_base;
     bool is_detect = keypad_is_detect();
@@ -179,11 +119,7 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
     }
 
     if (state->light_dirty) {
-        if (is_detect) {
-            sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
-        } else {
-            sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
-        }
+        densitometer_set_idle_light(state->densitometer, is_detect);
         state->light_dirty = false;
     }
 
@@ -198,14 +134,14 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
             }
         } else {
             if (is_detect && keypad_is_only_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
-                state_controller_set_next_state(controller, STATE_TRANSMISSION_MEASURE);
+                state_controller_set_next_state(controller, state->measure_state);
             } else if (keypad_event.key == KEYPAD_BUTTON_UP) {
                 if (keypad_event.pressed || keypad_event.repeated) {
                     if (state->up_repeat < 5) {
                         state->up_repeat++;
                     } else if (state->up_repeat == 5) {
-                        log_i("Clear zero transmission measurement");
-                        densitometer_transmission_clear_zero();
+                        log_i("Clear zero measurement");
+                        densitometer_clear_zero(state->densitometer);
                         state->up_repeat++;
                         state->display_dirty = true;
                     }
@@ -218,8 +154,8 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
                     if (state->down_repeat < 5) {
                         state->down_repeat++;
                     } else if (state->down_repeat == 5) {
-                        log_i("Setting zero transmission measurement");
-                        densitometer_transmission_set_zero();
+                        log_i("Setting zero measurement");
+                        densitometer_set_zero(state->densitometer);
                         state->down_repeat++;
                         state->display_dirty = true;
                     }
@@ -228,7 +164,7 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
                     state->display_dirty = true;
                 }
             } else if (keypad_is_only_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
-                state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
+                state_controller_set_next_state(controller, state->alternate_state);
             }
 
             if (keypad_is_key_combo_pressed(&keypad_event, KEYPAD_BUTTON_UP, KEYPAD_BUTTON_DOWN)) {
@@ -240,12 +176,12 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
     }
 
     if (state->display_dirty) {
-        float reading = densitometer_transmission_get_last_reading();
+        float reading = densitometer_get_last_reading(state->densitometer);
         display_main_elements_t elements = {
-            .title = "Transmission",
-            .mode = DISPLAY_MODE_TRANSMISSION,
+            .title = state->display_title,
+            .mode = state->display_mode,
             .density100 = ((!isnanf(reading)) ? lroundf(reading * 100) : 0),
-            .zero_indicator = densitometer_transmission_has_zero()
+            .zero_indicator = densitometer_has_zero(state->densitometer)
         };
         display_draw_main_elements(&elements);
         state->display_dirty = false;

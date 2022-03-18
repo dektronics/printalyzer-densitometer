@@ -94,6 +94,12 @@ void state_controller_loop()
     }
 }
 
+state_identifier_t state_controller_get_current_state(const state_controller_t *controller)
+{
+    if (!controller) { return STATE_MAX; }
+    return controller->current_state;
+}
+
 void state_controller_set_next_state(state_controller_t *controller, state_identifier_t next_state)
 {
     if (!controller) { return; }

@@ -14,30 +14,44 @@ typedef struct {
     state_t base;
     bool display_dirty;
     bool take_measurement;
+    densitometer_t *densitometer;
+    state_identifier_t display_state;
+    const char *display_title;
+    display_mode_t display_mode;
 } state_measure_t;
 
+static void state_measure_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
 static void state_reflection_measure_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
-static void state_reflection_measure_process(state_t *state_base, state_controller_t *controller);
+static void state_transmission_measure_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
+
+static void state_measure_process(state_t *state_base, state_controller_t *controller);
+
 static state_measure_t state_reflection_measure_data = {
     .base = {
         .state_entry = state_reflection_measure_entry,
-        .state_process = state_reflection_measure_process,
+        .state_process = state_measure_process,
         .state_exit = NULL
     },
     .display_dirty = true,
     .take_measurement = true,
+    .densitometer = NULL,
+    .display_state = STATE_REFLECTION_DISPLAY,
+    .display_title = "Reflection",
+    .display_mode = DISPLAY_MODE_REFLECTION
 };
 
-static void state_transmission_measure_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state);
-static void state_transmission_measure_process(state_t *state_base, state_controller_t *controller);
 static state_measure_t state_transmission_measure_data = {
     .base = {
         .state_entry = state_transmission_measure_entry,
-        .state_process = state_transmission_measure_process,
+        .state_process = state_measure_process,
         .state_exit = NULL
     },
     .display_dirty = true,
     .take_measurement = true,
+    .densitometer = NULL,
+    .display_state = STATE_TRANSMISSION_DISPLAY,
+    .display_title = "Transmission",
+    .display_mode = DISPLAY_MODE_TRANSMISSION
 };
 
 static void sensor_read_callback(void *user_data);
@@ -47,82 +61,42 @@ state_t *state_reflection_measure()
     return (state_t *)&state_reflection_measure_data;
 }
 
-void state_reflection_measure_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
-{
-    state_measure_t *state = (state_measure_t *)state_base;
-    state->display_dirty = true;
-    state->take_measurement = true;
-}
-
-void state_reflection_measure_process(state_t *state_base, state_controller_t *controller)
-{
-    state_measure_t *state = (state_measure_t *)state_base;
-
-    display_main_elements_t elements = {
-        .title = "Measuring...",
-        .mode = DISPLAY_MODE_REFLECTION,
-        .density100 = 0,
-        .frame = 0
-    };
-
-    if (state->take_measurement) {
-        display_draw_main_elements(&elements);
-
-        densitometer_result_t result = densitometer_reflection_measure(sensor_read_callback, &elements);
-        if (result == DENSITOMETER_CAL_ERROR) {
-            display_static_list("Reflection",
-                "Invalid\n"
-                "calibration");
-            osDelay(2000);
-            state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
-        } else if (result == DENSITOMETER_SENSOR_ERROR) {
-            display_static_list("Reflection",
-                "Sensor\n"
-                "read error");
-            osDelay(2000);
-            state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
-        } else {
-            state->take_measurement = false;
-            state->display_dirty = true;
-        }
-    } else {
-        keypad_event_t keypad_event;
-        if (keypad_wait_for_event(&keypad_event, STATE_KEYPAD_WAIT) == osOK) {
-            if (!keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
-                /* Return to the display state if the measure button was released */
-                state_controller_set_next_state(controller, STATE_REFLECTION_DISPLAY);
-            }
-        }
-
-        if (state->display_dirty) {
-            float reading = densitometer_reflection_get_last_reading();
-            elements.density100 = (!isnanf(reading)) ? lroundf(reading * 100) : 0;
-            elements.zero_indicator = densitometer_reflection_has_zero();
-            display_draw_main_elements(&elements);
-            state->display_dirty = false;
-        }
-    }
-}
-
 state_t *state_transmission_measure()
 {
     return (state_t *)&state_transmission_measure_data;
 }
 
-void state_transmission_measure_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
+void state_measure_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
 {
     state_measure_t *state = (state_measure_t *)state_base;
+
     state->display_dirty = true;
     state->take_measurement = true;
 }
 
-void state_transmission_measure_process(state_t *state_base, state_controller_t *controller)
+void state_reflection_measure_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
+{
+    state_measure_entry(state_base, controller, prev_state);
+
+    state_measure_t *state = (state_measure_t *)state_base;
+    state->densitometer = densitometer_reflection();
+}
+
+void state_transmission_measure_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
+{
+    state_measure_entry(state_base, controller, prev_state);
+
+    state_measure_t *state = (state_measure_t *)state_base;
+    state->densitometer = densitometer_transmission();
+}
+
+void state_measure_process(state_t *state_base, state_controller_t *controller)
 {
     state_measure_t *state = (state_measure_t *)state_base;
 
     display_main_elements_t elements = {
         .title = "Measuring...",
-        .mode = DISPLAY_MODE_TRANSMISSION,
+        .mode = state->display_mode,
         .density100 = 0,
         .frame = 0
     };
@@ -130,19 +104,19 @@ void state_transmission_measure_process(state_t *state_base, state_controller_t 
     if (state->take_measurement) {
         display_draw_main_elements(&elements);
 
-        densitometer_result_t result = densitometer_transmission_measure(sensor_read_callback, &elements);
+        densitometer_result_t result = densitometer_measure(state->densitometer, sensor_read_callback, &elements);
         if (result == DENSITOMETER_CAL_ERROR) {
-            display_static_list("Transmission",
+            display_static_list(state->display_title,
                 "Invalid\n"
                 "calibration");
             osDelay(2000);
-            state_controller_set_next_state(controller, STATE_TRANSMISSION_DISPLAY);
+            state_controller_set_next_state(controller, state->display_state);
         } else if (result == DENSITOMETER_SENSOR_ERROR) {
-            display_static_list("Transmission",
+            display_static_list(state->display_title,
                 "Sensor\n"
                 "read error");
             osDelay(2000);
-            state_controller_set_next_state(controller, STATE_TRANSMISSION_DISPLAY);
+            state_controller_set_next_state(controller, state->display_state);
         } else {
             state->take_measurement = false;
             state->display_dirty = true;
@@ -152,14 +126,14 @@ void state_transmission_measure_process(state_t *state_base, state_controller_t 
         if (keypad_wait_for_event(&keypad_event, STATE_KEYPAD_WAIT) == osOK) {
             if (!keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_ACTION)) {
                 /* Return to the display state if the measure button was released */
-                state_controller_set_next_state(controller, STATE_TRANSMISSION_DISPLAY);
+                state_controller_set_next_state(controller, state->display_state);
             }
         }
 
         if (state->display_dirty) {
-            float reading = densitometer_transmission_get_last_reading();
+            float reading = densitometer_get_last_reading(state->densitometer);
             elements.density100 = (!isnanf(reading)) ? lroundf(reading * 100) : 0;
-            elements.zero_indicator = densitometer_transmission_has_zero();
+            elements.zero_indicator = densitometer_has_zero(state->densitometer);
             display_draw_main_elements(&elements);
             state->display_dirty = false;
         }

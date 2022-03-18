@@ -49,6 +49,8 @@ struct __state_t {
 void state_controller_init();
 void state_controller_loop();
 
+state_identifier_t state_controller_get_current_state(const state_controller_t *controller);
+
 void state_controller_set_next_state(state_controller_t *controller, state_identifier_t next_state);
 
 void state_controller_set_home_state(state_controller_t *controller, state_identifier_t home_state);

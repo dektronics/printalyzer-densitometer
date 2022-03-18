@@ -264,10 +264,11 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                 } while (!keypad_is_detect() && meas_option != 0 && meas_option != UINT8_MAX);
 
                 if (meas_option == 1) {
+                    densitometer_t *densitometer = densitometer_reflection();
                     elements.density100 = lroundf(cal_reflection.lo_d * 100);
                     elements.frame = 0;
                     display_draw_main_elements(&elements);
-                    meas_result = densitometer_calibrate_reflection(&(cal_reflection.lo_value), sensor_read_callback, &elements);
+                    meas_result = densitometer_calibrate(densitometer, &(cal_reflection.lo_value), sensor_read_callback, &elements);
                 } else {
                     break;
                 }
@@ -282,10 +283,11 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                 } while (!keypad_is_detect() && meas_option != 0 && meas_option != UINT8_MAX);
 
                 if (meas_option == 1) {
+                    densitometer_t *densitometer = densitometer_reflection();
                     elements.density100 = lroundf(cal_reflection.hi_d * 100);
                     elements.frame = 0;
                     display_draw_main_elements(&elements);
-                    meas_result = densitometer_calibrate_reflection(&(cal_reflection.hi_value), sensor_read_callback, &elements);
+                    meas_result = densitometer_calibrate(densitometer, &(cal_reflection.hi_value), sensor_read_callback, &elements);
                 } else {
                     break;
                 }
@@ -407,10 +409,11 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
                 } while (!keypad_is_detect() && meas_option != 0 && meas_option != UINT8_MAX);
 
                 if (meas_option == 1) {
+                    densitometer_t *densitometer = densitometer_transmission();
                     elements.density100 = 0;
                     elements.frame = 0;
                     display_draw_main_elements(&elements);
-                    meas_result = densitometer_calibrate_transmission(&(cal_transmission.zero_value), sensor_read_callback, &elements);
+                    meas_result = densitometer_calibrate(densitometer, &(cal_transmission.zero_value), sensor_read_callback, &elements);
                 } else {
                     break;
                 }
@@ -425,10 +428,11 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
                 } while (!keypad_is_detect() && meas_option != 0 && meas_option != UINT8_MAX);
 
                 if (meas_option == 1) {
+                    densitometer_t *densitometer = densitometer_transmission();
                     elements.density100 = lroundf(cal_transmission.hi_d * 100);
                     elements.frame = 0;
                     display_draw_main_elements(&elements);
-                    meas_result = densitometer_calibrate_transmission(&(cal_transmission.hi_value), sensor_read_callback, &elements);
+                    meas_result = densitometer_calibrate(densitometer, &(cal_transmission.hi_value), sensor_read_callback, &elements);
                 } else {
                     break;
                 }

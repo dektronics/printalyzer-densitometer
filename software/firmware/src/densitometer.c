@@ -13,18 +13,103 @@
 #include "cdc_handler.h"
 #include "util.h"
 
+static densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_read_callback_t callback, void *user_data);
+static densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_read_callback_t callback, void *user_data);
+
+struct __densitometer_t {
+    float last_d;
+    float zero_d;
+    sensor_light_t read_light;
+    uint8_t read_light_idle_value;
+    densitometer_result_t (*measure_func)(densitometer_t *densitometer, sensor_read_callback_t callback, void *user_data);
+};
+
+static densitometer_t reflection_data = {
+    .last_d = NAN,
+    .zero_d = NAN,
+    .read_light = SENSOR_LIGHT_REFLECTION,
+    .read_light_idle_value = LIGHT_REFLECTION_IDLE,
+    .measure_func = reflection_measure
+};
+
+static densitometer_t transmission_data = {
+    .last_d = NAN,
+    .zero_d = NAN,
+    .read_light = SENSOR_LIGHT_TRANSMISSION,
+    .read_light_idle_value = LIGHT_TRANSMISSION_IDLE,
+    .measure_func = transmission_measure
+};
+
 static bool densitometer_allow_uncalibrated = false;
-static float densitometer_reflection_d = NAN;
-static float densitometer_reflection_zero_d = NAN;
-static float densitometer_transmission_d = NAN;
-static float densitometer_transmission_zero_d = NAN;
 
 void densitometer_set_allow_uncalibrated_measurements(bool allow)
 {
     densitometer_allow_uncalibrated = allow;
 }
 
-densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t callback, void *user_data)
+densitometer_t *densitometer_reflection()
+{
+    return &reflection_data;
+}
+
+densitometer_t *densitometer_transmission()
+{
+    return &transmission_data;
+}
+
+densitometer_result_t densitometer_measure(densitometer_t *densitometer, sensor_read_callback_t callback, void *user_data)
+{
+    if (!densitometer) { return DENSITOMETER_CAL_ERROR; }
+
+    return densitometer->measure_func(densitometer, callback, user_data);
+}
+
+void densitometer_set_zero(densitometer_t *densitometer)
+{
+    if (!densitometer) { return; }
+
+    if (!isnanf(densitometer->last_d)) {
+        densitometer->zero_d = densitometer->last_d;
+    }
+}
+
+void densitometer_clear_zero(densitometer_t *densitometer)
+{
+    if (!densitometer) { return; }
+
+    densitometer->zero_d = NAN;
+}
+
+bool densitometer_has_zero(const densitometer_t *densitometer)
+{
+    if (!densitometer) { return false; }
+
+    return !isnanf(densitometer->zero_d);
+}
+
+float densitometer_get_last_reading(const densitometer_t *densitometer)
+{
+    if (!densitometer) { return NAN; }
+
+    if (!isnanf(densitometer->zero_d)) {
+        return densitometer->last_d - densitometer->zero_d;
+    } else {
+        return densitometer->last_d;
+    }
+}
+
+void densitometer_set_idle_light(const densitometer_t *densitometer, bool enabled)
+{
+    if (!densitometer) { return; }
+
+    if (enabled) {
+        sensor_set_light_mode(densitometer->read_light, false, densitometer->read_light_idle_value);
+    } else {
+        sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+    }
+}
+
+densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_read_callback_t callback, void *user_data)
 {
     settings_cal_reflection_t cal_reflection;
     bool use_target_cal = true;
@@ -72,50 +157,24 @@ densitometer_result_t densitometer_reflection_measure(sensor_read_callback_t cal
         if (meas_d < 0.0F) { meas_d = 0.0F; }
         else if (meas_d > REFLECTION_MAX_D) { meas_d = REFLECTION_MAX_D; }
 
-        densitometer_reflection_d = meas_d;
+        densitometer->last_d = meas_d;
 
     } else {
         log_i("D=<uncal>, VALUE=%f,%f", meas_value, corr_value);
 
         /* Assign a default reading when missing target calibration */
-        densitometer_reflection_d = 0.0F;
+        densitometer->last_d = 0.0F;
     }
 
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
 
-    cdc_send_density_reading('R', densitometer_reflection_d, meas_value, corr_value);
+    cdc_send_density_reading('R', densitometer->last_d, meas_value, corr_value);
 
     return DENSITOMETER_OK;
 }
 
-void densitometer_reflection_set_zero()
-{
-    if (!isnanf(densitometer_reflection_d)) {
-        densitometer_reflection_zero_d = densitometer_reflection_d;
-    }
-}
-
-void densitometer_reflection_clear_zero()
-{
-    densitometer_reflection_zero_d = NAN;
-}
-
-bool densitometer_reflection_has_zero()
-{
-    return !isnanf(densitometer_reflection_zero_d);
-}
-
-float densitometer_reflection_get_last_reading()
-{
-    if (!isnanf(densitometer_reflection_zero_d)) {
-        return densitometer_reflection_d - densitometer_reflection_zero_d;
-    } else {
-        return densitometer_reflection_d;
-    }
-}
-
-densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t callback, void *user_data)
+densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_read_callback_t callback, void *user_data)
 {
     settings_cal_transmission_t cal_transmission;
     bool use_target_cal = true;
@@ -138,6 +197,7 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
         return DENSITOMETER_SENSOR_ERROR;
     }
 
+    /* Make sure the two channels don't overlap the wrong way */
     if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
 
     /* Combine and correct the basic reading */
@@ -163,61 +223,38 @@ densitometer_result_t densitometer_transmission_measure(sensor_read_callback_t c
         if (corr_d < 0.0F) { corr_d = 0.0F; }
         else if (corr_d > TRANSMISSION_MAX_D) { corr_d = TRANSMISSION_MAX_D; }
 
-        densitometer_transmission_d = corr_d;
+        densitometer->last_d = corr_d;
 
     } else {
         log_i("D=<uncal>, VALUE=%f,%f", meas_value, corr_value);
 
         /* Assign a default reading when missing target calibration */
-        densitometer_transmission_d = 0.0F;
+        densitometer->last_d = 0.0F;
     }
 
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
 
-    cdc_send_density_reading('T', densitometer_transmission_d, meas_value, corr_value);
+    cdc_send_density_reading('T', densitometer->last_d, meas_value, corr_value);
 
     return DENSITOMETER_OK;
 }
 
-void densitometer_transmission_set_zero()
+densitometer_result_t densitometer_calibrate(densitometer_t *densitometer, float *cal_value, sensor_read_callback_t callback, void *user_data)
 {
-    if (!isnanf(densitometer_transmission_d)) {
-        densitometer_transmission_zero_d = densitometer_transmission_d;
-    }
-}
+    if (!densitometer) { return DENSITOMETER_CAL_ERROR; }
 
-void densitometer_transmission_clear_zero()
-{
-    densitometer_transmission_zero_d = NAN;
-}
-
-bool densitometer_transmission_has_zero()
-{
-    return !isnanf(densitometer_transmission_zero_d);
-}
-
-float densitometer_transmission_get_last_reading()
-{
-    if (!isnanf(densitometer_transmission_zero_d)) {
-        return densitometer_transmission_d - densitometer_transmission_zero_d;
-    } else {
-        return densitometer_transmission_d;
-    }
-}
-
-densitometer_result_t densitometer_calibrate_reflection(float *cal_value, sensor_read_callback_t callback, void *user_data)
-{
     float ch0_basic;
     float ch1_basic;
 
     /* Perform sensor read */
-    if (sensor_read_target(SENSOR_LIGHT_REFLECTION, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
+    if (sensor_read_target(densitometer->read_light, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
         log_w("Sensor read error");
-        sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
+        sensor_set_light_mode(densitometer->read_light, false, densitometer->read_light_idle_value);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
+    /* Make sure the two channels don't overlap the wrong way */
     if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
 
     /* Combine and correct the basic reading */
@@ -234,40 +271,7 @@ densitometer_result_t densitometer_calibrate_reflection(float *cal_value, sensor
     }
 
     /* Set light back to idle */
-    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
-
-    return DENSITOMETER_OK;
-}
-
-densitometer_result_t densitometer_calibrate_transmission(float *cal_value, sensor_read_callback_t callback, void *user_data)
-{
-    float ch0_basic;
-    float ch1_basic;
-
-    /* Perform sensor read */
-    if (sensor_read_target(SENSOR_LIGHT_TRANSMISSION, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
-        log_w("Sensor read error");
-        sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
-        return DENSITOMETER_SENSOR_ERROR;
-    }
-
-    if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-
-    /* Combine and correct the basic reading */
-    float meas_value = ch0_basic - ch1_basic;
-    float corr_value = sensor_apply_slope_calibration(meas_value);
-
-    if (meas_value < 0.01F || corr_value < 0.01F) {
-        return DENSITOMETER_CAL_ERROR;
-    }
-
-    /* Assign the calibration value */
-    if (cal_value) {
-        *cal_value = corr_value;
-    }
-
-    /* Set light back to idle */
-    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
+    sensor_set_light_mode(densitometer->read_light, false, densitometer->read_light_idle_value);
 
     return DENSITOMETER_OK;
 }

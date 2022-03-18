@@ -475,13 +475,13 @@ bool cdc_process_command_measurement(const cdc_command_t *cmd)
      */
     if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "REFL") == 0) {
         char buf[32];
-        float reading = densitometer_reflection_get_last_reading();
+        float reading = densitometer_get_last_reading(densitometer_reflection());
         encode_f32(buf, reading);
         cdc_send_command_response(cmd, buf);
         return true;
     } else if (cmd->type == CMD_TYPE_GET && strcmp(cmd->action, "TRAN") == 0) {
         char buf[32];
-        float reading = densitometer_transmission_get_last_reading();
+        float reading = densitometer_get_last_reading(densitometer_transmission());
         encode_f32(buf, reading);
         cdc_send_command_response(cmd, buf);
         return true;
