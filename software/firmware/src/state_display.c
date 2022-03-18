@@ -102,23 +102,29 @@ void state_reflection_display_process(state_t *state_base, state_controller_t *c
                 state_controller_set_next_state(controller, STATE_REFLECTION_MEASURE);
             } else if (keypad_event.key == KEYPAD_BUTTON_UP) {
                 if (keypad_event.pressed || keypad_event.repeated) {
-                    state->up_repeat++;
-                } else {
-                    if (state->up_repeat > 5) {
+                    if (state->up_repeat < 5) {
+                        state->up_repeat++;
+                    } else if (state->up_repeat == 5) {
                         log_i("Clear zero reflection measurement");
                         densitometer_reflection_clear_zero();
+                        state->up_repeat++;
+                        state->display_dirty = true;
                     }
+                } else {
                     state->up_repeat = 0;
                     state->display_dirty = true;
                 }
             } else if (keypad_event.key == KEYPAD_BUTTON_DOWN) {
                 if (keypad_event.pressed || keypad_event.repeated) {
-                    state->down_repeat++;
-                } else {
-                    if (state->down_repeat > 5) {
+                    if (state->down_repeat < 5) {
+                        state->down_repeat++;
+                    } else if (state->down_repeat == 5) {
                         log_i("Setting zero reflection measurement");
                         densitometer_reflection_set_zero();
+                        state->down_repeat++;
+                        state->display_dirty = true;
                     }
+                } else {
                     state->down_repeat = 0;
                     state->display_dirty = true;
                 }
@@ -195,23 +201,29 @@ void state_transmission_display_process(state_t *state_base, state_controller_t 
                 state_controller_set_next_state(controller, STATE_TRANSMISSION_MEASURE);
             } else if (keypad_event.key == KEYPAD_BUTTON_UP) {
                 if (keypad_event.pressed || keypad_event.repeated) {
-                    state->up_repeat++;
-                } else {
-                    if (state->up_repeat > 5) {
+                    if (state->up_repeat < 5) {
+                        state->up_repeat++;
+                    } else if (state->up_repeat == 5) {
                         log_i("Clear zero transmission measurement");
                         densitometer_transmission_clear_zero();
+                        state->up_repeat++;
+                        state->display_dirty = true;
                     }
+                } else {
                     state->up_repeat = 0;
                     state->display_dirty = true;
                 }
             } else if (keypad_event.key == KEYPAD_BUTTON_DOWN) {
                 if (keypad_event.pressed || keypad_event.repeated) {
-                    state->down_repeat++;
-                } else {
-                    if (state->down_repeat > 5) {
+                    if (state->down_repeat < 5) {
+                        state->down_repeat++;
+                    } else if (state->down_repeat == 5) {
                         log_i("Setting zero transmission measurement");
                         densitometer_transmission_set_zero();
+                        state->down_repeat++;
+                        state->display_dirty = true;
                     }
+                } else {
                     state->down_repeat = 0;
                     state->display_dirty = true;
                 }
