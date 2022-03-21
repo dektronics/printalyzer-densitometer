@@ -35,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->statusBar->addWidget(statusLabel_);
 
+    ui->zeroIndicatorLabel->setPixmap(QPixmap());
+
     // Calibration (gain) field validation
     ui->med0LineEdit->setValidator(util::createFloatValidator(22.0, 27.0, 6, this));
     ui->med1LineEdit->setValidator(util::createFloatValidator(22.0, 27.0, 6, this));
@@ -303,7 +305,7 @@ void MainWindow::onConnectionError()
     closeConnection();
 }
 
-void MainWindow::onDensityReading(DensInterface::DensityType type, float dValue, float rawValue, float corrValue)
+void MainWindow::onDensityReading(DensInterface::DensityType type, float dValue, float dZero, float rawValue, float corrValue)
 {
     Q_UNUSED(rawValue)
     Q_UNUSED(corrValue)
@@ -317,7 +319,29 @@ void MainWindow::onDensityReading(DensInterface::DensityType type, float dValue,
         ui->readingTypeNameLabel->setText(tr("Transmission"));
     }
 
-    ui->readingValueLineEdit->setText(QString("%1D").arg(dValue, 4, 'f', 2));
+    if (!qIsNaN(dZero)) {
+        ui->zeroIndicatorLabel->setPixmap(QPixmap(QString::fromUtf8(":/images/zero-set-indicator.png")));
+        float displayZero = dZero;
+        if (qAbs(displayZero) < 0.01F) {
+            displayZero = 0.0F;
+        }
+        ui->zeroIndicatorLabel->setToolTip(QString("%1D").arg(displayZero, 4, 'f', 2));
+    } else {
+        ui->zeroIndicatorLabel->setPixmap(QPixmap());
+        ui->zeroIndicatorLabel->setToolTip(QString());
+    }
+
+    /* Clean up the display value */
+    float displayValue;
+    if (!qIsNaN(dZero)) {
+        displayValue = dValue - dZero;
+    } else {
+        displayValue = dValue;
+    }
+    if (qAbs(displayValue) < 0.01F) {
+        displayValue = 0.0F;
+    }
+    ui->readingValueLineEdit->setText(QString("%1D").arg(displayValue, 4, 'f', 2));
 
     // Update calibration tab fields, if focused
     if (type == DensInterface::DensityReflection) {

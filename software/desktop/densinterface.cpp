@@ -473,6 +473,7 @@ void DensInterface::readDensityResponse(const DensCommand &response)
     if (!response.args().isEmpty() && response.args().at(0).endsWith(QLatin1Char('D'))) {
         DensityType densityType;
         float dValue;
+        float dZero = qSNaN();
         float rawValue = qSNaN();
         float corrValue = qSNaN();
 
@@ -487,10 +488,13 @@ void DensInterface::readDensityResponse(const DensCommand &response)
         if (response.args().size() > 1) {
             dValue = util::decode_f32(response.args().at(1));
             if (response.args().size() > 2) {
-                rawValue = util::decode_f32(response.args().at(2));
+                dZero = util::decode_f32(response.args().at(2));
             }
             if (response.args().size() > 3) {
-                corrValue = util::decode_f32(response.args().at(3));
+                rawValue = util::decode_f32(response.args().at(3));
+            }
+            if (response.args().size() > 4) {
+                corrValue = util::decode_f32(response.args().at(4));
             }
         } else {
             QString readingStr = response.args().at(0);
@@ -503,7 +507,7 @@ void DensInterface::readDensityResponse(const DensCommand &response)
             }
         }
 
-        emit densityReading(densityType, dValue, rawValue, corrValue);
+        emit densityReading(densityType, dValue, dZero, rawValue, corrValue);
     }
 }
 

@@ -123,7 +123,7 @@ signals:
     void connectionClosed();
     void connectionError();
 
-    void densityReading(DensInterface::DensityType type, float dValue, float rawValue, float corrValue);
+    void densityReading(DensInterface::DensityType type, float dValue, float dZero, float rawValue, float corrValue);
     void measurementFormatChanged();
     void allowUncalibratedMeasurementsChanged();
 

@@ -36,7 +36,7 @@ private slots:
     void onConnectionClosed();
     void onConnectionError();
 
-    void onDensityReading(DensInterface::DensityType type, float dValue, float rawValue, float corrValue);
+    void onDensityReading(DensInterface::DensityType type, float dValue, float dZero, float rawValue, float corrValue);
 
     void onCalGetAllValues();
     void onCalGainSetClicked();
