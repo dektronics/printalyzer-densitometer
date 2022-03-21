@@ -150,23 +150,20 @@ void MainWindow::onOpenConnectionDialogFinished(int result)
     dialog->deleteLater();
 
     if (result == QDialog::Accepted) {
-        const ConnectDialog::Settings p = dialog->settings();
-        qDebug() << "Connecting to:" << p.name;
-        serialPort_->setPortName(p.name);
-        serialPort_->setBaudRate(p.baudRate);
-        serialPort_->setDataBits(p.dataBits);
-        serialPort_->setParity(p.parity);
-        serialPort_->setStopBits(p.stopBits);
-        serialPort_->setFlowControl(p.flowControl);
+        const QString portName = dialog->portName();
+        qDebug() << "Connecting to:" << portName;
+        serialPort_->setPortName(portName);
+        serialPort_->setBaudRate(QSerialPort::Baud115200);
+        serialPort_->setDataBits(QSerialPort::Data8);
+        serialPort_->setParity(QSerialPort::NoParity);
+        serialPort_->setStopBits(QSerialPort::OneStop);
+        serialPort_->setFlowControl(QSerialPort::NoFlowControl);
         if (serialPort_->open(QIODevice::ReadWrite)) {
             serialPort_->setDataTerminalReady(true);
             if (densInterface_->connectToDevice(serialPort_)) {
                 ui->actionConnect->setEnabled(false);
                 ui->actionDisconnect->setEnabled(true);
-                statusLabel_->setText(tr("Connected to %1 : %2, %3, %4, %5, %6")
-                                  .arg(p.name, p.stringBaudRate, p.stringDataBits,
-                                       p.stringParity, p.stringStopBits,
-                                       p.stringFlowControl));
+                statusLabel_->setText(tr("Connected to %1").arg(portName));
             } else {
                 serialPort_->close();
                 statusLabel_->setText(tr("Unrecognized device"));

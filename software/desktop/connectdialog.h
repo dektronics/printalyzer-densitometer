@@ -17,36 +17,20 @@ class ConnectDialog : public QDialog
     Q_OBJECT
 
 public:
-    struct Settings {
-        QString name;
-        qint32 baudRate;
-        QString stringBaudRate;
-        QSerialPort::DataBits dataBits;
-        QString stringDataBits;
-        QSerialPort::Parity parity;
-        QString stringParity;
-        QSerialPort::StopBits stopBits;
-        QString stringStopBits;
-        QSerialPort::FlowControl flowControl;
-        QString stringFlowControl;
-    };
-
     explicit ConnectDialog(QWidget *parent = nullptr);
     ~ConnectDialog();
 
-    Settings settings() const;
+    QString portName() const;
 
 private slots:
     void showPortInfo(int idx);
     virtual void accept();
 
 private:
-    void fillPortsParameters();
     void fillPortsInfo();
-    void updateSettings();
 
     Ui::ConnectDialog *ui;
-    Settings currentSettings_;
+    QString portName_;
 };
 
 #endif // CONNECTDIALOG_H
