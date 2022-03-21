@@ -261,7 +261,7 @@ densitometer_result_t densitometer_calibrate(densitometer_t *densitometer, float
     float meas_value = ch0_basic - ch1_basic;
     float corr_value = sensor_apply_slope_calibration(meas_value);
 
-    if (meas_value < 0.01F || corr_value < 0.01F) {
+    if (meas_value < 0.0001F || corr_value < 0.0001F) {
         return DENSITOMETER_CAL_ERROR;
     }
 
