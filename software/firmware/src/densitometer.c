@@ -138,7 +138,7 @@ densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_re
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
 
-    cdc_send_density_reading('R', densitometer->last_d, meas_value, corr_value);
+    cdc_send_density_reading('R', densitometer->last_d, densitometer->zero_d, meas_value, corr_value);
 
     return DENSITOMETER_OK;
 }
@@ -204,7 +204,7 @@ densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
 
-    cdc_send_density_reading('T', densitometer->last_d, meas_value, corr_value);
+    cdc_send_density_reading('T', densitometer->last_d, densitometer->zero_d, meas_value, corr_value);
 
     return DENSITOMETER_OK;
 }

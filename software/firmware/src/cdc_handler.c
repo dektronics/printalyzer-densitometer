@@ -899,8 +899,9 @@ void cdc_send_command_response(const cdc_command_t *cmd, const char *str)
     cdc_write(buf, n);
 }
 
-void cdc_send_density_reading(char prefix, float d_value, float raw_value, float corr_value)
+void cdc_send_density_reading(char prefix, float d_value, float d_zero, float raw_value, float corr_value)
 {
+    float d_display;
     char buf[16];
     char sign;
 
@@ -912,15 +913,22 @@ void cdc_send_density_reading(char prefix, float d_value, float raw_value, float
         raw_value = 0.0F;
     }
 
+    /* Calculate the display value */
+    if (!isnanf(d_zero)) {
+        d_display = d_value - d_zero;
+    } else {
+        d_display = d_value;
+    }
+
     /* Find the sign character */
-    if (d_value >= 0.0F) {
+    if (d_display >= 0.0F) {
         sign = '+';
     } else {
         sign = '-';
     }
 
     /* Format the result */
-    size_t n = sprintf_(buf, "%c%c%.2fD\r\n", prefix, sign, fabsf(d_value));
+    size_t n = sprintf_(buf, "%c%c%.2fD\r\n", prefix, sign, fabsf(d_display));
 
     /* Catch cases where a negative was rounded to zero */
     if (strncmp(buf + 1, "-0.00", 5) == 0) {
@@ -933,6 +941,8 @@ void cdc_send_density_reading(char prefix, float d_value, float raw_value, float
         strncpy(extbuf, buf, n);
         extbuf[n++] = ',';
         n += encode_f32(extbuf + n, d_value);
+        extbuf[n++] = ',';
+        n += encode_f32(extbuf + n, d_zero);
         extbuf[n++] = ',';
         n += encode_f32(extbuf + n, raw_value);
         extbuf[n++] = ',';

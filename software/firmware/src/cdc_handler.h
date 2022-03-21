@@ -13,10 +13,11 @@ void task_cdc_run(void *argument);
  *
  * @param prefix The reading type, such as 'R' or 'T'
  * @param d_value The density reading value
+ * @param d_zero The density "zero" offset
  * @param raw_value The raw sensor reading, in basic counts
  * @param corr_value The slope corrected sensor reading, in basic counts
  */
-void cdc_send_density_reading(char prefix, float d_value, float raw_value, float corr_value);
+void cdc_send_density_reading(char prefix, float d_value, float d_zero, float raw_value, float corr_value);
 
 /**
  * Send a message containing raw sensor data for diagnostic purposes
