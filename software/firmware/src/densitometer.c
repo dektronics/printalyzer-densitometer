@@ -19,14 +19,16 @@ static densitometer_result_t transmission_measure(densitometer_t *densitometer, 
 struct __densitometer_t {
     float last_d;
     float zero_d;
-    sensor_light_t read_light;
-    uint8_t read_light_idle_value;
-    densitometer_result_t (*measure_func)(densitometer_t *densitometer, sensor_read_callback_t callback, void *user_data);
+    const float max_d;
+    const sensor_light_t read_light;
+    const uint8_t read_light_idle_value;
+    const densitometer_result_t (*measure_func)(densitometer_t *densitometer, sensor_read_callback_t callback, void *user_data);
 };
 
 static densitometer_t reflection_data = {
     .last_d = NAN,
     .zero_d = NAN,
+    .max_d = REFLECTION_MAX_D,
     .read_light = SENSOR_LIGHT_REFLECTION,
     .read_light_idle_value = LIGHT_REFLECTION_IDLE,
     .measure_func = reflection_measure
@@ -35,6 +37,7 @@ static densitometer_t reflection_data = {
 static densitometer_t transmission_data = {
     .last_d = NAN,
     .zero_d = NAN,
+    .max_d = TRANSMISSION_MAX_D,
     .read_light = SENSOR_LIGHT_TRANSMISSION,
     .read_light_idle_value = LIGHT_TRANSMISSION_IDLE,
     .measure_func = transmission_measure
@@ -62,40 +65,6 @@ densitometer_result_t densitometer_measure(densitometer_t *densitometer, sensor_
     if (!densitometer) { return DENSITOMETER_CAL_ERROR; }
 
     return densitometer->measure_func(densitometer, callback, user_data);
-}
-
-void densitometer_set_zero(densitometer_t *densitometer)
-{
-    if (!densitometer) { return; }
-
-    if (!isnanf(densitometer->last_d)) {
-        densitometer->zero_d = densitometer->last_d;
-    }
-}
-
-void densitometer_clear_zero(densitometer_t *densitometer)
-{
-    if (!densitometer) { return; }
-
-    densitometer->zero_d = NAN;
-}
-
-bool densitometer_has_zero(const densitometer_t *densitometer)
-{
-    if (!densitometer) { return false; }
-
-    return !isnanf(densitometer->zero_d);
-}
-
-float densitometer_get_last_reading(const densitometer_t *densitometer)
-{
-    if (!densitometer) { return NAN; }
-
-    if (!isnanf(densitometer->zero_d)) {
-        return densitometer->last_d - densitometer->zero_d;
-    } else {
-        return densitometer->last_d;
-    }
 }
 
 void densitometer_set_idle_light(const densitometer_t *densitometer, bool enabled)
@@ -154,8 +123,8 @@ densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_re
         log_i("D=%.2f, VALUE=%f,%f", meas_d, meas_value, corr_value);
 
         /* Clamp the return value to be within an acceptable range */
-        if (meas_d < 0.0F) { meas_d = 0.0F; }
-        else if (meas_d > REFLECTION_MAX_D) { meas_d = REFLECTION_MAX_D; }
+        if (meas_d <= 0.0F) { meas_d = 0.0F; }
+        else if (meas_d > densitometer->max_d) { meas_d = densitometer->max_d; }
 
         densitometer->last_d = meas_d;
 
@@ -220,8 +189,8 @@ densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_
         log_i("D=%.2f, VALUE=%f,%f", corr_d, meas_value, corr_value);
 
         /* Clamp the return value to be within an acceptable range */
-        if (corr_d < 0.0F) { corr_d = 0.0F; }
-        else if (corr_d > TRANSMISSION_MAX_D) { corr_d = TRANSMISSION_MAX_D; }
+        if (corr_d <= 0.0F) { corr_d = 0.0F; }
+        else if (corr_d > densitometer->max_d) { corr_d = densitometer->max_d; }
 
         densitometer->last_d = corr_d;
 
@@ -274,4 +243,54 @@ densitometer_result_t densitometer_calibrate(densitometer_t *densitometer, float
     sensor_set_light_mode(densitometer->read_light, false, densitometer->read_light_idle_value);
 
     return DENSITOMETER_OK;
+}
+
+void densitometer_set_zero_d(densitometer_t *densitometer, float d_value)
+{
+    if (!densitometer) { return; }
+
+    if (!isnanf(d_value) && d_value >= 0.0F && d_value <= densitometer->max_d) {
+        densitometer->zero_d = d_value;
+    } else {
+        densitometer->zero_d = NAN;
+    }
+}
+
+float densitometer_get_zero_d(const densitometer_t *densitometer)
+{
+    if (!densitometer) { return NAN; }
+
+    return densitometer->zero_d;
+}
+
+float densitometer_get_reading_d(const densitometer_t *densitometer)
+{
+    if (!densitometer) { return NAN; }
+
+    return densitometer->last_d;
+}
+
+float densitometer_get_display_d(const densitometer_t *densitometer)
+{
+    if (!densitometer) { return NAN; }
+
+    float display_value;
+    if (!isnanf(densitometer->zero_d)) {
+        display_value = densitometer->last_d - densitometer->zero_d;
+    } else {
+        display_value = densitometer->last_d;
+    }
+
+    /*
+     * Clamp the return value to be within an acceptable range, allowing
+     * for negative values as an indication to the user that their selected
+     * offset might be inappropriate.
+     */
+    if (display_value > densitometer->max_d) {
+        display_value = densitometer->max_d;
+    } else if (display_value < (-1.0F * densitometer->max_d)) {
+        display_value = -1.0F * densitometer->max_d;
+    }
+
+    return display_value;
 }

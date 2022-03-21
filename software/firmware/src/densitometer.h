@@ -44,6 +44,9 @@ densitometer_t *densitometer_transmission();
 /**
  * Measure a target material to get its density.
  *
+ * After a successful density measurement, the result can be obtained via
+ * 'densitometer_get_reading_d' or 'densitometer_get_display_d'.
+ *
  * @param callback Called periodically during the measurement loop
  * @return Result code for the measurement process
  */
@@ -71,9 +74,43 @@ densitometer_result_t densitometer_calibrate(densitometer_t *densitometer, float
  */
 void densitometer_set_idle_light(const densitometer_t *densitometer, bool enabled);
 
-void densitometer_set_zero(densitometer_t *densitometer);
-void densitometer_clear_zero(densitometer_t *densitometer);
-bool densitometer_has_zero(const densitometer_t *densitometer);
-float densitometer_get_last_reading(const densitometer_t *densitometer);
+/**
+ * Set the "zero" density value.
+ *
+ * This value is used as an offset to a displayed density reading, and is
+ * intended to be used to mark a film or paper base for user convenience.
+ *
+ * If the provided value is invalid, then the stored value is set to NAN.
+ *
+ * @param d_value The offset to set, or NAN to represent no offset.
+ */
+void densitometer_set_zero_d(densitometer_t *densitometer, float d_value);
+
+/**
+ * Get the "zero" density value.
+ *
+ * @return The current "zero" offset, or NAN if none is set.
+ */
+float densitometer_get_zero_d(const densitometer_t *densitometer);
+
+/**
+ * Get the last density reading.
+ *
+ * This is the last density reading that resulted from a call to
+ * 'densitometer_measure', with no offsets applied.
+ *
+ * @return The last density reading, or NAN if none is available
+ */
+float densitometer_get_reading_d(const densitometer_t *densitometer);
+
+/**
+ * Get the last displayable density reading.
+ *
+ * This is a convenience function that combines the last density reading
+ * with the current "zero" offset to produce a value suitable for display.
+ *
+ * @return The last displayable density reading, or NAN if none is available
+ */
+float densitometer_get_display_d(const densitometer_t *densitometer);
 
 #endif /* DENSITOMETER_H */

@@ -141,7 +141,7 @@ void state_display_process(state_t *state_base, state_controller_t *controller)
                         state->up_repeat++;
                     } else if (state->up_repeat == 5) {
                         log_i("Clear zero measurement");
-                        densitometer_clear_zero(state->densitometer);
+                        densitometer_set_zero_d(state->densitometer, NAN);
                         state->up_repeat++;
                         state->display_dirty = true;
                     }
@@ -155,7 +155,8 @@ void state_display_process(state_t *state_base, state_controller_t *controller)
                         state->down_repeat++;
                     } else if (state->down_repeat == 5) {
                         log_i("Setting zero measurement");
-                        densitometer_set_zero(state->densitometer);
+                        float last_reading = densitometer_get_reading_d(state->densitometer);
+                        densitometer_set_zero_d(state->densitometer, last_reading);
                         state->down_repeat++;
                         state->display_dirty = true;
                     }
@@ -176,12 +177,13 @@ void state_display_process(state_t *state_base, state_controller_t *controller)
     }
 
     if (state->display_dirty) {
-        float reading = densitometer_get_last_reading(state->densitometer);
+        float reading = densitometer_get_display_d(state->densitometer);
+        bool has_zero = !isnanf(densitometer_get_zero_d(state->densitometer));
         display_main_elements_t elements = {
             .title = state->display_title,
             .mode = state->display_mode,
             .density100 = ((!isnanf(reading)) ? lroundf(reading * 100) : 0),
-            .zero_indicator = densitometer_has_zero(state->densitometer)
+            .zero_indicator = has_zero
         };
         display_draw_main_elements(&elements);
         state->display_dirty = false;
