@@ -146,6 +146,7 @@ void MainWindow::openConnection()
     qDebug() << "Open connection";
     ConnectDialog *dialog = new ConnectDialog(this);
     connect(dialog, &QDialog::finished, this, &MainWindow::onOpenConnectionDialogFinished);
+    dialog->setModal(true);
     dialog->show();
 }
 
