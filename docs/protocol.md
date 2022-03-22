@@ -114,8 +114,22 @@ Commands that lack a documented response format will return either `OK` or `ERR`
 
 * `IC GAIN` - Invoke the sensor gain calibration process ***(remote mode)***
   * This is a long process in which the device must be held closed.
-    Unless logging is redirected, it does not currently report progress
-    via the USB CDC interface.
+    It will automatically abort if the hinge detect switch is released
+    during the process.
+  * While running, there will be a series of `STATUS` responses followed by
+    a single `OK` or `ERR` response.
+  * Status is reported via the following responses:
+    * `IC GAIN,STATUS,n` where n is an enumerated value as follows:
+      * 0 = initializing
+      * 1 = measuring medium gain
+      * 2 = measuring high gain
+      * 3 = measuring maximum gain
+      * 4 = calibration process failed
+      * 5 = finding gain measurement brightness
+      * 6 = waiting between measurements
+      * 7 = calibration process complete
+    * `IC GAIN,OK` - Gain calibration process is complete
+    * `IC GAIN,ERR` - Gain calibration process has failed
 * `GC GAIN` - Get sensor gain calibration values
   * Response: `GC GAIN,<L0>,<L1>,<M0>,<M1>,<H0>,<H1>,<X0>,<X1>`
   * Note: `<L0>` and `<L1>` will always be equivalent to 1.0, as they represent

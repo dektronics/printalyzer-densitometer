@@ -27,6 +27,7 @@
 #include "densitometer.h"
 #include "app_descriptor.h"
 #include "util.h"
+#include "keypad.h"
 
 #define CMD_DATA_SIZE 64
 #define CDC_TX_TIMEOUT 200
@@ -92,6 +93,7 @@ static bool cdc_parse_command(cdc_command_t *cmd, const char *buf, size_t len);
 static bool cdc_process_command_system(const cdc_command_t *cmd);
 static bool cdc_process_command_measurement(const cdc_command_t *cmd);
 static bool cdc_process_command_calibration(const cdc_command_t *cmd);
+static bool cdc_invoke_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data);
 static bool cdc_process_command_diagnostics(const cdc_command_t *cmd);
 
 static void cdc_send_response(const char *str);
@@ -525,8 +527,7 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
      * "SC TRAN" -> Set transmission density calibration values
      */
     if (cmd->type == CMD_TYPE_INVOKE && strcmp(cmd->action, "GAIN") == 0 && cdc_remote_active) {
-        //TODO This is long running, having some sort of progress notification could be helpful
-        osStatus_t result = sensor_gain_calibration(NULL, NULL);
+        osStatus_t result = sensor_gain_calibration(cdc_invoke_gain_calibration_callback, (void *)cmd);
         if (result == osOK) {
             cdc_send_command_response(cmd, "OK");
         } else {
@@ -693,6 +694,16 @@ bool cdc_process_command_calibration(const cdc_command_t *cmd)
     }
 
     return false;
+}
+
+bool cdc_invoke_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data)
+{
+    const cdc_command_t *cmd = (const cdc_command_t *)user_data;
+    char buf[32];
+    sprintf(buf, "STATUS,%d", status);
+    cdc_send_command_response(cmd, buf);
+
+    return keypad_is_detect();
 }
 
 bool cdc_process_command_diagnostics(const cdc_command_t *cmd)
