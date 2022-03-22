@@ -27,7 +27,6 @@ typedef enum {
     MAIN_MENU_CALIBRATION_REFLECTION,
     MAIN_MENU_CALIBRATION_TRANSMISSION,
     MAIN_MENU_CALIBRATION_SENSOR_GAIN,
-    MAIN_MENU_CALIBRATION_SENSOR_GAIN_RUN,
     MAIN_MENU_CALIBRATION_SENSOR_SLOPE,
     MAIN_MENU_SETTINGS,
     MAIN_MENU_SETTINGS_DIAGNOSTICS,
@@ -63,10 +62,7 @@ static void main_menu_calibration(state_main_menu_t *state, state_controller_t *
 static void main_menu_calibration_reflection(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_transmission(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controller_t *controller);
-static void main_menu_calibration_sensor_gain_run(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controller_t *controller);
-static bool sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data);
-static bool sensor_calibration_should_abort();
 static void main_menu_settings(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_about(state_main_menu_t *state, state_controller_t *controller);
@@ -107,8 +103,6 @@ void state_main_menu_process(state_t *state_base, state_controller_t *controller
         main_menu_calibration_transmission(state, controller);
     } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR_GAIN) {
         main_menu_calibration_sensor_gain(state, controller);
-    } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR_GAIN_RUN) {
-        main_menu_calibration_sensor_gain_run(state, controller);
     } else if (state->menu_state == MAIN_MENU_CALIBRATION_SENSOR_SLOPE) {
         main_menu_calibration_sensor_slope(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS) {
@@ -500,8 +494,7 @@ void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controlle
         "H0 = %.3fx\n"
         "H1 = %.3fx\n"
         "X0 = %.2fx\n"
-        "X1 = %.2fx\n"
-        "* Calibrate *",
+        "X1 = %.2fx",
         1.0F, 1.0F,
         cal_gain.ch0_medium, cal_gain.ch1_medium,
         cal_gain.ch0_high, cal_gain.ch1_high,
@@ -511,87 +504,12 @@ void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controlle
         "Sensor Gain", state->cal_sub_option,
         buf);
 
-    if (state->cal_sub_option == 9) {
-        state->menu_state = MAIN_MENU_CALIBRATION_SENSOR_GAIN_RUN;
-    } else if (state->cal_sub_option == UINT8_MAX) {
+    if (state->cal_sub_option == UINT8_MAX) {
         state_controller_set_next_state(controller, STATE_HOME);
     } else if (state->cal_sub_option == 0) {
         state->menu_state = MAIN_MENU_CALIBRATION;
         state->cal_sub_option = 1;
     }
-}
-
-void main_menu_calibration_sensor_gain_run(state_main_menu_t *state, state_controller_t *controller)
-{
-    uint8_t option = display_message(
-        "Hold device\n"
-        "firmly closed\n"
-        "with no film", NULL, NULL, " Measure ");
-
-    if (option == 1) {
-        osStatus_t ret = osOK;
-        if (!keypad_is_detect()) { return; }
-        do {
-            display_static_list("Sensor Gain", "\nStarting...");
-            ret = sensor_gain_calibration(sensor_gain_calibration_callback, NULL);
-            if (ret != osOK) { break; }
-        } while (0);
-
-        if (ret == osOK) {
-            display_message(
-                "Sensor", NULL,
-                "calibration\n"
-                "complete", " OK ");
-        } else {
-            display_message(
-                "Sensor", NULL,
-                "calibration\n"
-                "failed", " OK ");
-        }
-        state->menu_state = MAIN_MENU_CALIBRATION;
-
-    } else if (option == UINT8_MAX) {
-        state_controller_set_next_state(controller, STATE_HOME);
-    } else {
-        state->menu_state = MAIN_MENU_CALIBRATION;
-    }
-}
-
-bool sensor_gain_calibration_callback(sensor_gain_calibration_status_t status, void *user_data)
-{
-    char buf[128];
-    bool update_display = true;
-    if (status == SENSOR_GAIN_CALIBRATION_STATUS_MEDIUM) {
-        sprintf(buf, "\n"
-            "Measuring\n"
-            "medium gain");
-    } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_HIGH) {
-        sprintf(buf, "\n"
-            "Measuring\n"
-            "high gain");
-    } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_MAXIMUM) {
-        sprintf(buf, "\n"
-            "Measuring\n"
-            "maximum gain");
-    } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_LED) {
-        sprintf(buf,
-            "Finding gain\n"
-            "measurement\n"
-            "brightness");
-    } else if (status == SENSOR_GAIN_CALIBRATION_STATUS_COOLDOWN) {
-        sprintf(buf,
-            "Waiting\n"
-            "between\n"
-            "measurements");
-    } else {
-        update_display = false;
-    }
-
-    if (update_display) {
-        display_static_list("Sensor Gain", buf);
-    }
-
-    return !sensor_calibration_should_abort();
 }
 
 void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controller_t *controller)
@@ -626,22 +544,6 @@ void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controll
         state->menu_state = MAIN_MENU_CALIBRATION;
         state->cal_sub_option = 1;
     }
-}
-
-bool sensor_calibration_should_abort()
-{
-    keypad_event_t keypad_event;
-    if (keypad_wait_for_event(&keypad_event, 0) == osOK) {
-        if (keypad_is_key_pressed(&keypad_event, KEYPAD_BUTTON_MENU)) {
-            return true;
-        } else if(keypad_event.key == KEYPAD_BUTTON_DETECT && !keypad_event.pressed) {
-            return true;
-        }
-    }
-    if (!keypad_is_detect()) {
-        return true;
-    }
-    return false;
 }
 
 void main_menu_settings(state_main_menu_t *state, state_controller_t *controller)
