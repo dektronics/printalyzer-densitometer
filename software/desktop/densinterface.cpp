@@ -233,6 +233,12 @@ void DensInterface::sendSetDiagLoggingModeDebug()
     sendCommand(command);
 }
 
+void DensInterface::sendInvokeCalGain()
+{
+    DensCommand command(DensCommand::TypeInvoke, DensCommand::CategoryCalibration, "GAIN");
+    sendCommand(command);
+}
+
 void DensInterface::sendGetCalGain()
 {
     DensCommand command(DensCommand::TypeGet, DensCommand::CategoryCalibration, "GAIN");
@@ -626,7 +632,19 @@ void DensInterface::readMeasurementResponse(const DensCommand &response)
 
 void DensInterface::readCalibrationResponse(const DensCommand &response)
 {
-    if (response.type() == DensCommand::TypeGet
+    if (response.type() == DensCommand::TypeInvoke
+            && response.action() == QLatin1String("GAIN")) {
+        if (response.args().size() > 0 && response.args().at(0) == QLatin1String("OK")) {
+            emit calGainCalFinished();
+        } else if (response.args().size() > 0 && response.args().at(0) == QLatin1String("ERR")) {
+            emit calGainCalError();
+        } else if (response.args().size() > 1 && response.args().at(0) == QLatin1String("STATUS")) {
+            bool ok;
+            int status = response.args().at(1).toInt(&ok);
+            if (!ok) { status = -1; }
+            emit calGainCalStatus(status);
+        }
+    } else if (response.type() == DensCommand::TypeGet
             && response.action() == QLatin1String("GAIN")
             && response.args().length() == 8) {
         for (int i = 0; i < 8; i++) {

@@ -500,6 +500,13 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_4">
                <item>
+                <widget class="QPushButton" name="gainCalPushButton">
+                 <property name="text">
+                  <string>Calibrate</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <spacer name="horizontalSpacer_3">
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>

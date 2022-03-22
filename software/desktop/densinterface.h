@@ -57,6 +57,7 @@ public slots:
     void sendSetDiagLoggingModeUsb();
     void sendSetDiagLoggingModeDebug();
 
+    void sendInvokeCalGain();
     void sendGetCalGain();
     void sentSetCalGain(
             float medium0, float medium1, float high0, float high1,
@@ -144,6 +145,9 @@ signals:
     void diagSensorInvokeReading(int ch0, int ch1);
     void diagLogLine(const QByteArray &data);
 
+    void calGainCalStatus(int status);
+    void calGainCalFinished();
+    void calGainCalError();
     void calGainResponse();
     void calSlopeResponse();
     void calReflectionResponse();

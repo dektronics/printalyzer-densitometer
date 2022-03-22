@@ -39,6 +39,7 @@ private slots:
     void onDensityReading(DensInterface::DensityType type, float dValue, float dZero, float rawValue, float corrValue);
 
     void onCalGetAllValues();
+    void onCalGainCalClicked();
     void onCalGainSetClicked();
     void onCalSlopeSetClicked();
     void onCalReflectionSetClicked();

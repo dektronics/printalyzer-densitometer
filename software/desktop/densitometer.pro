@@ -17,6 +17,7 @@ SOURCES += \
     denscommand.cpp \
     densinterface.cpp \
     floatitemdelegate.cpp \
+    gaincalibrationdialog.cpp \
     logger.cpp \
     logwindow.cpp \
     main.cpp \
@@ -30,6 +31,7 @@ HEADERS += \
     denscommand.h \
     densinterface.h \
     floatitemdelegate.h \
+    gaincalibrationdialog.h \
     logger.h \
     logwindow.h \
     mainwindow.h \
@@ -39,6 +41,7 @@ HEADERS += \
 
 FORMS += \
     connectdialog.ui \
+    gaincalibrationdialog.ui \
     logwindow.ui \
     mainwindow.ui \
     remotecontroldialog.ui \

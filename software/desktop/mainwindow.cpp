@@ -5,12 +5,14 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
 #include <QtGui/QImage>
 #include <QtGui/QValidator>
 
 #include "connectdialog.h"
 #include "densinterface.h"
 #include "remotecontroldialog.h"
+#include "gaincalibrationdialog.h"
 #include "slopecalibrationdialog.h"
 #include "logwindow.h"
 #include "util.h"
@@ -96,6 +98,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Calibration UI signals
     connect(ui->calGetAllPushButton, &QPushButton::clicked, this, &MainWindow::onCalGetAllValues);
+    connect(ui->gainCalPushButton, &QPushButton::clicked, this, &MainWindow::onCalGainCalClicked);
     connect(ui->gainGetPushButton, &QPushButton::clicked, densInterface_, &DensInterface::sendGetCalGain);
     connect(ui->gainSetPushButton, &QPushButton::clicked, this, &MainWindow::onCalGainSetClicked);
     connect(ui->slopeGetPushButton, &QPushButton::clicked, densInterface_, &DensInterface::sendGetCalSlope);
@@ -232,6 +235,7 @@ void MainWindow::refreshButtonState()
         ui->screenshotButton->setEnabled(true);
         ui->remotePushButton->setEnabled(true);
         ui->calGetAllPushButton->setEnabled(true);
+        ui->gainCalPushButton->setEnabled(true);
         ui->gainGetPushButton->setEnabled(true);
         ui->slopeGetPushButton->setEnabled(true);
         ui->reflGetPushButton->setEnabled(true);
@@ -253,6 +257,7 @@ void MainWindow::refreshButtonState()
         ui->screenshotButton->setEnabled(false);
         ui->remotePushButton->setEnabled(false);
         ui->calGetAllPushButton->setEnabled(false);
+        ui->gainCalPushButton->setEnabled(false);
         ui->gainGetPushButton->setEnabled(false);
         ui->slopeGetPushButton->setEnabled(false);
         ui->reflGetPushButton->setEnabled(false);
@@ -365,6 +370,31 @@ void MainWindow::onCalGetAllValues()
     densInterface_->sendGetCalSlope();
     densInterface_->sendGetCalReflection();
     densInterface_->sendGetCalTransmission();
+}
+
+void MainWindow::onCalGainCalClicked()
+{
+    if (remoteDialog_) {
+        qWarning() << "Cannot start gain galibration with remote control dialog open";
+        return;
+    }
+    ui->gainCalPushButton->setEnabled(false);
+
+    QMessageBox messageBox;
+    messageBox.setWindowTitle(tr("Sensor Gain Calibration"));
+    messageBox.setText(tr("Hold the device firmly closed with no film in the optical path."));
+    messageBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    messageBox.setDefaultButton(QMessageBox::Ok);
+
+    if (messageBox.exec() == QMessageBox::Ok) {
+        GainCalibrationDialog dialog(densInterface_, this);
+        dialog.exec();
+        if (dialog.success()) {
+            densInterface_->sendGetCalGain();
+        }
+    }
+
+    ui->gainCalPushButton->setEnabled(true);
 }
 
 void MainWindow::onCalGainSetClicked()
