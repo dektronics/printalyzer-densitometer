@@ -224,9 +224,11 @@ void MainWindow::onLoggerClosed()
 void MainWindow::about()
 {
     QMessageBox::about(this, tr("About"),
-                       tr("<b>Printalyzer Densitometer Desktop v0.1</b><br>"
+                       tr("<b>%1 v%2</b><br>"
                           "<br>"
-                          "Copyright 2021 Dektronics, Inc. All rights reserved."));
+                          "Copyright 2021 Dektronics, Inc. All rights reserved.")
+                       .arg(QApplication::applicationName(),
+                            QApplication::applicationVersion()));
 }
 
 void MainWindow::refreshButtonState()
