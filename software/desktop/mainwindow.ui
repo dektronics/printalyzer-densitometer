@@ -928,6 +928,10 @@
      <string>&amp;Tools</string>
     </property>
     <addaction name="actionConfigure"/>
+    <addaction name="separator"/>
+    <addaction name="actionImportSettings"/>
+    <addaction name="actionExportSettings"/>
+    <addaction name="separator"/>
     <addaction name="actionLogger"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -1042,6 +1046,22 @@
    </property>
    <property name="shortcut">
     <string>Alt+L</string>
+   </property>
+  </action>
+  <action name="actionExportSettings">
+   <property name="text">
+    <string>Export Device Settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>Export settings to file</string>
+   </property>
+  </action>
+  <action name="actionImportSettings">
+   <property name="text">
+    <string>Import Device Settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>Import settings from file</string>
    </property>
   </action>
  </widget>

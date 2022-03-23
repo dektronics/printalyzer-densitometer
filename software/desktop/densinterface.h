@@ -59,7 +59,7 @@ public slots:
 
     void sendInvokeCalGain();
     void sendGetCalGain();
-    void sentSetCalGain(
+    void sendSetCalGain(
             float medium0, float medium1, float high0, float high1,
             float maximum0, float maximum1);
     void sendGetCalSlope();

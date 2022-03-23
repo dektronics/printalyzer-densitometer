@@ -23,6 +23,8 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     remotecontroldialog.cpp \
+    settingsexporter.cpp \
+    settingsimportdialog.cpp \
     slopecalibrationdialog.cpp \
     util.cpp
 
@@ -36,6 +38,8 @@ HEADERS += \
     logwindow.h \
     mainwindow.h \
     remotecontroldialog.h \
+    settingsexporter.h \
+    settingsimportdialog.h \
     slopecalibrationdialog.h \
     util.h
 
@@ -45,6 +49,7 @@ FORMS += \
     logwindow.ui \
     mainwindow.ui \
     remotecontroldialog.ui \
+    settingsimportdialog.ui \
     slopecalibrationdialog.ui
 
 RESOURCES += \

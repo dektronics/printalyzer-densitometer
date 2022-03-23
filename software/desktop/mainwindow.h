@@ -27,6 +27,8 @@ private slots:
     void openConnection();
     void onOpenConnectionDialogFinished(int result);
     void closeConnection();
+    void onImportSettings();
+    void onExportSettings();
     void onLogger(bool checked);
     void onLoggerOpened();
     void onLoggerClosed();

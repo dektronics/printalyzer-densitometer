@@ -15,6 +15,8 @@
 #include "gaincalibrationdialog.h"
 #include "slopecalibrationdialog.h"
 #include "logwindow.h"
+#include "settingsexporter.h"
+#include "settingsimportdialog.h"
 #include "util.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -31,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->actionDisconnect->setEnabled(false);
     ui->actionConfigure->setEnabled(true);
     ui->actionExit->setEnabled(true);
+    ui->actionImportSettings->setEnabled(false);
+    ui->actionExportSettings->setEnabled(false);
 
     ui->refreshSensorsPushButton->setEnabled(false);
     ui->screenshotButton->setEnabled(false);
@@ -84,6 +88,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionDisconnect, &QAction::triggered, this, &MainWindow::closeConnection);
     connect(ui->actionExit, &QAction::triggered, this, &MainWindow::close);
     //connect(ui->actionConfigure, &QAction::triggered, settings_, &SettingsDialog::show);
+    connect(ui->actionImportSettings, &QAction::triggered, this, &MainWindow::onImportSettings);
+    connect(ui->actionExportSettings, &QAction::triggered, this, &MainWindow::onExportSettings);
     connect(ui->actionLogger, &QAction::triggered, this, &MainWindow::onLogger);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::about);
 
@@ -194,6 +200,56 @@ void MainWindow::closeConnection()
     ui->actionDisconnect->setEnabled(false);
 }
 
+void MainWindow::onImportSettings()
+{
+    QFileDialog fileDialog(this, tr("Load Device Settings"), QString(), tr("Settings Files (*.pds)"));
+    fileDialog.setDefaultSuffix(".pds");
+    fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+    if (fileDialog.exec() && !fileDialog.selectedFiles().isEmpty()) {
+        QString filename = fileDialog.selectedFiles().constFirst();
+        if (!filename.isEmpty()) {
+            SettingsImportDialog importDialog;
+            if (!importDialog.loadFile(filename)) {
+                QMessageBox::warning(this, tr("Error"), tr("Unable to read settings file"));
+                return;
+            }
+            if (importDialog.exec() == QDialog::Accepted) {
+                QMessageBox messageBox;
+                messageBox.setWindowTitle(tr("Send to Device"));
+                messageBox.setText(tr("Replace the current device settings with the selected values?"));
+                messageBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+                messageBox.setDefaultButton(QMessageBox::Cancel);
+
+                if (messageBox.exec() == QMessageBox::Ok) {
+                    importDialog.sendSelectedSettings(densInterface_);
+                    onCalGetAllValues();
+                }
+            }
+        }
+    }
+}
+
+void MainWindow::onExportSettings()
+{
+    SettingsExporter *exporter = new SettingsExporter(densInterface_, this);
+    connect(exporter, &SettingsExporter::exportReady, this, [this, exporter]() {
+        exporter->deleteLater();
+        QFileDialog fileDialog(this, tr("Save Device Settings"), QString(), tr("Settings File (*.pds)"));
+        fileDialog.setDefaultSuffix(".pds");
+        fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+        if (fileDialog.exec() && !fileDialog.selectedFiles().isEmpty()) {
+            QString filename = fileDialog.selectedFiles().constFirst();
+            if (!filename.isEmpty()) {
+                exporter->saveExport(filename);
+            }
+        }
+    });
+    connect(exporter, &SettingsExporter::exportFailed, this, [exporter]() {
+        exporter->deleteLater();
+    });
+    exporter->prepareExport();
+}
+
 void MainWindow::onLogger(bool checked)
 {
     if (checked) {
@@ -234,6 +290,8 @@ void MainWindow::about()
 void MainWindow::refreshButtonState()
 {
     if (densInterface_->connected()) {
+        ui->actionImportSettings->setEnabled(true);
+        ui->actionExportSettings->setEnabled(true);
         ui->refreshSensorsPushButton->setEnabled(true);
         ui->screenshotButton->setEnabled(true);
         ui->remotePushButton->setEnabled(true);
@@ -256,6 +314,8 @@ void MainWindow::refreshButtonState()
             ui->tranLoDensityLineEdit->setText("0.00");
         }
     } else {
+        ui->actionImportSettings->setEnabled(false);
+        ui->actionExportSettings->setEnabled(false);
         ui->refreshSensorsPushButton->setEnabled(false);
         ui->screenshotButton->setEnabled(false);
         ui->remotePushButton->setEnabled(false);
@@ -421,7 +481,7 @@ void MainWindow::onCalGainSetClicked()
     float max1 = ui->max1LineEdit->text().toFloat(&ok);
     if (!ok) { return; }
 
-    densInterface_->sentSetCalGain(med0, med1, high0, high1, max0, max1);
+    densInterface_->sendSetCalGain(med0, med1, high0, high1, max0, max1);
 }
 
 void MainWindow::onCalSlopeSetClicked()
