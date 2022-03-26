@@ -2,6 +2,7 @@
 #include "ui_connectdialog.h"
 
 #include <QSerialPortInfo>
+#include <QPushButton>
 
 static const char blankString[] = QT_TRANSLATE_NOOP("ConnectDialog", "N/A");
 
@@ -75,4 +76,5 @@ void ConnectDialog::fillPortsInfo()
 
         ui->serialPortInfoListBox->addItem(list.first(), list);
     }
+    ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(ui->serialPortInfoListBox->count() > 0);
 }
