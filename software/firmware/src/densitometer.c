@@ -94,19 +94,14 @@ densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_re
 
     /* Perform sensor read */
     float ch0_basic;
-    float ch1_basic;
-    if (sensor_read_target(SENSOR_LIGHT_REFLECTION, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
+    if (sensor_read_target(SENSOR_LIGHT_REFLECTION, &ch0_basic, NULL, callback, user_data) != osOK) {
         log_w("Sensor read error");
         sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
-    /* Make sure the two channels don't overlap the wrong way */
-    if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-
     /* Combine and correct the basic reading */
-    float meas_value = ch0_basic - ch1_basic;
-    float corr_value = sensor_apply_slope_calibration(meas_value);
+    float corr_value = sensor_apply_slope_calibration(ch0_basic);
 
     if (use_target_cal) {
         /* Convert all values into log units */
@@ -120,7 +115,7 @@ densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_re
         /* Calculate the measured density */
         float meas_d = (m * (meas_ll - cal_lo_ll)) + cal_reflection.lo_d;
 
-        log_i("D=%.2f, VALUE=%f,%f", meas_d, meas_value, corr_value);
+        log_i("D=%.2f, VALUE=%f,%f", meas_d, ch0_basic, corr_value);
 
         /* Clamp the return value to be within an acceptable range */
         if (meas_d <= 0.0F) { meas_d = 0.0F; }
@@ -129,7 +124,7 @@ densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_re
         densitometer->last_d = meas_d;
 
     } else {
-        log_i("D=<uncal>, VALUE=%f,%f", meas_value, corr_value);
+        log_i("D=<uncal>, VALUE=%f,%f", ch0_basic, corr_value);
 
         /* Assign a default reading when missing target calibration */
         densitometer->last_d = 0.0F;
@@ -138,7 +133,7 @@ densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_re
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
 
-    cdc_send_density_reading('R', densitometer->last_d, densitometer->zero_d, meas_value, corr_value);
+    cdc_send_density_reading('R', densitometer->last_d, densitometer->zero_d, ch0_basic, corr_value);
 
     return DENSITOMETER_OK;
 }
@@ -159,19 +154,14 @@ densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_
 
     /* Perform sensor read */
     float ch0_basic;
-    float ch1_basic;
-    if (sensor_read_target(SENSOR_LIGHT_TRANSMISSION, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
+    if (sensor_read_target(SENSOR_LIGHT_TRANSMISSION, &ch0_basic, NULL, callback, user_data) != osOK) {
         log_w("Sensor read error");
         sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
-    /* Make sure the two channels don't overlap the wrong way */
-    if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-
     /* Combine and correct the basic reading */
-    float meas_value = ch0_basic - ch1_basic;
-    float corr_value = sensor_apply_slope_calibration(meas_value);
+    float corr_value = sensor_apply_slope_calibration(ch0_basic);
 
     if (use_target_cal) {
         /* Calculate the measured CAL-HI density relative to the zero value */
@@ -186,7 +176,7 @@ densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_
         /* Calculate the calibration corrected density */
         float corr_d = meas_d * adj_factor;
 
-        log_i("D=%.2f, VALUE=%f,%f", corr_d, meas_value, corr_value);
+        log_i("D=%.2f, VALUE=%f,%f", corr_d, ch0_basic, corr_value);
 
         /* Clamp the return value to be within an acceptable range */
         if (corr_d <= 0.0F) { corr_d = 0.0F; }
@@ -195,7 +185,7 @@ densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_
         densitometer->last_d = corr_d;
 
     } else {
-        log_i("D=<uncal>, VALUE=%f,%f", meas_value, corr_value);
+        log_i("D=<uncal>, VALUE=%f,%f", ch0_basic, corr_value);
 
         /* Assign a default reading when missing target calibration */
         densitometer->last_d = 0.0F;
@@ -204,7 +194,7 @@ densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_
     /* Set light back to idle */
     sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
 
-    cdc_send_density_reading('T', densitometer->last_d, densitometer->zero_d, meas_value, corr_value);
+    cdc_send_density_reading('T', densitometer->last_d, densitometer->zero_d, ch0_basic, corr_value);
 
     return DENSITOMETER_OK;
 }
@@ -213,24 +203,18 @@ densitometer_result_t densitometer_calibrate(densitometer_t *densitometer, float
 {
     if (!densitometer) { return DENSITOMETER_CAL_ERROR; }
 
-    float ch0_basic;
-    float ch1_basic;
-
     /* Perform sensor read */
-    if (sensor_read_target(densitometer->read_light, &ch0_basic, &ch1_basic, callback, user_data) != osOK) {
+    float ch0_basic;
+    if (sensor_read_target(densitometer->read_light, &ch0_basic, NULL, callback, user_data) != osOK) {
         log_w("Sensor read error");
         sensor_set_light_mode(densitometer->read_light, false, densitometer->read_light_idle_value);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
-    /* Make sure the two channels don't overlap the wrong way */
-    if (ch1_basic >= ch0_basic) { ch1_basic = 0; }
-
     /* Combine and correct the basic reading */
-    float meas_value = ch0_basic - ch1_basic;
-    float corr_value = sensor_apply_slope_calibration(meas_value);
+    float corr_value = sensor_apply_slope_calibration(ch0_basic);
 
-    if (meas_value < 0.0001F || corr_value < 0.0001F) {
+    if (ch0_basic < 0.0001F || corr_value < 0.0001F) {
         return DENSITOMETER_CAL_ERROR;
     }
 
