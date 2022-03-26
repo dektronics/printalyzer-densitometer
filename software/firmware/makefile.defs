@@ -2,6 +2,15 @@
 # Makefile definitions used to setup initial build properties
 #
 
+PYTHON3_OK := $(shell python3 --version 2>&1)
+ifeq ('$(PYTHON3_OK)','')
+PYTHON := python
+else
+PYTHON := python3
+endif
+
+PERL := perl
+
 ifeq ($(SHELL), cmd.exe)
 BUILD_DATE := $(shell python -c "from datetime import datetime; print(datetime.utcnow().strftime('%Y-%m-%d %H:%M'))")
 else
