@@ -57,9 +57,10 @@ std::tuple<float, float, float> SlopeCalibrationDialog::calValues() const
     return calValues_;
 }
 
-void SlopeCalibrationDialog::onDensityReading(DensInterface::DensityType type, float dValue, float rawValue, float corrValue)
+void SlopeCalibrationDialog::onDensityReading(DensInterface::DensityType type, float dValue, float dZero, float rawValue, float corrValue)
 {
     Q_UNUSED(dValue)
+    Q_UNUSED(dZero)
     Q_UNUSED(corrValue)
 
     // Only using transmission readings for this

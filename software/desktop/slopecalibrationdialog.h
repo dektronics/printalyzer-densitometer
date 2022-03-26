@@ -23,7 +23,7 @@ public:
     std::tuple<float, float, float> calValues() const;
 
 private slots:
-    void onDensityReading(DensInterface::DensityType type, float dValue, float rawValue, float corrValue);
+    void onDensityReading(DensInterface::DensityType type, float dValue, float dZero, float rawValue, float corrValue);
     void onActionCut();
     void onActionCopy();
     void onActionPaste();
