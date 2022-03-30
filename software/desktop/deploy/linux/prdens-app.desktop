@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Printalyzer Densitometer Desktop
+Comment=Companion application for the Printalyzer Densitometer
+Exec=densitometer
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Utility;Science;
+Icon=prdens-app
