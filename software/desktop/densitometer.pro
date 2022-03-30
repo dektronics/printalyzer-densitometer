@@ -13,50 +13,51 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    connectdialog.cpp \
-    denscommand.cpp \
-    densinterface.cpp \
-    floatitemdelegate.cpp \
-    gaincalibrationdialog.cpp \
-    logger.cpp \
-    logwindow.cpp \
-    main.cpp \
-    mainwindow.cpp \
-    remotecontroldialog.cpp \
-    settingsexporter.cpp \
-    settingsimportdialog.cpp \
-    slopecalibrationdialog.cpp \
-    util.cpp
+    src/connectdialog.cpp \
+    src/denscommand.cpp \
+    src/densinterface.cpp \
+    src/floatitemdelegate.cpp \
+    src/gaincalibrationdialog.cpp \
+    src/logger.cpp \
+    src/logwindow.cpp \
+    src/main.cpp \
+    src/mainwindow.cpp \
+    src/remotecontroldialog.cpp \
+    src/settingsexporter.cpp \
+    src/settingsimportdialog.cpp \
+    src/slopecalibrationdialog.cpp \
+    src/util.cpp
 
 HEADERS += \
-    connectdialog.h \
-    denscommand.h \
-    densinterface.h \
-    floatitemdelegate.h \
-    gaincalibrationdialog.h \
-    logger.h \
-    logwindow.h \
-    mainwindow.h \
-    remotecontroldialog.h \
-    settingsexporter.h \
-    settingsimportdialog.h \
-    slopecalibrationdialog.h \
-    util.h
+    src/connectdialog.h \
+    src/denscommand.h \
+    src/densinterface.h \
+    src/floatitemdelegate.h \
+    src/gaincalibrationdialog.h \
+    src/logger.h \
+    src/logwindow.h \
+    src/mainwindow.h \
+    src/remotecontroldialog.h \
+    src/settingsexporter.h \
+    src/settingsimportdialog.h \
+    src/slopecalibrationdialog.h \
+    src/util.h
 
 FORMS += \
-    connectdialog.ui \
-    gaincalibrationdialog.ui \
-    logwindow.ui \
-    mainwindow.ui \
-    remotecontroldialog.ui \
-    settingsimportdialog.ui \
-    slopecalibrationdialog.ui
+    src/connectdialog.ui \
+    src/gaincalibrationdialog.ui \
+    src/logwindow.ui \
+    src/mainwindow.ui \
+    src/remotecontroldialog.ui \
+    src/settingsimportdialog.ui \
+    src/slopecalibrationdialog.ui
 
 RESOURCES += \
-    densitometer.qrc
+    assets/densitometer.qrc
 
 TRANSLATIONS += \
-    densitometer_en_US.ts
+    assets/translations/densitometer_en_US.ts
+
 CONFIG += lrelease
 CONFIG += embed_translations
 

@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
     QApplication::setApplicationVersion("0.1");
     QApplication::setOrganizationName("Dektronics, Inc.");
     QApplication::setOrganizationDomain("dektronics.com");
+    QApplication::setWindowIcon(QIcon(":/icons/appicon.png"));
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();

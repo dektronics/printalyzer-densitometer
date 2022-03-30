@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+        <file>icons/appicon.png</file>
         <file>images/connect.png</file>
         <file>images/disconnect.png</file>
         <file>images/application-exit.png</file>
