@@ -462,74 +462,87 @@ void MainWindow::onCalGainCalClicked()
 
 void MainWindow::onCalGainSetClicked()
 {
+    DensCalGain calSlope;
     bool ok;
-    float med0 = ui->med0LineEdit->text().toFloat(&ok);
+
+    calSlope.setLow0(1.0F);
+    calSlope.setLow1(1.0F);
+
+    calSlope.setMed0(ui->med0LineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float med1 = ui->med1LineEdit->text().toFloat(&ok);
+    calSlope.setMed1(ui->med1LineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float high0 = ui->high0LineEdit->text().toFloat(&ok);
+    calSlope.setHigh0(ui->high0LineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float high1 = ui->high1LineEdit->text().toFloat(&ok);
+    calSlope.setHigh1(ui->high1LineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float max0 = ui->max0LineEdit->text().toFloat(&ok);
+    calSlope.setMax0(ui->max0LineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float max1 = ui->max1LineEdit->text().toFloat(&ok);
+    calSlope.setMax1(ui->max1LineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    densInterface_->sendSetCalGain(med0, med1, high0, high1, max0, max1);
+    densInterface_->sendSetCalGain(calSlope);
 }
 
 void MainWindow::onCalSlopeSetClicked()
 {
+    DensCalSlope calSlope;
     bool ok;
-    float b0 = ui->b0LineEdit->text().toFloat(&ok);
+
+    calSlope.setB0(ui->b0LineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float b1 = ui->b1LineEdit->text().toFloat(&ok);
+    calSlope.setB1(ui->b1LineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float b2 = ui->b2LineEdit->text().toFloat(&ok);
+    calSlope.setB2(ui->b2LineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    densInterface_->sendSetCalSlope(b0, b1, b2);
+    densInterface_->sendSetCalSlope(calSlope);
 }
 
 void MainWindow::onCalReflectionSetClicked()
 {
+    DensCalTarget calTarget;
     bool ok;
-    float loDensity = ui->reflLoDensityLineEdit->text().toFloat(&ok);
+
+    calTarget.setLoDensity(ui->reflLoDensityLineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float loReading = ui->reflLoReadingLineEdit->text().toFloat(&ok);
+    calTarget.setLoReading(ui->reflLoReadingLineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float hiDensity = ui->reflHiDensityLineEdit->text().toFloat(&ok);
+    calTarget.setHiDensity(ui->reflHiDensityLineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float hiReading = ui->reflHiReadingLineEdit->text().toFloat(&ok);
+    calTarget.setHiReading(ui->reflHiReadingLineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    densInterface_->sendSetCalReflection(loDensity, loReading, hiDensity, hiReading);
+    densInterface_->sendSetCalReflection(calTarget);
 }
 
 void MainWindow::onCalTransmissionSetClicked()
 {
+    DensCalTarget calTarget;
     bool ok;
-    float loReading = ui->tranLoReadingLineEdit->text().toFloat(&ok);
+
+    calTarget.setLoDensity(0.0F);
+
+    calTarget.setLoReading(ui->tranLoReadingLineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float hiDensity = ui->tranHiDensityLineEdit->text().toFloat(&ok);
+    calTarget.setHiDensity(ui->tranHiDensityLineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    float hiReading = ui->tranHiReadingLineEdit->text().toFloat(&ok);
+    calTarget.setHiReading(ui->tranHiReadingLineEdit->text().toFloat(&ok));
     if (!ok) { return; }
 
-    densInterface_->sendSetCalTransmission(0.0F, loReading, hiDensity, hiReading);
+    densInterface_->sendSetCalTransmission(calTarget);
 }
 
 void MainWindow::onCalGainTextChanged()
@@ -650,40 +663,48 @@ void MainWindow::onDiagDisplayScreenshot(const QByteArray &data)
 
 void MainWindow::onCalGainResponse()
 {
-    ui->low0LineEdit->setText(QString::number(densInterface_->calGainLow0(), 'f'));
-    ui->low1LineEdit->setText(QString::number(densInterface_->calGainLow1(), 'f'));
+    const DensCalGain calGain = densInterface_->calGain();
 
-    ui->med0LineEdit->setText(QString::number(densInterface_->calGainMedium0(), 'f'));
-    ui->med1LineEdit->setText(QString::number(densInterface_->calGainMedium1(), 'f'));
+    ui->low0LineEdit->setText(QString::number(calGain.low0(), 'f'));
+    ui->low1LineEdit->setText(QString::number(calGain.low1(), 'f'));
 
-    ui->high0LineEdit->setText(QString::number(densInterface_->calGainHigh0(), 'f'));
-    ui->high1LineEdit->setText(QString::number(densInterface_->calGainHigh1(), 'f'));
+    ui->med0LineEdit->setText(QString::number(calGain.med0(), 'f'));
+    ui->med1LineEdit->setText(QString::number(calGain.med1(), 'f'));
 
-    ui->max0LineEdit->setText(QString::number(densInterface_->calGainMaximum0(), 'f'));
-    ui->max1LineEdit->setText(QString::number(densInterface_->calGainMaximum1(), 'f'));
+    ui->high0LineEdit->setText(QString::number(calGain.high0(), 'f'));
+    ui->high1LineEdit->setText(QString::number(calGain.high1(), 'f'));
+
+    ui->max0LineEdit->setText(QString::number(calGain.max0(), 'f'));
+    ui->max1LineEdit->setText(QString::number(calGain.max1(), 'f'));
 }
 
 void MainWindow::onCalSlopeResponse()
 {
-    ui->b0LineEdit->setText(QString::number(densInterface_->calSlopeB0(), 'f'));
-    ui->b1LineEdit->setText(QString::number(densInterface_->calSlopeB1(), 'f'));
-    ui->b2LineEdit->setText(QString::number(densInterface_->calSlopeB2(), 'f'));
+    const DensCalSlope calSlope = densInterface_->calSlope();
+
+    ui->b0LineEdit->setText(QString::number(calSlope.b0(), 'f'));
+    ui->b1LineEdit->setText(QString::number(calSlope.b1(), 'f'));
+    ui->b2LineEdit->setText(QString::number(calSlope.b2(), 'f'));
 }
 
 void MainWindow::onCalReflectionResponse()
 {
-    ui->reflLoDensityLineEdit->setText(QString::number(densInterface_->calReflectionLoDensity(), 'f', 2));
-    ui->reflLoReadingLineEdit->setText(QString::number(densInterface_->calReflectionLoReading(), 'f', 6));
-    ui->reflHiDensityLineEdit->setText(QString::number(densInterface_->calReflectionHiDensity(), 'f', 2));
-    ui->reflHiReadingLineEdit->setText(QString::number(densInterface_->calReflectionHiReading(), 'f', 6));
+    const DensCalTarget calReflection = densInterface_->calReflection();
+
+    ui->reflLoDensityLineEdit->setText(QString::number(calReflection.loDensity(), 'f', 2));
+    ui->reflLoReadingLineEdit->setText(QString::number(calReflection.loReading(), 'f', 6));
+    ui->reflHiDensityLineEdit->setText(QString::number(calReflection.hiDensity(), 'f', 2));
+    ui->reflHiReadingLineEdit->setText(QString::number(calReflection.hiReading(), 'f', 6));
 }
 
 void MainWindow::onCalTransmissionResponse()
 {
-    ui->tranLoDensityLineEdit->setText(QString::number(densInterface_->calTransmissionLoDensity(), 'f', 2));
-    ui->tranLoReadingLineEdit->setText(QString::number(densInterface_->calTransmissionLoReading(), 'f', 6));
-    ui->tranHiDensityLineEdit->setText(QString::number(densInterface_->calTransmissionHiDensity(), 'f', 2));
-    ui->tranHiReadingLineEdit->setText(QString::number(densInterface_->calTransmissionHiReading(), 'f', 6));
+    const DensCalTarget calTransmission = densInterface_->calTransmission();
+
+    ui->tranLoDensityLineEdit->setText(QString::number(calTransmission.loDensity(), 'f', 2));
+    ui->tranLoReadingLineEdit->setText(QString::number(calTransmission.loReading(), 'f', 6));
+    ui->tranHiDensityLineEdit->setText(QString::number(calTransmission.hiDensity(), 'f', 2));
+    ui->tranHiReadingLineEdit->setText(QString::number(calTransmission.hiReading(), 'f', 6));
 }
 
 void MainWindow::onRemoteControl()

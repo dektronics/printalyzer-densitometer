@@ -60,44 +60,49 @@ bool SettingsExporter::saveExport(const QString &filename)
 
     // Sensor calibration
     QJsonObject jsonCalGain;
-    jsonCalGain["L0"] = QString::number(densInterface_->calGainLow0(), 'f', 6);
-    jsonCalGain["L1"] = QString::number(densInterface_->calGainLow1(), 'f', 6);
-    jsonCalGain["M0"] = QString::number(densInterface_->calGainMedium0(), 'f', 6);
-    jsonCalGain["M1"] = QString::number(densInterface_->calGainMedium1(), 'f', 6);
-    jsonCalGain["H0"] = QString::number(densInterface_->calGainHigh0(), 'f', 6);
-    jsonCalGain["H1"] = QString::number(densInterface_->calGainHigh1(), 'f', 6);
-    jsonCalGain["X0"] = QString::number(densInterface_->calGainMaximum0(), 'f', 6);
-    jsonCalGain["X1"] = QString::number(densInterface_->calGainMaximum1(), 'f', 6);
+    const DensCalGain calGain = densInterface_->calGain();
+    jsonCalGain["L0"] = QString::number(calGain.low0(), 'f', 6);
+    jsonCalGain["L1"] = QString::number(calGain.low1(), 'f', 6);
+    jsonCalGain["M0"] = QString::number(calGain.med0(), 'f', 6);
+    jsonCalGain["M1"] = QString::number(calGain.med1(), 'f', 6);
+    jsonCalGain["H0"] = QString::number(calGain.high0(), 'f', 6);
+    jsonCalGain["H1"] = QString::number(calGain.high1(), 'f', 6);
+    jsonCalGain["X0"] = QString::number(calGain.max0(), 'f', 6);
+    jsonCalGain["X1"] = QString::number(calGain.max1(), 'f', 6);
 
     QJsonObject jsonCalSlope;
-    jsonCalSlope["B0"] = QString::number(densInterface_->calSlopeB0(), 'f', 6);
-    jsonCalSlope["B1"] = QString::number(densInterface_->calSlopeB1(), 'f', 6);
-    jsonCalSlope["B2"] = QString::number(densInterface_->calSlopeB2(), 'f', 6);
+    const DensCalSlope calSlope = densInterface_->calSlope();
+    jsonCalSlope["B0"] = QString::number(calSlope.b0(), 'f', 6);
+    jsonCalSlope["B1"] = QString::number(calSlope.b1(), 'f', 6);
+    jsonCalSlope["B2"] = QString::number(calSlope.b2(), 'f', 6);
 
     QJsonObject jsonCalSensor;
     jsonCalSensor["gain"] = jsonCalGain;
     jsonCalSensor["slope"] = jsonCalSlope;
 
     // Target calibration
+    const DensCalTarget calReflection = densInterface_->calReflection();
+    const DensCalTarget calTransmission = densInterface_->calTransmission();
+
     QJsonObject jsonCalReflLo;
-    jsonCalReflLo["density"] = QString::number(densInterface_->calReflectionLoDensity(), 'f', 2);
-    jsonCalReflLo["reading"] = QString::number(densInterface_->calReflectionLoReading(), 'f', 6);
+    jsonCalReflLo["density"] = QString::number(calReflection.loDensity(), 'f', 2);
+    jsonCalReflLo["reading"] = QString::number(calReflection.loReading(), 'f', 6);
 
     QJsonObject jsonCalReflHi;
-    jsonCalReflHi["density"] = QString::number(densInterface_->calReflectionHiDensity(), 'f', 2);
-    jsonCalReflHi["reading"] = QString::number(densInterface_->calReflectionHiReading(), 'f', 6);
+    jsonCalReflHi["density"] = QString::number(calReflection.hiDensity(), 'f', 2);
+    jsonCalReflHi["reading"] = QString::number(calReflection.hiReading(), 'f', 6);
 
     QJsonObject jsonCalRefl;
     jsonCalRefl["cal-lo"] = jsonCalReflLo;
     jsonCalRefl["cal-hi"] = jsonCalReflHi;
 
     QJsonObject jsonCalTranLo;
-    jsonCalTranLo["density"] = QString::number(densInterface_->calTransmissionLoDensity(), 'f', 2);
-    jsonCalTranLo["reading"] = QString::number(densInterface_->calTransmissionLoReading(), 'f', 6);
+    jsonCalTranLo["density"] = QString::number(calTransmission.loDensity(), 'f', 2);
+    jsonCalTranLo["reading"] = QString::number(calTransmission.loReading(), 'f', 6);
 
     QJsonObject jsonCalTranHi;
-    jsonCalTranHi["density"] = QString::number(densInterface_->calTransmissionHiDensity(), 'f', 2);
-    jsonCalTranHi["reading"] = QString::number(densInterface_->calTransmissionHiReading(), 'f', 6);
+    jsonCalTranHi["density"] = QString::number(calTransmission.hiDensity(), 'f', 2);
+    jsonCalTranHi["reading"] = QString::number(calTransmission.hiReading(), 'f', 6);
 
     QJsonObject jsonCalTran;
     jsonCalTran["cal-lo"] = jsonCalTranLo;

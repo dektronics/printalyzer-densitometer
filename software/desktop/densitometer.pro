@@ -53,6 +53,7 @@ linux:!android {
 
 SOURCES += \
     src/connectdialog.cpp \
+    src/denscalvalues.cpp \
     src/denscommand.cpp \
     src/densinterface.cpp \
     src/floatitemdelegate.cpp \
@@ -69,6 +70,7 @@ SOURCES += \
 
 HEADERS += \
     src/connectdialog.h \
+    src/denscalvalues.h \
     src/denscommand.h \
     src/densinterface.h \
     src/floatitemdelegate.h \

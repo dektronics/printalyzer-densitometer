@@ -113,7 +113,7 @@ bool SettingsImportDialog::parseHeader(const QJsonObject &root)
     if (root.contains("header") && root["header"].isObject()) {
         QJsonObject jsonHeader = root["header"].toObject();
         if (jsonHeader.contains("version")) {
-            int version = jsonHeader["version"].toInt(0);
+            int version = parseInt(jsonHeader["version"]);
             if (version != 1) {
                 qWarning() << "Unexpected version:" << version;
                 return false;
@@ -148,77 +148,62 @@ void SettingsImportDialog::parseCalSensor(const QJsonObject &jsonCalSensor)
     if (jsonCalSensor.contains("gain") && jsonCalSensor["gain"].isObject()) {
         QJsonObject jsonCalGain = jsonCalSensor["gain"].toObject();
         if (jsonCalGain.contains("L0")) {
-            calGainLow0_ = parseFloat(jsonCalGain["L0"]);
+            calGain_.setLow0(parseFloat(jsonCalGain["L0"]));
         }
         if (jsonCalGain.contains("L1")) {
-            calGainLow1_ = parseFloat(jsonCalGain["L1"]);
+            calGain_.setLow1(parseFloat(jsonCalGain["L1"]));
         }
         if (jsonCalGain.contains("M0")) {
-            calGainMed0_ = parseFloat(jsonCalGain["M0"]);
+            calGain_.setMed0(parseFloat(jsonCalGain["M0"]));
         }
         if (jsonCalGain.contains("M1")) {
-            calGainMed1_ = parseFloat(jsonCalGain["M1"]);
+            calGain_.setMed1(parseFloat(jsonCalGain["M1"]));
         }
         if (jsonCalGain.contains("H0")) {
-            calGainHigh0_ = parseFloat(jsonCalGain["H0"]);
+            calGain_.setHigh0(parseFloat(jsonCalGain["H0"]));
         }
         if (jsonCalGain.contains("H1")) {
-            calGainHigh1_ = parseFloat(jsonCalGain["H1"]);
+            calGain_.setHigh1(parseFloat(jsonCalGain["H1"]));
         }
         if (jsonCalGain.contains("X0")) {
-            calGainMax0_ = parseFloat(jsonCalGain["X0"]);
+            calGain_.setMax0(parseFloat(jsonCalGain["X0"]));
         }
         if (jsonCalGain.contains("X1")) {
-            calGainMax1_ = parseFloat(jsonCalGain["X1"]);
+            calGain_.setMax1(parseFloat(jsonCalGain["X1"]));
         }
 
         // Assign UI labels
-        ui->lowCh0Label->setText(QString::number(calGainLow0_, 'f', 1));
-        ui->lowCh1Label->setText(QString::number(calGainLow1_, 'f', 1));
-        ui->medCh0Label->setText(QString::number(calGainMed0_, 'f', 6));
-        ui->medCh1Label->setText(QString::number(calGainMed1_, 'f', 6));
-        ui->highCh0Label->setText(QString::number(calGainHigh0_, 'f', 6));
-        ui->highCh1Label->setText(QString::number(calGainHigh1_, 'f', 6));
-        ui->maxCh0Label->setText(QString::number(calGainMax0_, 'f', 6));
-        ui->maxCh1Label->setText(QString::number(calGainMax1_, 'f', 6));
+        ui->lowCh0Label->setText(QString::number(calGain_.low0(), 'f', 1));
+        ui->lowCh1Label->setText(QString::number(calGain_.low1(), 'f', 1));
+        ui->medCh0Label->setText(QString::number(calGain_.med0(), 'f', 6));
+        ui->medCh1Label->setText(QString::number(calGain_.med1(), 'f', 6));
+        ui->highCh0Label->setText(QString::number(calGain_.high0(), 'f', 6));
+        ui->highCh1Label->setText(QString::number(calGain_.high1(), 'f', 6));
+        ui->maxCh0Label->setText(QString::number(calGain_.max0(), 'f', 6));
+        ui->maxCh1Label->setText(QString::number(calGain_.max1(), 'f', 6));
 
         // Do basic validation to enable the checkbox
-        if (!qIsNaN(calGainLow0_) && !qIsNaN(calGainLow1_)
-                && !qIsNaN(calGainMed0_) && !qIsNaN(calGainMed1_)
-                && !qIsNaN(calGainHigh0_) && !qIsNaN(calGainHigh1_)
-                && !qIsNaN(calGainMax0_) && !qIsNaN(calGainMax1_)
-                && qAbs(1.0F - calGainLow0_) < 0.001F && qAbs(1.0F - calGainLow1_) < 0.001F
-                && calGainLow0_ < calGainMed0_ && calGainLow1_ < calGainMed1_
-                && calGainMed0_ < calGainHigh0_ && calGainMed1_ < calGainHigh1_
-                && calGainHigh0_ < calGainMax0_ && calGainHigh1_ < calGainMax1_) {
-            ui->importGainCheckBox->setEnabled(true);
-        } else {
-            ui->importGainCheckBox->setEnabled(false);
-        }
+        ui->importGainCheckBox->setEnabled(calGain_.isValid());
     }
     if (jsonCalSensor.contains("slope") && jsonCalSensor["slope"].isObject()) {
         QJsonObject jsonCalSlope = jsonCalSensor["slope"].toObject();
         if (jsonCalSlope.contains("B0")) {
-            calSlopeB0_ = parseFloat(jsonCalSlope["B0"]);
+            calSlope_.setB0(parseFloat(jsonCalSlope["B0"]));
         }
         if (jsonCalSlope.contains("B1")) {
-            calSlopeB1_ = parseFloat(jsonCalSlope["B1"]);
+            calSlope_.setB1(parseFloat(jsonCalSlope["B1"]));
         }
         if (jsonCalSlope.contains("B2")) {
-            calSlopeB2_ = parseFloat(jsonCalSlope["B2"]);
+            calSlope_.setB2(parseFloat(jsonCalSlope["B2"]));
         }
 
         // Assign UI labels
-        ui->slopeB0Label->setText(QString::number(calSlopeB0_, 'f', 6));
-        ui->slopeB1Label->setText(QString::number(calSlopeB1_, 'f', 6));
-        ui->slopeB2Label->setText(QString::number(calSlopeB2_, 'f', 6));
+        ui->slopeB0Label->setText(QString::number(calSlope_.b0(), 'f', 6));
+        ui->slopeB1Label->setText(QString::number(calSlope_.b1(), 'f', 6));
+        ui->slopeB2Label->setText(QString::number(calSlope_.b2(), 'f', 6));
 
         // Do basic validation to enable the checkbox
-        if (!qIsNaN(calSlopeB0_) && !qIsNaN(calSlopeB1_) && !qIsNaN(calSlopeB2_)) {
-            ui->importSlopeCheckBox->setEnabled(true);
-        } else {
-            ui->importSlopeCheckBox->setEnabled(false);
-        }
+        ui->importSlopeCheckBox->setEnabled(calSlope_.isValid());
     }
 }
 
@@ -231,41 +216,32 @@ void SettingsImportDialog::parseCalTarget(const QJsonObject &jsonCalTarget)
             QJsonObject jsonCalReflLo = jsonCalRefl["cal-lo"].toObject();
 
             if (jsonCalReflLo.contains("density")) {
-                calReflLoD_ = parseFloat(jsonCalReflLo["density"]);
+                calReflection_.setLoDensity(parseFloat(jsonCalReflLo["density"]));
             }
             if (jsonCalReflLo.contains("reading")) {
-                calReflLoR_ = parseFloat(jsonCalReflLo["reading"]);
+                calReflection_.setLoReading(parseFloat(jsonCalReflLo["reading"]));
             }
         }
         if (jsonCalRefl.contains("cal-hi") && jsonCalRefl["cal-hi"].isObject()) {
             QJsonObject jsonCalReflHi = jsonCalRefl["cal-hi"].toObject();
 
             if (jsonCalReflHi.contains("density")) {
-                calReflHiD_ = parseFloat(jsonCalReflHi["density"]);
+                calReflection_.setHiDensity(parseFloat(jsonCalReflHi["density"]));
             }
             if (jsonCalReflHi.contains("reading")) {
-                calReflHiR_ = parseFloat(jsonCalReflHi["reading"]);
+                calReflection_.setHiReading(parseFloat(jsonCalReflHi["reading"]));
             }
         }
     }
 
     // Assign UI labels
-    ui->reflCalLoDensityLabel->setText(QString::number(calReflLoD_, 'f', 2));
-    ui->reflCalLoReadingLabel->setText(QString::number(calReflLoR_, 'f', 6));
-    ui->reflCalHiDensityLabel->setText(QString::number(calReflHiD_, 'f', 2));
-    ui->reflCalHiReadingLabel->setText(QString::number(calReflHiR_, 'f', 6));
+    ui->reflCalLoDensityLabel->setText(QString::number(calReflection_.loDensity(), 'f', 2));
+    ui->reflCalLoReadingLabel->setText(QString::number(calReflection_.loReading(), 'f', 6));
+    ui->reflCalHiDensityLabel->setText(QString::number(calReflection_.hiDensity(), 'f', 2));
+    ui->reflCalHiReadingLabel->setText(QString::number(calReflection_.hiReading(), 'f', 6));
 
     // Do basic validation and enable the checkbox
-    if (!qIsNaN(calReflLoD_) && !qIsNaN(calReflLoR_)
-            && !qIsNaN(calReflHiD_) && !qIsNaN(calReflHiR_)
-            && calReflLoD_ > 0 && calReflLoR_ > 0
-            && calReflHiD_ > 0 && calReflHiR_ > 0
-            && calReflLoD_ < calReflHiD_
-            && calReflLoR_ > calReflHiR_) {
-        ui->importReflCheckBox->setEnabled(true);
-    } else {
-        ui->importReflCheckBox->setEnabled(false);
-    }
+    ui->importReflCheckBox->setEnabled(calReflection_.isValidReflection());
 
     if (jsonCalTarget.contains("transmission") && jsonCalTarget["transmission"].isObject()) {
         QJsonObject jsonCalTran = jsonCalTarget["transmission"].toObject();
@@ -274,41 +250,32 @@ void SettingsImportDialog::parseCalTarget(const QJsonObject &jsonCalTarget)
             QJsonObject jsonCalTranLo = jsonCalTran["cal-lo"].toObject();
 
             if (jsonCalTranLo.contains("density")) {
-                calTranLoD_ = parseFloat(jsonCalTranLo["density"]);
+                calTransmission_.setLoDensity(parseFloat(jsonCalTranLo["density"]));
             }
             if (jsonCalTranLo.contains("reading")) {
-                calTranLoR_ = parseFloat(jsonCalTranLo["reading"]);
+                calTransmission_.setLoReading(parseFloat(jsonCalTranLo["reading"]));
             }
         }
         if (jsonCalTran.contains("cal-hi") && jsonCalTran["cal-hi"].isObject()) {
             QJsonObject jsonCalTranHi = jsonCalTran["cal-hi"].toObject();
 
             if (jsonCalTranHi.contains("density")) {
-                calTranHiD_ = parseFloat(jsonCalTranHi["density"]);
+                calTransmission_.setHiDensity(parseFloat(jsonCalTranHi["density"]));
             }
             if (jsonCalTranHi.contains("reading")) {
-                calTranHiR_ = parseFloat(jsonCalTranHi["reading"]);
+                calTransmission_.setHiReading(parseFloat(jsonCalTranHi["reading"]));
             }
         }
     }
 
     // Assign UI labels
-    ui->tranCalLoDensityLabel->setText(QString::number(calTranLoD_, 'f', 2));
-    ui->tranCalLoReadingLabel->setText(QString::number(calTranLoR_, 'f', 6));
-    ui->tranCalHiDensityLabel->setText(QString::number(calTranHiD_, 'f', 2));
-    ui->tranCalHiReadingLabel->setText(QString::number(calTranHiR_, 'f', 6));
+    ui->tranCalLoDensityLabel->setText(QString::number(calTransmission_.loDensity(), 'f', 2));
+    ui->tranCalLoReadingLabel->setText(QString::number(calTransmission_.loReading(), 'f', 6));
+    ui->tranCalHiDensityLabel->setText(QString::number(calTransmission_.hiDensity(), 'f', 2));
+    ui->tranCalHiReadingLabel->setText(QString::number(calTransmission_.hiReading(), 'f', 6));
 
     // Do basic validation and enable the checkbox
-    if (!qIsNaN(calTranLoD_) && !qIsNaN(calTranLoR_)
-            && !qIsNaN(calTranHiD_) && !qIsNaN(calTranHiR_)
-            && qAbs(calTranLoD_) < 0.001F && calTranLoR_ > 0
-            && calTranHiD_ > 0 && calTranHiR_ > 0
-            && calTranLoD_ < calTranHiD_
-            && calTranLoR_ > calTranHiR_) {
-        ui->importTranCheckBox->setEnabled(true);
-    } else {
-        ui->importTranCheckBox->setEnabled(false);
-    }
+    ui->importTranCheckBox->setEnabled(calTransmission_.isValidTransmission());
 }
 
 void SettingsImportDialog::onCheckBoxChanged()
@@ -326,26 +293,33 @@ void SettingsImportDialog::sendSelectedSettings(DensInterface *densInterface)
     if (!densInterface) { return; }
 
     if (ui->importGainCheckBox->isChecked()) {
-        densInterface->sendSetCalGain(
-                    calGainMed0_, calGainMed1_,
-                    calGainHigh0_, calGainHigh1_,
-                    calGainMax0_, calGainMax1_);
+        densInterface->sendSetCalGain(calGain_);
     }
     if (ui->importSlopeCheckBox->isChecked()) {
-        densInterface->sendSetCalSlope(
-                    calSlopeB0_,
-                    calSlopeB1_,
-                    calSlopeB2_);
+        densInterface->sendSetCalSlope(calSlope_);
     }
     if (ui->importReflCheckBox->isChecked()) {
-        densInterface->sendSetCalReflection(
-                    calReflLoD_, calReflLoR_,
-                    calReflHiD_, calReflHiR_);
+        densInterface->sendSetCalReflection(calReflection_);
     }
     if (ui->importTranCheckBox->isChecked()) {
-        densInterface->sendSetCalTransmission(
-                    calTranLoD_, calTranLoR_,
-                    calTranHiD_, calTranHiR_);
+        densInterface->sendSetCalTransmission(calTransmission_);
+    }
+}
+
+int SettingsImportDialog::parseInt(const QJsonValue &value)
+{
+    if (value.isDouble()) {
+        return (int)value.toDouble(0);
+    } else if (value.isString()) {
+        bool ok;
+        float result = value.toString().toInt(&ok);
+        if (ok) {
+            return result;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
     }
 }
 

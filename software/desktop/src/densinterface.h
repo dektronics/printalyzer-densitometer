@@ -6,6 +6,7 @@
 #include <QSerialPort>
 #include <QDateTime>
 #include "denscommand.h"
+#include "denscalvalues.h"
 
 class DensInterface : public QObject
 {
@@ -59,15 +60,13 @@ public slots:
 
     void sendInvokeCalGain();
     void sendGetCalGain();
-    void sendSetCalGain(
-            float medium0, float medium1, float high0, float high1,
-            float maximum0, float maximum1);
+    void sendSetCalGain(const DensCalGain &calGain);
     void sendGetCalSlope();
-    void sendSetCalSlope(float b0, float b1, float b2);
+    void sendSetCalSlope(const DensCalSlope &calSlope);
     void sendGetCalReflection();
-    void sendSetCalReflection(float loDensity, float loReading, float hiDensity, float hiReading);
+    void sendSetCalReflection(const DensCalTarget &calTarget);
     void sendGetCalTransmission();
-    void sendSetCalTransmission(float loDensity, float loReading, float hiDensity, float hiReading);
+    void sendSetCalTransmission(const DensCalTarget &calTarget);
 
 public:
     bool connected() const;
@@ -96,28 +95,11 @@ public:
     QString mcuVdda() const;
     QString mcuTemp() const;
 
-    float calGainLow0() const;
-    float calGainLow1() const;
-    float calGainMedium0() const;
-    float calGainMedium1() const;
-    float calGainHigh0() const;
-    float calGainHigh1() const;
-    float calGainMaximum0() const;
-    float calGainMaximum1() const;
+    DensCalGain calGain() const;
+    DensCalSlope calSlope() const;
 
-    float calSlopeB0() const;
-    float calSlopeB1() const;
-    float calSlopeB2() const;
-
-    float calReflectionLoDensity() const;
-    float calReflectionLoReading() const;
-    float calReflectionHiDensity() const;
-    float calReflectionHiReading() const;
-
-    float calTransmissionLoDensity() const;
-    float calTransmissionLoReading() const;
-    float calTransmissionHiDensity() const;
-    float calTransmissionHiReading() const;
+    DensCalTarget calReflection() const;
+    DensCalTarget calTransmission() const;
 
 signals:
     void connectionOpened();
@@ -193,10 +175,10 @@ private:
     QString uniqueId_;
     QString mcuVdda_;
     QString mcuTemp_;
-    float gainValues_[8];
-    float slopeValues_[3];
-    float reflValues_[4];
-    float tranValues_[4];
+    DensCalGain calGain_;
+    DensCalSlope calSlope_;
+    DensCalTarget calReflection_;
+    DensCalTarget calTransmission_;
 };
 
 #endif // DENSINTERFACE_H

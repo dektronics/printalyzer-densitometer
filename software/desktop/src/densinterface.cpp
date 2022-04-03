@@ -17,10 +17,6 @@ DensInterface::DensInterface(QObject *parent)
     , freeRtosHeapSize_(0)
     , freeRtosHeapWatermark_(0)
     , freeRtosTaskCount_(0)
-    , gainValues_{0,0,0,0,0,0,0,0}
-    , slopeValues_{0,0,0}
-    , reflValues_{0,0,0,0}
-    , tranValues_{0,0,0,0}
 {
 }
 
@@ -245,17 +241,15 @@ void DensInterface::sendGetCalGain()
     sendCommand(command);
 }
 
-void DensInterface::sendSetCalGain(
-        float medium0, float medium1, float high0, float high1,
-        float maximum0, float maximum1)
+void DensInterface::sendSetCalGain(const DensCalGain &calGain)
 {
     QStringList args;
-    args.append(util::encode_f32(medium0));
-    args.append(util::encode_f32(medium1));
-    args.append(util::encode_f32(high0));
-    args.append(util::encode_f32(high1));
-    args.append(util::encode_f32(maximum0));
-    args.append(util::encode_f32(maximum1));
+    args.append(util::encode_f32(calGain.med0()));
+    args.append(util::encode_f32(calGain.med1()));
+    args.append(util::encode_f32(calGain.high0()));
+    args.append(util::encode_f32(calGain.high1()));
+    args.append(util::encode_f32(calGain.max0()));
+    args.append(util::encode_f32(calGain.max1()));
 
     DensCommand command(DensCommand::TypeSet, DensCommand::CategoryCalibration, "GAIN", args);
     sendCommand(command);
@@ -267,12 +261,12 @@ void DensInterface::sendGetCalSlope()
     sendCommand(command);
 }
 
-void DensInterface::sendSetCalSlope(float b0, float b1, float b2)
+void DensInterface::sendSetCalSlope(const DensCalSlope &calSlope)
 {
     QStringList args;
-    args.append(util::encode_f32(b0));
-    args.append(util::encode_f32(b1));
-    args.append(util::encode_f32(b2));
+    args.append(util::encode_f32(calSlope.b0()));
+    args.append(util::encode_f32(calSlope.b1()));
+    args.append(util::encode_f32(calSlope.b2()));
 
     DensCommand command(DensCommand::TypeSet, DensCommand::CategoryCalibration, "SLOPE", args);
     sendCommand(command);
@@ -284,13 +278,13 @@ void DensInterface::sendGetCalReflection()
     sendCommand(command);
 }
 
-void DensInterface::sendSetCalReflection(float loDensity, float loReading, float hiDensity, float hiReading)
+void DensInterface::sendSetCalReflection(const DensCalTarget &calTarget)
 {
     QStringList args;
-    args.append(util::encode_f32(loDensity));
-    args.append(util::encode_f32(loReading));
-    args.append(util::encode_f32(hiDensity));
-    args.append(util::encode_f32(hiReading));
+    args.append(util::encode_f32(calTarget.loDensity()));
+    args.append(util::encode_f32(calTarget.loReading()));
+    args.append(util::encode_f32(calTarget.hiDensity()));
+    args.append(util::encode_f32(calTarget.hiReading()));
 
     DensCommand command(DensCommand::TypeSet, DensCommand::CategoryCalibration, "REFL", args);
     sendCommand(command);
@@ -302,13 +296,13 @@ void DensInterface::sendGetCalTransmission()
     sendCommand(command);
 }
 
-void DensInterface::sendSetCalTransmission(float loDensity, float loReading, float hiDensity, float hiReading)
+void DensInterface::sendSetCalTransmission(const DensCalTarget &calTarget)
 {
     QStringList args;
-    args.append(util::encode_f32(loDensity));
-    args.append(util::encode_f32(loReading));
-    args.append(util::encode_f32(hiDensity));
-    args.append(util::encode_f32(hiReading));
+    args.append(util::encode_f32(calTarget.loDensity()));
+    args.append(util::encode_f32(calTarget.loReading()));
+    args.append(util::encode_f32(calTarget.hiDensity()));
+    args.append(util::encode_f32(calTarget.hiReading()));
 
     DensCommand command(DensCommand::TypeSet, DensCommand::CategoryCalibration, "TRAN", args);
     sendCommand(command);
@@ -339,28 +333,11 @@ QString DensInterface::uniqueId() const { return uniqueId_; }
 QString DensInterface::mcuVdda() const { return mcuVdda_; }
 QString DensInterface::mcuTemp() const { return mcuTemp_; }
 
-float DensInterface::calGainLow0() const { return gainValues_[0]; }
-float DensInterface::calGainLow1() const { return gainValues_[1]; }
-float DensInterface::calGainMedium0() const { return gainValues_[2]; }
-float DensInterface::calGainMedium1() const { return gainValues_[3]; }
-float DensInterface::calGainHigh0() const { return gainValues_[4]; }
-float DensInterface::calGainHigh1() const { return gainValues_[5]; }
-float DensInterface::calGainMaximum0() const { return gainValues_[6]; }
-float DensInterface::calGainMaximum1() const { return gainValues_[7]; }
+DensCalGain DensInterface::calGain() const { return calGain_; }
+DensCalSlope DensInterface::calSlope() const { return calSlope_; }
 
-float DensInterface::calSlopeB0() const { return slopeValues_[0]; }
-float DensInterface::calSlopeB1() const { return slopeValues_[1]; }
-float DensInterface::calSlopeB2() const { return slopeValues_[2]; }
-
-float DensInterface::calReflectionLoDensity() const { return reflValues_[0]; }
-float DensInterface::calReflectionLoReading() const { return reflValues_[1]; }
-float DensInterface::calReflectionHiDensity() const { return reflValues_[2]; }
-float DensInterface::calReflectionHiReading() const { return reflValues_[3]; }
-
-float DensInterface::calTransmissionLoDensity() const { return tranValues_[0]; }
-float DensInterface::calTransmissionLoReading() const { return tranValues_[1]; }
-float DensInterface::calTransmissionHiDensity() const { return tranValues_[2]; }
-float DensInterface::calTransmissionHiReading() const { return tranValues_[3]; }
+DensCalTarget DensInterface::calReflection() const { return calReflection_; }
+DensCalTarget DensInterface::calTransmission() const { return calTransmission_; }
 
 void DensInterface::readData()
 {
@@ -647,30 +624,37 @@ void DensInterface::readCalibrationResponse(const DensCommand &response)
     } else if (response.type() == DensCommand::TypeGet
             && response.action() == QLatin1String("GAIN")
             && response.args().length() == 8) {
-        for (int i = 0; i < 8; i++) {
-            gainValues_[i] = util::decode_f32(response.args().at(i));
-        }
+        calGain_.setLow0(util::decode_f32(response.args().at(0)));
+        calGain_.setLow1(util::decode_f32(response.args().at(1)));
+        calGain_.setMed0(util::decode_f32(response.args().at(2)));
+        calGain_.setMed1(util::decode_f32(response.args().at(3)));
+        calGain_.setHigh0(util::decode_f32(response.args().at(4)));
+        calGain_.setHigh1(util::decode_f32(response.args().at(5)));
+        calGain_.setMax0(util::decode_f32(response.args().at(6)));
+        calGain_.setMax1(util::decode_f32(response.args().at(7)));
         emit calGainResponse();
     } else if (response.type() == DensCommand::TypeGet
                && response.action() == QLatin1String("SLOPE")
                && response.args().length() == 3) {
-        for (int i = 0; i < 3; i++) {
-            slopeValues_[i] = util::decode_f32(response.args().at(i));
-        }
+        calSlope_.setB0(util::decode_f32(response.args().at(0)));
+        calSlope_.setB1(util::decode_f32(response.args().at(1)));
+        calSlope_.setB2(util::decode_f32(response.args().at(2)));
         emit calSlopeResponse();
     } else if (response.type() == DensCommand::TypeGet
             && response.action() == QLatin1String("REFL")
             && response.args().length() == 4) {
-        for (int i = 0; i < 4; i++) {
-            reflValues_[i] = util::decode_f32(response.args().at(i));
-        }
+        calReflection_.setLoDensity(util::decode_f32(response.args().at(0)));
+        calReflection_.setLoReading(util::decode_f32(response.args().at(1)));
+        calReflection_.setHiDensity(util::decode_f32(response.args().at(2)));
+        calReflection_.setHiReading(util::decode_f32(response.args().at(3)));
         emit calReflectionResponse();
     } else if (response.type() == DensCommand::TypeGet
             && response.action() == QLatin1String("TRAN")
             && response.args().length() == 4) {
-        for (int i = 0; i < 4; i++) {
-            tranValues_[i] = util::decode_f32(response.args().at(i));
-        }
+        calTransmission_.setLoDensity(util::decode_f32(response.args().at(0)));
+        calTransmission_.setLoReading(util::decode_f32(response.args().at(1)));
+        calTransmission_.setHiDensity(util::decode_f32(response.args().at(2)));
+        calTransmission_.setHiReading(util::decode_f32(response.args().at(3)));
         emit calTransmissionResponse();
     }
 }
