@@ -19,6 +19,8 @@
 #include "sensor.h"
 #include "app_descriptor.h"
 
+#define EMC_TEST
+
 extern I2C_HandleTypeDef hi2c1;
 
 typedef enum {
@@ -30,6 +32,9 @@ typedef enum {
     MAIN_MENU_CALIBRATION_SENSOR_SLOPE,
     MAIN_MENU_SETTINGS,
     MAIN_MENU_SETTINGS_DIAGNOSTICS,
+#ifdef EMC_TEST
+    MAIN_MENU_SETTINGS_EMC_TEST,
+#endif
     MAIN_MENU_ABOUT
 } main_menu_state_t;
 
@@ -65,6 +70,9 @@ static void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_co
 static void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t *controller);
+#ifdef EMC_TEST
+static void main_menu_settings_emc_test(state_main_menu_t *state, state_controller_t *controller);
+#endif
 static void main_menu_about(state_main_menu_t *state, state_controller_t *controller);
 static void sensor_read_callback(void *user_data);
 
@@ -109,6 +117,10 @@ void state_main_menu_process(state_t *state_base, state_controller_t *controller
         main_menu_settings(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS_DIAGNOSTICS) {
         main_menu_settings_diagnostics(state, controller);
+#ifdef EMC_TEST
+    } else if (state->menu_state == MAIN_MENU_SETTINGS_EMC_TEST) {
+        main_menu_settings_emc_test(state, controller);
+#endif
     } else if (state->menu_state == MAIN_MENU_ABOUT) {
         main_menu_about(state, controller);
     }
@@ -550,10 +562,18 @@ void main_menu_settings(state_main_menu_t *state, state_controller_t *controller
 {
     state->settings_option = display_selection_list(
         "Settings", state->settings_option,
-        "Diagnostics");
+        "Diagnostics"
+#ifdef EMC_TEST
+        "\nEMC Test Cycle"
+#endif
+        );
 
     if (state->settings_option == 1) {
         state->menu_state = MAIN_MENU_SETTINGS_DIAGNOSTICS;
+#ifdef EMC_TEST
+    } else if (state->settings_option == 2) {
+        state->menu_state = MAIN_MENU_SETTINGS_EMC_TEST;
+#endif
     } else {
         state->menu_state = MAIN_MENU_HOME;
         state->settings_option = 1;
@@ -680,7 +700,7 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
             settings_changed = false;
         }
 
-        if (sensor_get_next_reading(&reading, 1000) == osOK) {
+        if (sensor_get_next_reading(&reading, 100) == osOK) {
             bool is_detect = keypad_is_detect();
             if (display_mode) {
                 sensor_convert_to_basic_counts(&reading, &ch0_basic, &ch1_basic);
@@ -712,6 +732,159 @@ void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t
 
     state->menu_state = MAIN_MENU_SETTINGS;
 }
+
+#ifdef EMC_TEST
+void main_menu_settings_emc_test(state_main_menu_t *state, state_controller_t *controller)
+{
+    osStatus_t ret = osOK;
+    const tsl2591_gain_t gain = TSL2591_GAIN_HIGH;
+    const tsl2591_time_t time = TSL2591_TIME_300MS;
+    sensor_reading_t reading;
+    keypad_event_t keypad_event;
+    bool key_state[4] = {0};
+    uint8_t test_state = 0;
+    uint32_t state_ticks_start = 0;
+    char buf[128];
+
+    /* Initialize the sensor task */
+    do {
+        /* Initialize the sensor with fixed settings */
+        ret = sensor_set_config(gain, time);
+        if (ret != osOK) { break; }
+        ret = sensor_start();
+        if (ret != osOK) { break; }
+
+        /* Wait on the first reading to ensure things are working */
+        ret = sensor_get_next_reading(&reading, 2000);
+        if (ret != osOK) { break; }
+    } while (0);
+
+    /* Verify that the sensor task is operating as expected */
+    if (ret != osOK || reading.gain != gain || reading.time != time) {
+        display_message(
+            "Sensor", NULL,
+            "initialization\n"
+            "failed", " OK ");
+        state->menu_state = MAIN_MENU_SETTINGS;
+        return;
+    }
+
+    /* Set initial LED state */
+    test_state = 0;
+    state_ticks_start = osKernelGetTickCount();
+    sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+
+    do {
+        bool has_key = false;
+        bool has_reading = false;
+        bool has_new_state = false;
+        bool is_detect = keypad_is_detect();
+
+        /* Capture the keypad state */
+        if (keypad_wait_for_event(&keypad_event, 0) == osOK) {
+            if (keypad_event.key == KEYPAD_BUTTON_ACTION) {
+                key_state[0] = keypad_event.pressed;
+            } else if (keypad_event.key == KEYPAD_BUTTON_UP) {
+                key_state[1] = keypad_event.pressed;
+            } else if (keypad_event.key == KEYPAD_BUTTON_DOWN) {
+                key_state[2] = keypad_event.pressed;
+            } else if (keypad_event.key == KEYPAD_BUTTON_MENU) {
+                key_state[3] = keypad_event.pressed;
+            }
+            has_key = true;
+        }
+
+        /* Capture any pending sensor reading */
+        if (sensor_get_next_reading(&reading, 0) == osOK) {
+            has_reading = true;
+        }
+
+        /* Cycle to next LED state */
+        if (osKernelGetTickCount() - state_ticks_start > 1000) {
+            test_state++;
+            if (test_state > 5) { test_state = 0; }
+            state_ticks_start = osKernelGetTickCount();
+            has_new_state = true;
+
+            switch (test_state) {
+            case 0:
+                sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+                break;
+            case 1:
+                sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
+                break;
+            case 2:
+                sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, 128);
+                break;
+            case 3:
+                sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+                break;
+            case 4:
+                sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
+                break;
+            case 5:
+                sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, 128);
+                break;
+            default:
+                break;
+            }
+        }
+
+        /* Update the display */
+        if (has_key || has_reading || has_new_state) {
+            const char *state_str;
+            switch (test_state) {
+            case 0:
+                state_str = "ReO";
+                break;
+            case 1:
+                state_str = "ReI";
+                break;
+            case 2:
+                state_str = "ReM";
+                break;
+            case 3:
+                state_str = "TrO";
+                break;
+            case 4:
+                state_str = "TrI";
+                break;
+            case 5:
+                state_str = "TrM";
+                break;
+            default:
+                state_str = "---";
+                break;
+            }
+            sprintf(buf,
+                "CH0=%5d\n"
+                "CH1=%5d\n"
+                "[%c%c%c%c][%c][%s]",
+                reading.ch0_val, reading.ch1_val,
+                (key_state[0] ? '*' : '-'),
+                (key_state[1] ? '*' : '-'),
+                (key_state[2] ? '*' : '-'),
+                (key_state[3] ? '*' : '-'),
+                (is_detect ? '*' : '-'),
+                state_str);
+            display_static_list("EMC Test Cycle", buf);
+
+            has_key = false;
+            has_reading = false;
+            has_new_state = false;
+        }
+        if (is_detect && key_state[0] && key_state[3]) {
+            break;
+        }
+        osDelay(50);
+    } while (1);
+
+    sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
+    sensor_stop();
+
+    state->menu_state = MAIN_MENU_SETTINGS;
+}
+#endif
 
 void main_menu_about(state_main_menu_t *state, state_controller_t *controller)
 {
