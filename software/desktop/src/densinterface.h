@@ -44,6 +44,7 @@ public slots:
     void sendGetSystemUID();
     void sendGetSystemInternalSensors();
     void sendInvokeSystemRemoteControl(bool enabled);
+    void sendSetSystemDisplayText(const QString &text);
 
     void sendSetMeasurementFormat(DensInterface::DensityFormat format);
     void sendSetAllowUncalibratedMeasurements(bool allow);

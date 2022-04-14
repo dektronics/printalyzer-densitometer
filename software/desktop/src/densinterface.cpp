@@ -109,6 +109,19 @@ void DensInterface::sendInvokeSystemRemoteControl(bool enabled)
     sendCommand(command);
 }
 
+void DensInterface::sendSetSystemDisplayText(const QString &text)
+{
+    QString sendText = text;
+    sendText.replace(QChar('\\'), QLatin1String("\\\\"));
+    sendText.replace(QChar('\n'), QLatin1String("\\n"));
+
+    QStringList args;
+    args.append(sendText);
+
+    DensCommand command(DensCommand::TypeSet, DensCommand::CategorySystem, "DISP", args);
+    sendCommand(command);
+}
+
 void DensInterface::sendSetMeasurementFormat(DensInterface::DensityFormat format)
 {
     QStringList args;

@@ -93,6 +93,9 @@ Commands that lack a documented response format will return either `OK` or `ERR`
   * Note: Response elements have unit suffixes appended, so it looks like "3300mV,24.5C"
 * `IS REMOTE,n` - Invoke remote control mode (enable = 1, disable = 0)
   * Response: `IS REMOTE,n`
+* `SS DISP,text` - Write the provided text to the display
+  * Note: Line breaks are sent as the literal text "\n"
+    and backslashes are sent as the literal text "\\"
 
 ### Measurement Commands
 
