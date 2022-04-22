@@ -233,7 +233,6 @@ void MainWindow::onExportSettings()
 {
     SettingsExporter *exporter = new SettingsExporter(densInterface_, this);
     connect(exporter, &SettingsExporter::exportReady, this, [this, exporter]() {
-        exporter->deleteLater();
         QFileDialog fileDialog(this, tr("Save Device Settings"), QString(), tr("Settings File (*.pds)"));
         fileDialog.setDefaultSuffix(".pds");
         fileDialog.setAcceptMode(QFileDialog::AcceptSave);
@@ -243,6 +242,7 @@ void MainWindow::onExportSettings()
                 exporter->saveExport(filename);
             }
         }
+        exporter->deleteLater();
     });
     connect(exporter, &SettingsExporter::exportFailed, this, [exporter]() {
         exporter->deleteLater();
