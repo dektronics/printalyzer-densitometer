@@ -22,7 +22,7 @@
 #define USB_MANUFACTURER  "Dektronics"
 #define USB_PRODUCT       "Printalyzer Densitometer"
 #define UF2_PRODUCT_NAME  USB_MANUFACTURER " " USB_PRODUCT
-#define UF2_BOARD_ID      "STM32L072-PrintalyzerDensitometer-revC"
+#define UF2_BOARD_ID      "STM32L072KZ-DPD100-revC"
 #define UF2_VOLUME_LABEL  "PRDENSBOOT"
 #define UF2_INDEX_URL     "https://www.dektronics.com/printalyzer-densitometer"
 
