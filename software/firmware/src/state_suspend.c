@@ -4,6 +4,7 @@
 #include <elog.h>
 
 #include <cmsis_os.h>
+#include <tusb.h>
 
 #include "display.h"
 #include "keypad.h"
@@ -47,6 +48,13 @@ void state_suspend_entry(state_t *state_base, state_controller_t *controller, st
 {
     state_suspend_t *state = (state_suspend_t *)state_base;
     state->suspend_state = SUSPEND_IDLE;
+
+    /* Check for a resume prior to starting the suspend process */
+    if (!tud_suspended()) {
+        log_i("Skipping suspend due to event race");
+        state_controller_set_next_state(controller, STATE_HOME);
+        return;
+    }
 
     log_i("Entering suspend state");
 
@@ -127,6 +135,11 @@ void state_suspend_rtc_wakeup_handler()
      * STOP mode.
      */
     watchdog_refresh();
+
+    /* Check for a resume prior to completing the suspend process */
+    if (!tud_suspended()) {
+        state_suspend_data.suspend_state = SUSPEND_DEACTIVATED;
+    }
 }
 
 void state_suspend_exit(state_t *state, state_controller_t *controller, state_identifier_t next_state)
