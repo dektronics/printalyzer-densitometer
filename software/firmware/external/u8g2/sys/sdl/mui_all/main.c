@@ -24,6 +24,11 @@ uint8_t radio_input = 0;
 uint8_t fruit_input = 2;
 uint8_t color_input = 0;
 uint8_t food_input = 0;
+uint8_t text_input[4] = { ' ',' ',' ',' '} ;
+
+uint16_t list_selection_1 = 0;
+uint16_t list_selection_2 = 0;
+uint16_t list_selection_3 = 0;
 
 
 uint8_t number_input = 2;       // variable where the user can input a number between 0 and 9
@@ -32,7 +37,6 @@ uint8_t fruit_input2 = 2;
 uint8_t my_value3 = 0;
 uint8_t checkbox_input = 0;
 uint8_t direction_input = 0;
-uint8_t text_input[4] = { ' ',' ',' ',' '} ;
 uint8_t exit_code = 0;
 uint16_t list_selection = 0;
 uint16_t list_selection2 = 0;
@@ -47,6 +51,22 @@ uint8_t led_on_time = 0;
 
 
 /*=================================================*/
+/* user element access functions */
+
+static const char *animals[] = { "Bird", "Bison", "Cat", "Crow", "Dog", "Elephant", "Fish", "Gnu", "Horse", "Koala", "Lion", "Mouse", "Owl", "Rabbit", "Spider", "Turtle", "Zebra" };
+
+uint16_t animals_get_cnt(void *data)
+{
+  return sizeof(animals)/sizeof(*animals);    /* number of animals */
+}
+
+const char *animals_get_str(void *data, uint16_t index)
+{
+  return animals[index];
+}
+
+
+/*=================================================*/
 /* style */
 
 uint8_t mui_style_helv_r_08(mui_t *ui, uint8_t msg)
@@ -56,8 +76,8 @@ uint8_t mui_style_helv_r_08(mui_t *ui, uint8_t msg)
   switch(msg)
   {
     case MUIF_MSG_DRAW:
+      
       u8g2_SetFont(u8g2, u8g2_font_helvR08_tr);
-    
       break;
   }
   return 0;
@@ -69,6 +89,7 @@ uint8_t mui_style_helv_b_08(mui_t *ui, uint8_t msg)
   switch(msg)
   {
     case MUIF_MSG_DRAW:
+      
       u8g2_SetFont(u8g2, u8g2_font_helvB08_tr);
       break;
   }
@@ -128,6 +149,18 @@ uint8_t mui_style_streamline_interface_essential_login(mui_t *ui, uint8_t msg)
 }
 
 
+uint8_t mui_style_glasstown(mui_t *ui, uint8_t msg)
+{
+  
+  u8g2_t *u8g2 = mui_get_U8g2(ui);
+  switch(msg)
+  {
+    case MUIF_MSG_DRAW:
+      u8g2_SetFont(u8g2, u8g2_font_glasstown_nbp_tr);
+      break;
+  }
+  return 0;
+}
  
 
 /*=================================================*/
@@ -237,16 +270,20 @@ muif_t muif_list[] MUI_PROGMEM = {
   /* food and drink */
   MUIF_STYLE(4, mui_style_streamline_food_drink),
   
-  /* monospaced font */
-  //MUIF_STYLE(3, mui_style_monospaced),
+  /* monospaced font, good for  mui_u8g2_u8_char_wm_mud_pi */
+  MUIF_STYLE(5, mui_style_monospaced),
 
+  /* smaller replacement for style 0 */
+  MUIF_STYLE(6, mui_style_glasstown),
+  
+  
   /* horizontal line (hrule) */
   MUIF_RO("HR", mui_hrule),
 
   MUIF_LABEL(mui_u8g2_draw_text),
 
-  MUIF_RO("GP",mui_u8g2_goto_parent),
-  MUIF_BUTTON("GC", mui_u8g2_goto_child_w1_mse_pi),
+  MUIF_RO("GP",mui_u8g2_goto_data),
+  MUIF_BUTTON("GC", mui_u8g2_goto_form_w1_pi),
 
   /* Form 10 */
   MUIF_GOTO(mui_u8g2_btn_goto_wm_fi),
@@ -271,12 +308,24 @@ muif_t muif_list[] MUI_PROGMEM = {
 
 
   /* Form 50: Parent/Child Option */
-  MUIF_VARIABLE("P1",&color_input,mui_u8g2_u8_opt_parent_wm_mse_pi),
-  MUIF_VARIABLE("ca",&color_input,mui_u8g2_u8_opt_radio_child_w1_mse_pi),
+  MUIF_VARIABLE("P1",&color_input,mui_u8g2_u8_opt_parent_wm_pi),
+  MUIF_VARIABLE("ca",&color_input,mui_u8g2_u8_opt_radio_child_w1_pi),
   
-  MUIF_VARIABLE("P2",&food_input,mui_u8g2_u8_opt_parent_wm_mse_pi),
-  MUIF_VARIABLE("cf",&food_input,mui_u8g2_u8_opt_child_wm_mse_pi),
+  MUIF_VARIABLE("P2",&food_input,mui_u8g2_u8_opt_parent_wm_pi),
+  MUIF_VARIABLE("cf",&food_input,mui_u8g2_u8_opt_child_wm_pi),
 
+  /* Form 60: Char Input */
+  MUIF_VARIABLE("T0", text_input+0, mui_u8g2_u8_char_wm_mud_pi),
+  MUIF_VARIABLE("T1", text_input+1, mui_u8g2_u8_char_wm_mud_pi),
+  MUIF_VARIABLE("T2", text_input+2, mui_u8g2_u8_char_wm_mud_pi),
+  MUIF_VARIABLE("T3", text_input+3, mui_u8g2_u8_char_wm_mud_pi),
+
+  /* Form 70: One of many selection within the same field */
+  MUIF_U8G2_U16_LIST("A1", &list_selection_1, NULL, animals_get_str, animals_get_cnt, mui_u8g2_u16_list_line_wa_mse_pi),
+  MUIF_U8G2_U16_LIST("A2", &list_selection_2, NULL, animals_get_str, animals_get_cnt, mui_u8g2_u16_list_line_wa_mud_pi),
+
+  MUIF_U8G2_U16_LIST("AP", &list_selection_3, NULL, animals_get_str, animals_get_cnt, mui_u8g2_u16_list_parent_wm_pi),
+  MUIF_U8G2_U16_LIST("AC", &list_selection_3, NULL, animals_get_str, animals_get_cnt, mui_u8g2_u16_list_child_w1_pi),
 
 };
 
@@ -294,9 +343,9 @@ MUI_DATA("GP",
     MUI_30 "uint8 Checkbox|"
     MUI_40 "uint8 Cycle Options|"
     MUI_50 "uint8 ParentChild Select|"
-    MUI_15 "Text Input|"
-    MUI_16 "Single Line Selection|"
-    MUI_17 "List Line Selection|"
+    MUI_60 "uint8 Char/Text Input|"
+    MUI_70 "uint16 Cycle Options|"
+    MUI_80 "uint16 ParentChild Select|"
     MUI_18 "Parent/Child List|"
     MUI_20 "Array Edit")
 MUI_XYA("GC", 5, 25, 0) 
@@ -523,7 +572,7 @@ MUI_DATA("GP",
 MUI_XYA("GC", 5, 25, 0) 
 MUI_XYA("GC", 5, 37, 1) 
 MUI_XYA("GC", 5, 49, 2) 
-MUI_XYA("GC", 5, 61, 3) 
+//MUI_XYA("GC", 5, 61, 3) 
 
 MUI_FORM(51)
 MUI_STYLE(2)
@@ -547,8 +596,8 @@ MUI_LABEL(1,25, "Child: Show selectable options")
 MUI_XY("HR", 0,26)
 MUI_STYLE(0)
 MUI_XYA("ca", 5, 38, 0) 
-MUI_XYA("ca", 5, 48, 1) 
-MUI_XYA("ca", 5, 58, 2) 
+MUI_XYA("ca", 5, 49, 1) 
+MUI_XYA("ca", 5, 60, 2) 
 
 MUI_FORM(53)
 MUI_STYLE(2)
@@ -578,12 +627,135 @@ MUI_XYA("cf", 53, 53, 2)
 MUI_XYA("cf", 78, 53, 3)
 MUI_XYA("cf", 103, 53, 4)
 
+
+MUI_FORM(60)
+MUI_STYLE(1)
+MUI_LABEL(5,10, "uint8 Char/Text Input")
+MUI_XY("HR", 0,13)
+MUI_STYLE(0)
+MUI_DATA("GP", 
+  MUI_61 "u8_char_wm_mud_pi|" 
+  MUI_1 "Back to Main Menu" )
+MUI_XYA("GC", 5, 25, 0) 
+MUI_XYA("GC", 5, 37, 1) 
+MUI_XYA("GC", 5, 49, 2) 
+MUI_XYA("GC", 5, 61, 3) 
+
+MUI_FORM(61)
+MUI_STYLE(2)
+MUI_LABEL(1,5, "mui_u8g2_u8_char_wm_mud_pi")
+MUI_LABEL(1,12, "MUIF_VARIABLE")
+MUI_LABEL(1,19, "MUI_XYAT")
+MUI_LABEL(1,25, "4x Char Input")
+MUI_XY("HR", 0,26)
+MUI_STYLE(0)
+MUI_LABEL(5,40, "Text:")
+MUI_STYLE(5)
+MUI_XY("T0",40, 40)
+MUI_XY("T1",48, 40)
+MUI_XY("T2",56, 40)
+MUI_XY("T3",64, 40)
+MUI_STYLE(0)
+MUI_GOTO(64, 59, 60, " Ok ")
+
+
+
+
+
+MUI_FORM(70)
+MUI_STYLE(1)
+MUI_LABEL(5,10, "uint16 Cycle Options")
+MUI_XY("HR", 0,13)
+MUI_STYLE(0)
+MUI_DATA("GP", 
+  MUI_71 "u16_list_line_wa_mse_pi|" 
+  MUI_72 "u16_list_line_wa_mud_pi|" 
+  MUI_1 "Back to Main Menu" )
+MUI_XYA("GC", 5, 25, 0) 
+MUI_XYA("GC", 5, 37, 1) 
+MUI_XYA("GC", 5, 49, 2) 
+MUI_XYA("GC", 5, 61, 3) 
+
+MUI_FORM(71)
+MUI_STYLE(2)
+MUI_LABEL(1,5, "mui_u8g2_u16_list_line_wa_mse_pi")
+MUI_LABEL(1,12, "MUIF_U8G2_U16_LIST")
+MUI_LABEL(1,19, "MUI_XYA")
+MUI_LABEL(1,25, "Cycle through options")
+MUI_XY("HR", 0,26)
+MUI_STYLE(0)
+MUI_LABEL(5,40, "Animal:")
+MUI_XYA("A1",45, 40, 50)
+MUI_GOTO(64, 59, 70, " Ok ")
+
+MUI_FORM(72)
+MUI_STYLE(2)
+MUI_LABEL(1,5, "mui_u8g2_u16_list_line_wa_mud_pi")
+MUI_LABEL(1,12, "MUIF_U8G2_U16_LIST")
+MUI_LABEL(1,19, "MUI_XYA")
+MUI_LABEL(1,25, "Cycle through options")
+MUI_XY("HR", 0,26)
+MUI_STYLE(0)
+MUI_LABEL(5,40, "Animal:")
+MUI_XYA("A2",45, 40, 50)
+MUI_GOTO(64, 59, 70, " Ok ")
+
+
+
+
+
+
+
+
+
+//uint8_t mui_u8g2_u16_list_parent_wm_pi(mui_t *ui, uint8_t msg);     /* MUIF_U8G2_U16_LIST, MUI_XYA, arg=subform */
+//uint8_t mui_u8g2_u16_list_child_w1_pi(mui_t *ui, uint8_t msg);      /* MUIF_U8G2_U16_LIST, MUI_XYA, arg=sub element number */
+
+
+MUI_FORM(80)
+MUI_STYLE(1)
+MUI_LABEL(0,10, "uint8 ParentChild Select")
+MUI_XY("HR", 0,13)
+MUI_STYLE(6)
+MUI_DATA("GP", 
+  MUI_81 "u16_list_parent_wm_mse_pi|" 
+  MUI_1 "Back to Main Menu" )
+MUI_XYA("GC", 0, 25, 0) 
+MUI_XYA("GC", 0, 37, 1) 
+MUI_XYA("GC", 0, 49, 2) 
+//MUI_XYA("GC", 5, 61, 3) 
+
+MUI_FORM(81)
+MUI_STYLE(2)
+MUI_LABEL(1,5, "..._u16_list_parent_wm_mse_pi")
+MUI_LABEL(1,12, "MUIF_U8G2_U16_LIST")
+MUI_LABEL(1,19, "MUI_XYA")
+MUI_LABEL(1,25, "Parent: Show selected option")
+MUI_XY("HR", 0,26)
+MUI_STYLE(0)
+MUI_LABEL(5,40, "Animal:")
+MUI_XYA("AP",50, 40, 82)     /* jump to sub form 19 */
+MUI_GOTO(64, 59, 80, " Ok ")
+
+MUI_FORM(82)
+MUI_STYLE(2)
+MUI_LABEL(1,5, "...u16_list_child_w1_mse_pi")
+MUI_LABEL(1,12, "MUIF_U8G2_U16_LIST")
+MUI_LABEL(1,19, "MUI_XYA")
+MUI_LABEL(1,25, "Child: Show selectable options")
+MUI_XY("HR", 0,26)
+MUI_STYLE(0)
+MUI_XYA("AC", 5, 38, 0) 
+MUI_XYA("AC", 5, 49, 1) 
+MUI_XYA("AC", 5, 60, 2) 
+
+
 /*
-  MUIF_VARIABLE("P1",&color_input,mui_u8g2_u8_opt_parent_wm_mse_pi),
-  MUIF_VARIABLE("c1",&color_input,mui_u8g2_u8_opt_radio_child_w1_mse_pi),
+  MUIF_VARIABLE("P1",&color_input,mui_u8g2_u8_opt_parent_wm_pi),
+  MUIF_VARIABLE("c1",&color_input,mui_u8g2_u8_opt_radio_child_w1_pi),
   
-  MUIF_VARIABLE("P2",&food_input,mui_u8g2_u8_opt_parent_wm_mse_pi),
-  MUIF_VARIABLE("ca",&food_input,mui_u8g2_u8_opt_child_wm_mse_pi),
+  MUIF_VARIABLE("P2",&food_input,mui_u8g2_u8_opt_parent_wm_pi),
+  MUIF_VARIABLE("ca",&food_input,mui_u8g2_u8_opt_child_wm_pi),
 
 
 MUI_LABEL(5,24, "Color:")
@@ -647,11 +819,11 @@ muif_t muif_list_old[] MUI_PROGMEM = {
   
   /* the following two fields belong together and implement a single selection combo box to select a color */
   //MUIF("IC",MUIF_CFLAG_IS_CURSOR_SELECTABLE,&color_input,mui_u8g2_u8_opt_parent_wa_mse_pi),
-  MUIF_VARIABLE("IC",&color_input,mui_u8g2_u8_opt_parent_wm_mse_pi),
-  MUIF_VARIABLE("OC",&color_input,mui_u8g2_u8_opt_radio_child_w1_mse_pi),
+  MUIF_VARIABLE("IC",&color_input,mui_u8g2_u8_opt_parent_wm_pi),
+  MUIF_VARIABLE("OC",&color_input,mui_u8g2_u8_opt_radio_child_w1_pi),
   
-  MUIF_VARIABLE("ID",&food_input,mui_u8g2_u8_opt_parent_wm_mse_pi),
-  MUIF_VARIABLE("OD",&food_input,mui_u8g2_u8_opt_child_wm_mse_pi),
+  MUIF_VARIABLE("ID",&food_input,mui_u8g2_u8_opt_parent_wm_pi),
+  MUIF_VARIABLE("OD",&food_input,mui_u8g2_u8_opt_child_wm_pi),
 
   /* radio button style */
   //MUIF("RS",MUIF_CFLAG_IS_CURSOR_SELECTABLE,&direction_input,mui_u8g2_u8_radio_wm_pi),
@@ -660,10 +832,10 @@ muif_t muif_list_old[] MUI_PROGMEM = {
   MUIF_U8G2_U16_LIST("L1", &list_selection, NULL, list_get_str, list_get_cnt, mui_u8g2_u16_list_line_wa_mse_pi),
   MUIF_U8G2_U16_LIST("L2", &list_selection2, NULL, list_get_str, list_get_cnt, mui_u8g2_u16_list_line_wa_mud_pi),
   
-  MUIF_U8G2_U16_LIST("LP", &list_selection3, NULL, list_get_str, list_get_cnt, mui_u8g2_u16_list_parent_wm_mse_pi),
-  MUIF_U8G2_U16_LIST("LC", &list_selection3, NULL, list_get_str, list_get_cnt, mui_u8g2_u16_list_child_w1_mse_pi),
+  MUIF_U8G2_U16_LIST("LP", &list_selection3, NULL, list_get_str, list_get_cnt, mui_u8g2_u16_list_parent_wm_pi),
+  MUIF_U8G2_U16_LIST("LC", &list_selection3, NULL, list_get_str, list_get_cnt, mui_u8g2_u16_list_child_w1_pi),
 
-  MUIF_U8G2_U16_LIST("LG", &list_selection4, NULL, menu_get_str, menu_get_cnt, mui_u8g2_u16_list_goto_w1_mse_pi),
+  MUIF_U8G2_U16_LIST("LG", &list_selection4, NULL, menu_get_str, menu_get_cnt, mui_u8g2_u16_list_goto_w1_pi),
 
   /* MUI_GOTO uses the fixed ".G" id and is intended for goto buttons. This is a full display width style button */  
   MUIF_GOTO(mui_u8g2_btn_goto_w1_pi),
