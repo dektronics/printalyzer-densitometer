@@ -33,7 +33,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="densitometer.qrc">
+    <iconset resource="../assets/densitometer.qrc">
      <normaloff>:/images/go-bottom.png</normaloff>:/images/go-bottom.png</iconset>
    </property>
    <property name="text">
@@ -45,7 +45,7 @@
   </action>
   <action name="actionClear">
    <property name="icon">
-    <iconset resource="densitometer.qrc">
+    <iconset resource="../assets/densitometer.qrc">
      <normaloff>:/images/clear.png</normaloff>:/images/clear.png</iconset>
    </property>
    <property name="text">
@@ -54,7 +54,7 @@
   </action>
  </widget>
  <resources>
-  <include location="densitometer.qrc"/>
+  <include location="../assets/densitometer.qrc"/>
  </resources>
  <connections/>
 </ui>
