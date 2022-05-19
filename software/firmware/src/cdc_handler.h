@@ -9,6 +9,19 @@
 void task_cdc_run(void *argument);
 
 /**
+ * Get whether the CDC device is currently connected to a host.
+ *
+ * The connection state is based on the state of the DTR signal,
+ * as the best available proxy for knowing if a host-side application
+ * is currently connected to the device.
+ *
+ * Note: There may be corner cases around state transitions, but this can
+ * generally be used as a way to decide whether or not to attempt
+ * a write of measurement data.
+ */
+bool cdc_is_connected();
+
+/**
  * Send a density reading out the CDC device.
  *
  * @param prefix The reading type, such as 'R' or 'T'

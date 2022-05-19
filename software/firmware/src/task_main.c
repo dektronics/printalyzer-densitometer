@@ -12,6 +12,7 @@
 #include "keypad.h"
 #include "display.h"
 #include "light.h"
+#include "task_usbd.h"
 #include "task_sensor.h"
 #include "adc_handler.h"
 #include "state_controller.h"
@@ -22,7 +23,6 @@ extern TIM_HandleTypeDef htim2;
 extern void system_clock_config(void);
 
 static void task_main_run(void *argument);
-static void task_usbd_run(void *argument);
 
 typedef struct {
     const osThreadFunc_t task_func;
@@ -91,7 +91,6 @@ static task_params_t task_list[] = {
 };
 
 static bool main_task_running = false;
-static bool suspend_pending = false;
 
 osStatus_t task_main_init()
 {
@@ -109,6 +108,11 @@ osStatus_t task_main_init()
         return osErrorNoMemory;
     }
     return osOK;
+}
+
+bool task_main_is_running()
+{
+    return main_task_running;
 }
 
 void task_main_run(void *argument)
@@ -154,77 +158,6 @@ void task_main_run(void *argument)
     /* Run the infinite main loop */
     log_i("Starting controller loop");
     state_controller_loop();
-}
-
-void task_usbd_run(void *argument)
-{
-    log_d("usbd_task start");
-
-    /* Initialize the TinyUSB stack */
-    if (!tusb_init()) {
-        log_e("Unable to initialize tusb");
-        return;
-    }
-
-    /* Enable USB interrupt */
-    HAL_NVIC_EnableIRQ(USB_IRQn);
-
-    /* Enable EXTI Line 18 for USB wakeup */
-    __HAL_USB_WAKEUP_EXTI_ENABLE_IT();
-
-    USB->LPMCSR |= USB_LPMCSR_LMPEN;
-    USB->LPMCSR |= USB_LPMCSR_LPMACK;
-
-    /* Release the startup semaphore */
-    if (osSemaphoreRelease(task_start_semaphore) != osOK) {
-        log_e("Unable to release task_start_semaphore");
-        return;
-    }
-
-    /* Run TinyUSB device task */
-    while (1) {
-        tud_task();
-
-        if (main_task_running && suspend_pending) {
-            log_d("Deferred suspend");
-            suspend_pending = false;
-            task_main_force_state(STATE_SUSPEND);
-        }
-    }
-}
-
-/**
- * Invoked when the USB device is suspended.
- *
- * Within 7ms, the device must drop its current draw to an average of
- * less than 2.5mA.
- */
-void tud_suspend_cb(bool remote_wakeup_en)
-{
-    UNUSED(remote_wakeup_en);
-    log_d("tud_suspend_cb");
-
-    if (main_task_running) {
-        /* Force the main task to enter its suspend state */
-        task_main_force_state(STATE_SUSPEND);
-    } else {
-        suspend_pending = true;
-    }
-}
-
-/**
- * Invoked when the USB device is resumed.
- */
-void tud_resume_cb()
-{
-    log_d("tud_resume_cb");
-
-    suspend_pending = false;
-
-    if (main_task_running) {
-        /* Force the main task to exit its suspend state */
-        task_main_force_state(STATE_HOME);
-    }
 }
 
 osStatus_t task_main_force_state(state_identifier_t next_state)

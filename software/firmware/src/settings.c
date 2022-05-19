@@ -29,6 +29,8 @@ static void settings_set_cal_reflection_defaults(settings_cal_reflection_t *cal_
 static bool settings_load_cal_reflection();
 static void settings_set_cal_transmission_defaults(settings_cal_transmission_t *cal_transmission);
 static bool settings_load_cal_transmission();
+static void settings_set_user_usb_key_defaults(settings_user_usb_key_t *usb_key);
+static bool settings_load_user_usb_key();
 
 static HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len);
 static HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, size_t data_len);
@@ -94,10 +96,15 @@ static HAL_StatusTypeDef settings_write_uint32(uint32_t address, uint32_t val);
 #define PAGE_USER_SETTINGS_SIZE    (128)
 #define PAGE_USER_SETTINGS_VERSION 1UL
 
+#define CONFIG_USER_USB_KEY        (PAGE_USER_SETTINGS + 4U)
+#define CONFIG_USER_USB_KEY_SIZE   (12U)
+
+
 static settings_cal_gain_t setting_cal_gain = {0};
 static settings_cal_slope_t setting_cal_slope = {0};
 static settings_cal_reflection_t setting_cal_reflection = {0};
 static settings_cal_transmission_t setting_cal_transmission = {0};
+static settings_user_usb_key_t setting_user_usb_key = {0};
 
 HAL_StatusTypeDef settings_init()
 {
@@ -356,13 +363,13 @@ bool settings_init_user_settings(bool force_clear)
 {
     bool result;
     /* Initialize all fields to their default values */
-    /* There are currently no user settings */
+    settings_set_user_usb_key_defaults(&setting_user_usb_key);
 
     /* Load settings if the version matches */
     uint32_t version = force_clear ? 0 : settings_read_uint32(PAGE_USER_SETTINGS);
     if (version == PAGE_USER_SETTINGS_VERSION) {
         /* Version is good, load data with per-field validation */
-        /* There are currently no user settings */
+        settings_load_user_usb_key();
         result = true;
     } else {
         /* Version is bad, initialize a blank page */
@@ -382,6 +389,13 @@ bool settings_clear_user_settings()
     uint8_t data[PAGE_USER_SETTINGS_SIZE];
     memset(data, 0, sizeof(data));
     if (settings_write_buffer(PAGE_USER_SETTINGS, data, sizeof(data)) != HAL_OK) {
+        return false;
+    }
+
+    /* Write an empty usb key user settings struct */
+    settings_user_usb_key_t usb_key;
+    settings_set_user_usb_key_defaults(&usb_key);
+    if (!settings_set_user_usb_key(&usb_key)) {
         return false;
     }
 
@@ -823,6 +837,67 @@ bool settings_validate_cal_transmission(const settings_cal_transmission_t *cal_t
     }
 
     return true;
+}
+
+void settings_set_user_usb_key_defaults(settings_user_usb_key_t *usb_key)
+{
+    if (!usb_key) { return; }
+    memset(usb_key, 0, sizeof(settings_user_usb_key_t));
+    usb_key->enabled = false;
+    usb_key->format = SETTING_KEY_FORMAT_NUMBER;
+    usb_key->separator = SETTING_KEY_SEPARATOR_NONE;
+}
+
+bool settings_set_user_usb_key(const settings_user_usb_key_t *usb_key)
+{
+    HAL_StatusTypeDef ret = HAL_OK;
+    if (!usb_key) { return false; }
+
+    uint8_t buf[CONFIG_USER_USB_KEY_SIZE];
+    copy_from_u32(&buf[0], (uint32_t)usb_key->enabled);
+    copy_from_u32(&buf[4], (uint32_t)usb_key->format);
+    copy_from_u32(&buf[8], (uint32_t)usb_key->separator);
+
+    ret = settings_write_buffer(CONFIG_USER_USB_KEY, buf, sizeof(buf));
+
+    if (ret == HAL_OK) {
+        memcpy(&setting_user_usb_key, usb_key, sizeof(settings_user_usb_key_t));
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool settings_load_user_usb_key()
+{
+    uint8_t buf[CONFIG_USER_USB_KEY_SIZE];
+
+    if (settings_read_buffer(CONFIG_USER_USB_KEY, buf, sizeof(buf)) != HAL_OK) {
+        return false;
+    }
+
+    setting_user_usb_key.enabled = (bool)copy_to_u32(&buf[0]);
+    setting_user_usb_key.format = (setting_key_format_t)copy_to_u32(&buf[4]);
+    setting_user_usb_key.separator = (setting_key_separator_t)copy_to_u32(&buf[8]);
+    return true;
+}
+
+bool settings_get_user_usb_key(settings_user_usb_key_t *usb_key)
+{
+    if (!usb_key) { return false; }
+
+    /* Copy over the settings values */
+    memcpy(usb_key, &setting_user_usb_key, sizeof(settings_user_usb_key_t));
+
+    /* Set default values if validation fails */
+    if (usb_key->format < 0 || usb_key->format >= SETTING_KEY_FORMAT_MAX
+        || usb_key->separator < 0 || usb_key->separator >= SETTING_KEY_SEPARATOR_MAX) {
+        log_w("Invalid USB key user settings values");
+        settings_set_user_usb_key_defaults(usb_key);
+        return false;
+    } else {
+        return true;
+    }
 }
 
 HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len)

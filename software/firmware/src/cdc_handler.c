@@ -258,6 +258,11 @@ void cdc_set_connected(bool connected)
     }
 }
 
+bool cdc_is_connected()
+{
+    return cdc_host_connected;
+}
+
 void cdc_process_command(const char *buf, size_t len)
 {
     cdc_command_t cmd = {0};

@@ -35,6 +35,27 @@ typedef struct {
     float hi_value;
 } settings_cal_transmission_t;
 
+typedef enum {
+    SETTING_KEY_FORMAT_NUMBER = 0,
+    SETTING_KEY_FORMAT_FULL,
+    SETTING_KEY_FORMAT_MAX
+} setting_key_format_t;
+
+typedef enum {
+    SETTING_KEY_SEPARATOR_NONE = 0,
+    SETTING_KEY_SEPARATOR_ENTER,
+    SETTING_KEY_SEPARATOR_TAB,
+    SETTING_KEY_SEPARATOR_COMMA,
+    SETTING_KEY_SEPARATOR_SPACE,
+    SETTING_KEY_SEPARATOR_MAX
+} setting_key_separator_t;
+
+typedef struct {
+    bool enabled;
+    setting_key_format_t format;
+    setting_key_separator_t separator;
+} settings_user_usb_key_t;
+
 HAL_StatusTypeDef settings_init();
 
 HAL_StatusTypeDef settings_wipe();
@@ -148,5 +169,21 @@ bool settings_get_cal_transmission(settings_cal_transmission_t *cal_transmission
  * @return True if valid, false if invalid
  */
 bool settings_validate_cal_transmission(const settings_cal_transmission_t *cal_transmission);
+
+/**
+ * Set the user settings for the USB key output feature
+ *
+ * @param usb_key Struct populated with the values to save
+ * @return True if saved, false on error
+ */
+bool settings_set_user_usb_key(const settings_user_usb_key_t *usb_key);
+
+/**
+ * Get the user settings for the USB key output feature
+ *
+ * @param usb_key Struct to be populated with saved values
+ * @return True if valid values are returned, false otherwise.
+ */
+bool settings_get_user_usb_key(settings_user_usb_key_t *usb_key);
 
 #endif /* SETTINGS_H */
