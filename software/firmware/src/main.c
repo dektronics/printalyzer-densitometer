@@ -277,7 +277,17 @@ void gpio_init(void)
 void i2c1_init(void)
 {
     hi2c1.Instance = I2C1;
-    hi2c1.Init.Timing = 0x00300F38;
+
+    /*
+     * CubeMX calculated value for the following configuration:
+     * - I2C Frequency: 400kHz
+     * - Rise Time: 250ns
+     * - Fall Time: 100ns
+     * - Coefficient of Digital Filter: 0
+     * - Analog Filter: Enabled
+     */
+    hi2c1.Init.Timing = 0x00B0122A;
+
     hi2c1.Init.OwnAddress1 = 0;
     hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
     hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
