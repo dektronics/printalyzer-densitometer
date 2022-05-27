@@ -7,6 +7,7 @@
 #include <printf.h>
 #include <cmsis_os.h>
 
+#include "state_home.h"
 #include "state_display.h"
 #include "state_measure.h"
 #include "state_main_menu.h"
@@ -21,14 +22,6 @@ struct __state_controller_t {
 
 static state_controller_t state_controller = {0};
 static state_t *state_map[STATE_MAX] = {0};
-
-static state_t *state_home();
-static void state_home_process(state_t *state_base, state_controller_t *controller);
-static state_t state_home_data = {
-    .state_entry = NULL,
-    .state_process = state_home_process,
-    .state_exit = NULL
-};
 
 void state_controller_init()
 {
@@ -112,16 +105,8 @@ void state_controller_set_home_state(state_controller_t *controller, state_ident
     controller->home_state = home_state;
 }
 
-state_t *state_home()
+state_identifier_t state_controller_get_home_state(state_controller_t *controller)
 {
-    return (state_t *)&state_home_data;
-}
-
-void state_home_process(state_t *state_base, state_controller_t *controller)
-{
-    /*
-     * The home state does not really do anything. It just decides which
-     * of the main device states to start in.
-     */
-    state_controller_set_next_state(controller, controller->home_state);
+    if (!controller) { return STATE_MAX; }
+    return controller->home_state;
 }
