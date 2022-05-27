@@ -128,11 +128,11 @@ void task_sensor_run(void *argument)
     ret = tsl2591_init(&hi2c1);
     if (ret != HAL_OK) {
         log_e("Sensor initialization failed");
-        return;
+        sensor_initialized = false;
+    } else {
+        /* Set the initialized flag */
+        sensor_initialized = true;
     }
-
-    /* Set the initialized flag */
-    sensor_initialized = true;
 
     /* Release the startup semaphore */
     if (osSemaphoreRelease(task_start_semaphore) != osOK) {
@@ -184,6 +184,8 @@ bool sensor_is_initialized()
 
 osStatus_t sensor_start()
 {
+    if (!sensor_initialized) { return osErrorResource; }
+
     osStatus_t result = osOK;
     sensor_control_event_t control_event = {
         .event_type = SENSOR_CONTROL_START,
@@ -239,6 +241,8 @@ osStatus_t sensor_control_start()
 
 osStatus_t sensor_stop()
 {
+    if (!sensor_initialized) { return osErrorResource; }
+
     osStatus_t result = osOK;
     sensor_control_event_t control_event = {
         .event_type = SENSOR_CONTROL_STOP,
@@ -265,6 +269,8 @@ osStatus_t sensor_control_stop()
 
 osStatus_t sensor_set_config(tsl2591_gain_t gain, tsl2591_time_t time)
 {
+    if (!sensor_initialized) { return osErrorResource; }
+
     osStatus_t result = osOK;
     sensor_control_event_t control_event = {
         .event_type = SENSOR_CONTROL_SET_CONFIG,
@@ -302,6 +308,8 @@ osStatus_t sensor_control_set_config(const sensor_control_config_params_t *param
 
 osStatus_t sensor_set_light_mode(sensor_light_t light, bool next_cycle, uint8_t value)
 {
+    if (!sensor_initialized) { return osErrorResource; }
+
     osStatus_t result = osOK;
     sensor_control_event_t control_event = {
         .event_type = SENSOR_CONTROL_SET_LIGHT_MODE,
@@ -357,6 +365,8 @@ osStatus_t sensor_control_set_light_mode(const sensor_control_light_mode_params_
 
 osStatus_t sensor_get_next_reading(sensor_reading_t *reading, uint32_t timeout)
 {
+    if (!sensor_initialized) { return osErrorResource; }
+
     if (!reading) {
         return osErrorParameter;
     }
@@ -366,6 +376,8 @@ osStatus_t sensor_get_next_reading(sensor_reading_t *reading, uint32_t timeout)
 
 void sensor_int_handler()
 {
+    if (!sensor_initialized) { return; }
+
     sensor_control_event_t control_event = {
         .event_type = SENSOR_CONTROL_INTERRUPT,
         .interrupt = {
