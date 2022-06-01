@@ -132,6 +132,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(densInterface_, &DensInterface::calReflectionResponse, this, &MainWindow::onCalReflectionResponse);
     connect(densInterface_, &DensInterface::calTransmissionResponse, this, &MainWindow::onCalTransmissionResponse);
 
+    // Loop back the set-complete signals to refresh their associated values
+    connect(densInterface_, &DensInterface::calGainSetComplete, densInterface_, &DensInterface::sendGetCalGain);
+    connect(densInterface_, &DensInterface::calSlopeSetComplete, densInterface_, &DensInterface::sendGetCalSlope);
+    connect(densInterface_, &DensInterface::calReflectionSetComplete, densInterface_, &DensInterface::sendGetCalReflection);
+    connect(densInterface_, &DensInterface::calTransmissionSetComplete, densInterface_, &DensInterface::sendGetCalTransmission);
+
     // Initialize all fields with blank values
     onSystemVersionResponse();
     onSystemBuildResponse();
@@ -289,7 +295,8 @@ void MainWindow::about()
 
 void MainWindow::refreshButtonState()
 {
-    if (densInterface_->connected()) {
+    const bool connected = densInterface_->connected();
+    if (connected) {
         ui->actionImportSettings->setEnabled(true);
         ui->actionExportSettings->setEnabled(true);
         ui->refreshSensorsPushButton->setEnabled(true);
@@ -313,6 +320,16 @@ void MainWindow::refreshButtonState()
         if (ui->tranLoDensityLineEdit->text().isEmpty()) {
             ui->tranLoDensityLineEdit->setText("0.00");
         }
+
+        ui->low0LineEdit->setEnabled(true);
+        ui->low1LineEdit->setEnabled(true);
+        ui->med0LineEdit->setEnabled(true);
+        ui->med1LineEdit->setEnabled(true);
+        ui->high0LineEdit->setEnabled(true);
+        ui->high1LineEdit->setEnabled(true);
+        ui->max0LineEdit->setEnabled(true);
+        ui->max1LineEdit->setEnabled(true);
+
     } else {
         ui->actionImportSettings->setEnabled(false);
         ui->actionExportSettings->setEnabled(false);
@@ -327,6 +344,27 @@ void MainWindow::refreshButtonState()
         ui->tranGetPushButton->setEnabled(false);
     }
 
+    // Make calibration values editable only if connected
+    ui->med0LineEdit->setReadOnly(!connected);
+    ui->med1LineEdit->setReadOnly(!connected);
+    ui->high0LineEdit->setReadOnly(!connected);
+    ui->high1LineEdit->setReadOnly(!connected);
+    ui->max0LineEdit->setReadOnly(!connected);
+    ui->max1LineEdit->setReadOnly(!connected);
+
+    ui->b0LineEdit->setReadOnly(!connected);
+    ui->b1LineEdit->setReadOnly(!connected);
+    ui->b2LineEdit->setReadOnly(!connected);
+
+    ui->reflLoDensityLineEdit->setReadOnly(!connected);
+    ui->reflLoReadingLineEdit->setReadOnly(!connected);
+    ui->reflHiDensityLineEdit->setReadOnly(!connected);
+    ui->reflHiReadingLineEdit->setReadOnly(!connected);
+
+    ui->tranLoReadingLineEdit->setReadOnly(!connected);
+    ui->tranHiDensityLineEdit->setReadOnly(!connected);
+    ui->tranHiReadingLineEdit->setReadOnly(!connected);
+
     onCalGainTextChanged();
     onCalSlopeTextChanged();
     onCalReflectionTextChanged();
@@ -336,6 +374,31 @@ void MainWindow::refreshButtonState()
 void MainWindow::onConnectionOpened()
 {
     qDebug() << "Connection opened";
+
+    // Clear the calibration page since values could have changed
+    ui->low0LineEdit->clear();
+    ui->low1LineEdit->clear();
+    ui->med0LineEdit->clear();
+    ui->med1LineEdit->clear();
+    ui->high0LineEdit->clear();
+    ui->high1LineEdit->clear();
+    ui->max0LineEdit->clear();
+    ui->max1LineEdit->clear();
+
+    ui->b0LineEdit->clear();
+    ui->b1LineEdit->clear();
+    ui->b2LineEdit->clear();
+
+    ui->reflLoDensityLineEdit->clear();
+    ui->reflLoReadingLineEdit->clear();
+    ui->reflHiDensityLineEdit->clear();
+    ui->reflHiReadingLineEdit->clear();
+
+    ui->tranLoDensityLineEdit->clear();
+    ui->tranLoReadingLineEdit->clear();
+    ui->tranHiDensityLineEdit->clear();
+    ui->tranHiReadingLineEdit->clear();
+
     densInterface_->sendSetMeasurementFormat(DensInterface::FormatExtended);
     densInterface_->sendSetAllowUncalibratedMeasurements(true);
     densInterface_->sendGetSystemBuild();
@@ -560,6 +623,14 @@ void MainWindow::onCalGainTextChanged()
     } else {
         ui->gainSetPushButton->setEnabled(false);
     }
+
+    const DensCalGain calGain = densInterface_->calGain();
+    updateLineEditDirtyState(ui->med0LineEdit, calGain.med0(), 6);
+    updateLineEditDirtyState(ui->med1LineEdit, calGain.med1(), 6);
+    updateLineEditDirtyState(ui->high0LineEdit, calGain.high0(), 6);
+    updateLineEditDirtyState(ui->high1LineEdit, calGain.high1(), 6);
+    updateLineEditDirtyState(ui->max0LineEdit, calGain.max0(), 6);
+    updateLineEditDirtyState(ui->max1LineEdit, calGain.max1(), 6);
 }
 
 void MainWindow::onCalSlopeTextChanged()
@@ -572,6 +643,11 @@ void MainWindow::onCalSlopeTextChanged()
     } else {
         ui->slopeSetPushButton->setEnabled(false);
     }
+
+    const DensCalSlope calSlope = densInterface_->calSlope();
+    updateLineEditDirtyState(ui->b0LineEdit, calSlope.b0(), 6);
+    updateLineEditDirtyState(ui->b1LineEdit, calSlope.b1(), 6);
+    updateLineEditDirtyState(ui->b2LineEdit, calSlope.b2(), 6);
 }
 
 void MainWindow::onCalReflectionTextChanged()
@@ -585,6 +661,12 @@ void MainWindow::onCalReflectionTextChanged()
     } else {
         ui->reflSetPushButton->setEnabled(false);
     }
+
+    const DensCalTarget calTarget = densInterface_->calReflection();
+    updateLineEditDirtyState(ui->reflLoDensityLineEdit, calTarget.loDensity(), 2);
+    updateLineEditDirtyState(ui->reflLoReadingLineEdit, calTarget.loReading(), 6);
+    updateLineEditDirtyState(ui->reflHiDensityLineEdit, calTarget.hiDensity(), 2);
+    updateLineEditDirtyState(ui->reflHiReadingLineEdit, calTarget.hiReading(), 6);
 }
 
 void MainWindow::onCalTransmissionTextChanged()
@@ -597,6 +679,23 @@ void MainWindow::onCalTransmissionTextChanged()
         ui->tranSetPushButton->setEnabled(true);
     } else {
         ui->tranSetPushButton->setEnabled(false);
+    }
+
+    const DensCalTarget calTarget = densInterface_->calTransmission();
+    updateLineEditDirtyState(ui->tranLoReadingLineEdit, calTarget.loReading(), 6);
+    updateLineEditDirtyState(ui->tranHiDensityLineEdit, calTarget.hiDensity(), 2);
+    updateLineEditDirtyState(ui->tranHiReadingLineEdit, calTarget.hiReading(), 6);
+}
+
+void MainWindow::updateLineEditDirtyState(QLineEdit *lineEdit, float densValue, int prec)
+{
+    if (!lineEdit) { return; }
+
+    if (lineEdit->text().isNull() || lineEdit->text().isEmpty()
+            || lineEdit->text() == QString::number(densValue, 'f', prec)) {
+        lineEdit->setStyleSheet(styleSheet());
+    } else {
+        lineEdit->setStyleSheet("QLineEdit { background-color: lightgoldenrodyellow; }");
     }
 }
 
@@ -676,6 +775,8 @@ void MainWindow::onCalGainResponse()
 
     ui->max0LineEdit->setText(QString::number(calGain.max0(), 'f'));
     ui->max1LineEdit->setText(QString::number(calGain.max1(), 'f'));
+
+    onCalGainTextChanged();
 }
 
 void MainWindow::onCalSlopeResponse()
@@ -685,6 +786,8 @@ void MainWindow::onCalSlopeResponse()
     ui->b0LineEdit->setText(QString::number(calSlope.b0(), 'f'));
     ui->b1LineEdit->setText(QString::number(calSlope.b1(), 'f'));
     ui->b2LineEdit->setText(QString::number(calSlope.b2(), 'f'));
+
+    onCalSlopeTextChanged();
 }
 
 void MainWindow::onCalReflectionResponse()
@@ -695,6 +798,8 @@ void MainWindow::onCalReflectionResponse()
     ui->reflLoReadingLineEdit->setText(QString::number(calReflection.loReading(), 'f', 6));
     ui->reflHiDensityLineEdit->setText(QString::number(calReflection.hiDensity(), 'f', 2));
     ui->reflHiReadingLineEdit->setText(QString::number(calReflection.hiReading(), 'f', 6));
+
+    onCalReflectionTextChanged();
 }
 
 void MainWindow::onCalTransmissionResponse()
@@ -705,6 +810,8 @@ void MainWindow::onCalTransmissionResponse()
     ui->tranLoReadingLineEdit->setText(QString::number(calTransmission.loReading(), 'f', 6));
     ui->tranHiDensityLineEdit->setText(QString::number(calTransmission.hiDensity(), 'f', 2));
     ui->tranHiReadingLineEdit->setText(QString::number(calTransmission.hiReading(), 'f', 6));
+
+    onCalTransmissionTextChanged();
 }
 
 void MainWindow::onRemoteControl()

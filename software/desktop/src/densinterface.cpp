@@ -646,6 +646,8 @@ void DensInterface::readCalibrationResponse(const DensCommand &response)
         calGain_.setMax0(util::decode_f32(response.args().at(6)));
         calGain_.setMax1(util::decode_f32(response.args().at(7)));
         emit calGainResponse();
+    } else if (isResponseSetOk(response, QLatin1String("GAIN"))) {
+        emit calGainSetComplete();
     } else if (response.type() == DensCommand::TypeGet
                && response.action() == QLatin1String("SLOPE")
                && response.args().length() == 3) {
@@ -653,6 +655,8 @@ void DensInterface::readCalibrationResponse(const DensCommand &response)
         calSlope_.setB1(util::decode_f32(response.args().at(1)));
         calSlope_.setB2(util::decode_f32(response.args().at(2)));
         emit calSlopeResponse();
+    } else if (isResponseSetOk(response, QLatin1String("SLOPE"))) {
+        emit calSlopeSetComplete();
     } else if (response.type() == DensCommand::TypeGet
             && response.action() == QLatin1String("REFL")
             && response.args().length() == 4) {
@@ -661,6 +665,8 @@ void DensInterface::readCalibrationResponse(const DensCommand &response)
         calReflection_.setHiDensity(util::decode_f32(response.args().at(2)));
         calReflection_.setHiReading(util::decode_f32(response.args().at(3)));
         emit calReflectionResponse();
+    } else if (isResponseSetOk(response, QLatin1String("REFL"))) {
+        emit calReflectionSetComplete();
     } else if (response.type() == DensCommand::TypeGet
             && response.action() == QLatin1String("TRAN")
             && response.args().length() == 4) {
@@ -669,6 +675,20 @@ void DensInterface::readCalibrationResponse(const DensCommand &response)
         calTransmission_.setHiDensity(util::decode_f32(response.args().at(2)));
         calTransmission_.setHiReading(util::decode_f32(response.args().at(3)));
         emit calTransmissionResponse();
+    } else if (isResponseSetOk(response, QLatin1String("TRAN"))) {
+        emit calTransmissionSetComplete();
+    }
+}
+
+bool DensInterface::isResponseSetOk(const DensCommand &response, QLatin1String action)
+{
+    if (response.type() == DensCommand::TypeSet
+            && response.action() == action
+            && response.args().length() == 1
+            && response.args().at(0) == QLatin1String("OK")) {
+        return true;
+    } else {
+        return false;
     }
 }
 

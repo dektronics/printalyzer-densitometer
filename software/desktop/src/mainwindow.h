@@ -8,6 +8,7 @@ QT_BEGIN_NAMESPACE
 
 class QLabel;
 class QSerialPort;
+class QLineEdit;
 
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -73,6 +74,7 @@ private slots:
 
 private:
     void refreshButtonState();
+    void updateLineEditDirtyState(QLineEdit *lineEdit, float densValue, int prec);
 
     Ui::MainWindow *ui = nullptr;
     QLabel *statusLabel_ = nullptr;

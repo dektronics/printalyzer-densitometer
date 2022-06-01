@@ -132,9 +132,13 @@ signals:
     void calGainCalFinished();
     void calGainCalError();
     void calGainResponse();
+    void calGainSetComplete();
     void calSlopeResponse();
+    void calSlopeSetComplete();
     void calReflectionResponse();
+    void calReflectionSetComplete();
     void calTransmissionResponse();
+    void calTransmissionSetComplete();
 
 private slots:
     void readData();
@@ -148,6 +152,7 @@ private:
     void readMeasurementResponse(const DensCommand &response);
     void readCalibrationResponse(const DensCommand &response);
     void readDiagnosticsResponse(const DensCommand &response);
+    static bool isResponseSetOk(const DensCommand &response, QLatin1String action);
 
     bool sendCommand(const DensCommand &command);
 
