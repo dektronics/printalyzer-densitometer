@@ -35,6 +35,13 @@ SlopeCalibrationDialog::SlopeCalibrationDialog(DensInterface *densInterface, QWi
 
     model_ = new QStandardItemModel(22, 2, this);
     model_->setHorizontalHeaderLabels(QStringList() << tr("Density") << tr("Raw Reading"));
+
+    QStringList verticalLabels;
+    for (int i = 0; i < model_->rowCount(); i++) {
+        verticalLabels.append(QString::number(i));
+    }
+    model_->setVerticalHeaderLabels(verticalLabels);
+
     ui->tableView->setModel(model_);
     ui->tableView->setColumnWidth(0, 80);
     ui->tableView->setColumnWidth(1, 150);
