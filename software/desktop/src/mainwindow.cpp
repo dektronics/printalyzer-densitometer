@@ -2,12 +2,15 @@
 #include "ui_mainwindow.h"
 
 #include <QtCore/QDebug>
+#include <QtCore/QThread>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 #include <QtGui/QImage>
 #include <QtGui/QValidator>
+#include <QtGui/QStandardItemModel>
+#include <QtGui/QClipboard>
 
 #include "connectdialog.h"
 #include "densinterface.h"
@@ -17,7 +20,13 @@
 #include "logwindow.h"
 #include "settingsexporter.h"
 #include "settingsimportdialog.h"
+#include "floatitemdelegate.h"
 #include "util.h"
+
+namespace
+{
+static const int MEAS_TABLE_ROWS = 10;
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -97,6 +106,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(logWindow_, &LogWindow::opened, this, &MainWindow::onLoggerOpened);
     connect(logWindow_, &LogWindow::closed, this, &MainWindow::onLoggerClosed);
 
+    // Measurement UI signals
+    connect(ui->addReadingPushButton, &QPushButton::clicked, this, &MainWindow::onAddReadingClicked);
+    connect(ui->copyTablePushButton, &QPushButton::clicked, this, &MainWindow::onCopyTableClicked);
+    connect(ui->clearTablePushButton, &QPushButton::clicked, this, &MainWindow::onClearTableClicked);
+
     // Diagnostics UI signals
     connect(ui->refreshSensorsPushButton, &QPushButton::clicked, densInterface_, &DensInterface::sendGetSystemInternalSensors);
     connect(ui->screenshotButton, &QPushButton::clicked, densInterface_, &DensInterface::sendGetDiagDisplayScreenshot);
@@ -137,6 +151,38 @@ MainWindow::MainWindow(QWidget *parent)
     connect(densInterface_, &DensInterface::calSlopeSetComplete, densInterface_, &DensInterface::sendGetCalSlope);
     connect(densInterface_, &DensInterface::calReflectionSetComplete, densInterface_, &DensInterface::sendGetCalReflection);
     connect(densInterface_, &DensInterface::calTransmissionSetComplete, densInterface_, &DensInterface::sendGetCalTransmission);
+
+    // Setup the measurement model
+    measModel_ = new QStandardItemModel(MEAS_TABLE_ROWS, 2, this);
+    measModel_->setHorizontalHeaderLabels(QStringList() << tr("Mode") << tr("Measurement") << tr("Offset"));
+    ui->measTableView->setModel(measModel_);
+    ui->measTableView->setItemDelegateForColumn(1, new FloatItemDelegate(0.0, 5.0, 2));
+    ui->measTableView->setItemDelegateForColumn(2, new FloatItemDelegate(0.0, 5.0, 2));
+    ui->measTableView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    ui->measTableView->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    ui->measTableView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+
+    // Set the initial state of table items
+    for (int row = 0; row < measModel_->rowCount(); row++) {
+        // Non-editable mode item
+        QStandardItem *item = new QStandardItem();
+        item->setSelectable(false);
+        item->setEditable(false);
+        measModel_->setItem(row, 0, item);
+
+        // Non-editable offset item
+        item = new QStandardItem();
+        item->setSelectable(false);
+        item->setEditable(false);
+        measModel_->setItem(row, 2, item);
+    }
+
+    QModelIndex index = measModel_->index(0, 1);
+    ui->measTableView->setCurrentIndex(index);
+    ui->measTableView->selectionModel()->clearSelection();
+
+    ui->autoAddPushButton->setChecked(true);
+    ui->addReadingPushButton->setEnabled(false);
 
     // Initialize all fields with blank values
     onSystemVersionResponse();
@@ -462,7 +508,7 @@ void MainWindow::onDensityReading(DensInterface::DensityType type, float dValue,
         ui->zeroIndicatorLabel->setToolTip(QString());
     }
 
-    /* Clean up the display value */
+    // Clean up the display value
     float displayValue;
     if (!qIsNaN(dZero)) {
         displayValue = dValue - dZero;
@@ -473,6 +519,19 @@ void MainWindow::onDensityReading(DensInterface::DensityType type, float dValue,
         displayValue = 0.0F;
     }
     ui->readingValueLineEdit->setText(QString("%1D").arg(displayValue, 4, 'f', 2));
+
+    // Save values so they can be referenced later
+    lastReadingType_ = type;
+    lastReadingDensity_ = displayValue;
+    lastReadingOffset_ = dZero;
+    ui->addReadingPushButton->setEnabled(true);
+
+    // Update the measurement tab table view, if the tab is focused
+    if (ui->tabWidget->currentWidget() == ui->tabMeasurement) {
+        if (ui->autoAddPushButton->isChecked()) {
+            onAddReadingClicked();
+        }
+    }
 
     // Update calibration tab fields, if focused
     if (type == DensInterface::DensityReflection) {
@@ -488,6 +547,139 @@ void MainWindow::onDensityReading(DensInterface::DensityType type, float dValue,
             ui->tranHiReadingLineEdit->setText(QString::number(corrValue, 'f'));
         }
     }
+}
+
+void MainWindow::onAddReadingClicked()
+{
+    if (lastReadingType_ == DensInterface::DensityUnknown
+            || qIsNaN(lastReadingDensity_)) {
+        return;
+    }
+
+    QString numStr = QString("%1").arg(lastReadingDensity_, 4, 'f', 2);
+    QString typeStr;
+    QIcon typeIcon;
+    QString offsetStr;
+    if (lastReadingType_ == DensInterface::DensityReflection) {
+        typeIcon = QIcon(QString::fromUtf8(":/images/reflection-icon.png"));
+        typeStr = QLatin1String("R");
+    } else {
+        typeIcon = QIcon(QString::fromUtf8(":/images/transmission-icon.png"));
+        typeStr = QLatin1String("T");
+    }
+    if (!qIsNaN(lastReadingOffset_)) {
+        offsetStr = QString("%1").arg(lastReadingOffset_, 4, 'f', 2);
+    }
+
+    int row = -1;
+    QModelIndexList selected = ui->measTableView->selectionModel()->selectedIndexes();
+    selected.append(ui->measTableView->selectionModel()->currentIndex());
+    for (const QModelIndex &index : qAsConst(selected)) {
+        if (row == -1 || index.row() < row) {
+            row = index.row();
+        }
+    }
+
+    if (row >= 0) {
+        QStandardItem *typeItem = new QStandardItem(typeIcon, typeStr);
+        typeItem->setSelectable(false);
+        typeItem->setEditable(false);
+        measModel_->setItem(row, 0, typeItem);
+
+        QStandardItem *measItem = new QStandardItem(numStr);
+        measModel_->setItem(row, 1, measItem);
+
+        QStandardItem *offsetItem = new QStandardItem(offsetStr);
+        offsetItem->setSelectable(false);
+        offsetItem->setEditable(false);
+        measModel_->setItem(row, 2, offsetItem);
+
+        if (row < measModel_->rowCount() - 1) {
+            QModelIndex index = measModel_->index(row + 1, 1);
+            ui->measTableView->setCurrentIndex(index);
+        } else {
+            measModel_->insertRow(row + 1);
+            QModelIndex index = measModel_->index(row + 1, 1);
+            ui->measTableView->setCurrentIndex(index);
+        }
+        ui->measTableView->scrollTo(ui->measTableView->currentIndex());
+    }
+}
+
+void MainWindow::onCopyTableClicked()
+{
+    QVector<QString> numList;
+
+    // Collect the list of populated measurement items in the table
+    for (int row = 0; row < measModel_->rowCount(); row++) {
+        QStandardItem *item = measModel_->item(row, 1);
+        if (item && !item->text().isEmpty()) {
+            numList.append(item->text());
+        }
+    }
+
+    // Get the copy orientation
+    bool horizCopy;
+    if (ui->copyDirButtonGroup->checkedButton() == ui->horizCopyRadioButton) {
+        horizCopy = true;
+    } else {
+        horizCopy = false;
+    }
+
+    // Build the string to put in the clipboard
+    QString copiedText;
+    for (const auto &numElement : numList) {
+        if (!copiedText.isEmpty()) {
+            if (horizCopy) {
+                copiedText.append(QLatin1String("\t"));
+            } else {
+#if defined(Q_OS_WIN)
+                copiedText.append(QLatin1String("\r\n"));
+#else
+                copiedText.append(QLatin1String("\n"));
+#endif
+            }
+        }
+        copiedText.append(numElement);
+    }
+
+    // Move to the clipboard
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(copiedText, QClipboard::Clipboard);
+
+    if (clipboard->supportsSelection()) {
+        clipboard->setText(copiedText, QClipboard::Selection);
+    }
+
+#if defined(Q_OS_UNIX)
+    QThread::msleep(1);
+#endif
+}
+
+void MainWindow::onClearTableClicked()
+{
+    if (measModel_->rowCount() > MEAS_TABLE_ROWS) {
+        measModel_->removeRows(MEAS_TABLE_ROWS, measModel_->rowCount() - 10);
+    }
+
+    for (int row = 0; row < measModel_->rowCount(); row++) {
+        QStandardItem *item = measModel_->item(row, 0);
+        if (item) {
+            item->setText(QString());
+            item->setIcon(QIcon());
+        }
+
+        item = measModel_->item(row, 1);
+        if (item) { item->setText(QString()); }
+
+        item = measModel_->item(row, 2);
+        if (item) { item->setText(QString()); }
+    }
+
+    QModelIndex index = measModel_->index(0, 1);
+    ui->measTableView->setCurrentIndex(index);
+    ui->measTableView->selectionModel()->clearSelection();
+    ui->measTableView->scrollToTop();
 }
 
 void MainWindow::onCalGetAllValues()

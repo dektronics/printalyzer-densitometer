@@ -11,5 +11,7 @@
         <file>images/go-bottom.png</file>
         <file>images/clear.png</file>
         <file>images/zero-set-indicator.png</file>
+        <file>images/go-next.png</file>
+        <file>images/media-record.png</file>
     </qresource>
 </RCC>

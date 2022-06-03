@@ -9,6 +9,7 @@ QT_BEGIN_NAMESPACE
 class QLabel;
 class QSerialPort;
 class QLineEdit;
+class QStandardItemModel;
 
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -40,6 +41,10 @@ private slots:
     void onConnectionError();
 
     void onDensityReading(DensInterface::DensityType type, float dValue, float dZero, float rawValue, float corrValue);
+
+    void onAddReadingClicked();
+    void onCopyTableClicked();
+    void onClearTableClicked();
 
     void onCalGetAllValues();
     void onCalGainCalClicked();
@@ -81,7 +86,11 @@ private:
     QSerialPort *serialPort_ = nullptr;
     DensInterface *densInterface_ = nullptr;
     LogWindow *logWindow_ = nullptr;
+    QStandardItemModel *measModel_ = nullptr;
     RemoteControlDialog *remoteDialog_ = nullptr;
+    DensInterface::DensityType lastReadingType_ = DensInterface::DensityUnknown;
+    float lastReadingDensity_ = qSNaN();
+    float lastReadingOffset_ = qSNaN();
 };
 
 #endif // MAINWINDOW_H
