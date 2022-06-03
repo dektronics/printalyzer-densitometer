@@ -20,6 +20,11 @@ SlopeCalibrationDialog::SlopeCalibrationDialog(DensInterface *densInterface, QWi
 {
     ui->setupUi(this);
 
+    ui->actionCut->setShortcut(QKeySequence::Cut);
+    ui->actionCopy->setShortcut(QKeySequence::Copy);
+    ui->actionPaste->setShortcut(QKeySequence::Paste);
+    ui->actionDelete->setShortcut(QKeySequence::Delete);
+
     addAction(ui->actionCut);
     addAction(ui->actionCopy);
     addAction(ui->actionPaste);
