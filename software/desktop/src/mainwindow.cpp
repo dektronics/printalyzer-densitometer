@@ -3,6 +3,7 @@
 
 #include <QtCore/QDebug>
 #include <QtCore/QThread>
+#include <QtCore/QMimeData>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
@@ -42,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->actionDisconnect->setEnabled(false);
     ui->actionConfigure->setEnabled(true);
     ui->actionExit->setEnabled(true);
+
     ui->actionImportSettings->setEnabled(false);
     ui->actionExportSettings->setEnabled(false);
 
@@ -51,6 +53,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->statusBar->addWidget(statusLabel_);
 
     ui->zeroIndicatorLabel->setPixmap(QPixmap());
+
+    // Setup menu shortcuts
+    ui->actionCut->setShortcut(QKeySequence::Cut);
+    ui->actionCopy->setShortcut(QKeySequence::Copy);
+    ui->actionPaste->setShortcut(QKeySequence::Paste);
+    ui->actionDelete->setShortcut(QKeySequence::Delete);
+    ui->actionExit->setShortcut(QKeySequence::Quit);
 
     // Calibration (gain) field validation
     ui->med0LineEdit->setValidator(util::createFloatValidator(22.0, 27.0, 6, this));
@@ -93,10 +102,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->tranHiReadingLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalTransmissionTextChanged);
 
     // Top-level UI signals
+    connect(ui->menuEdit, &QMenu::aboutToShow, this, &MainWindow::onMenuEditAboutToShow);
     connect(ui->actionConnect, &QAction::triggered, this, &MainWindow::openConnection);
     connect(ui->actionDisconnect, &QAction::triggered, this, &MainWindow::closeConnection);
     connect(ui->actionExit, &QAction::triggered, this, &MainWindow::close);
     //connect(ui->actionConfigure, &QAction::triggered, settings_, &SettingsDialog::show);
+    connect(ui->actionCut, &QAction::triggered, this, &MainWindow::onActionCut);
+    connect(ui->actionCopy, &QAction::triggered, this, &MainWindow::onActionCopy);
+    connect(ui->actionPaste, &QAction::triggered, this, &MainWindow::onActionPaste);
+    connect(ui->actionDelete, &QAction::triggered, this, &MainWindow::onActionDelete);
     connect(ui->actionImportSettings, &QAction::triggered, this, &MainWindow::onImportSettings);
     connect(ui->actionExportSettings, &QAction::triggered, this, &MainWindow::onExportSettings);
     connect(ui->actionLogger, &QAction::triggered, this, &MainWindow::onLogger);
@@ -417,6 +431,69 @@ void MainWindow::refreshButtonState()
     onCalTransmissionTextChanged();
 }
 
+void MainWindow::onMenuEditAboutToShow()
+{
+    qDebug() << "-->onMenuEditAboutToShow";
+    bool hasCut = false;
+    bool hasCopy = false;
+    bool hasPaste = false;
+    bool hasDelete = false;
+
+    if (ui->tabWidget->currentWidget() == ui->tabMeasurement) {
+        const QWidget *focusWidget = ui->tabMeasurement->focusWidget();
+        if (focusWidget) {
+            if (ui->readingValueLineEdit == focusWidget && ui->readingValueLineEdit->hasSelectedText()) {
+                hasCopy = true;
+            } else if (ui->measTableView == focusWidget || ui->measTableView->isAncestorOf(focusWidget)) {
+                if (!ui->measTableView->selectionModel()->selectedRows(1).isEmpty()) {
+                    // It is possible to have a table selection, and have focus
+                    // or highlight elsewhere on the tab. However, making the table
+                    // still handle edit actions under this situation has a lot of
+                    // corner cases that would need to be handled. Probably easier
+                    // to leave it alone for now.
+                    hasCut = true;
+                    hasCopy = true;
+                    hasPaste = true;
+                    hasDelete = true;
+                }
+            }
+        }
+    } else if (ui->tabWidget->currentWidget() == ui->tabCalibration) {
+        const QWidget *focusWidget = ui->tabCalibration->focusWidget();
+        if (focusWidget) {
+            const QLineEdit *lineEdit = qobject_cast<const QLineEdit *>(focusWidget);
+            if (lineEdit) {
+                if (lineEdit->hasSelectedText()) {
+                    hasCopy = true;
+                    if (!lineEdit->isReadOnly()) {
+                        hasCut = true;
+                        hasPaste = true;
+                        hasDelete = true;
+                    }
+                } else {
+                    if (!lineEdit->isReadOnly()) {
+                        hasPaste = true;
+                    }
+                }
+            }
+        }
+    }
+
+    // Only let paste stay enabled if the clipboard has content
+    if (hasPaste) {
+        const QClipboard *clipboard = QApplication::clipboard();
+        const QMimeData *mimeData = clipboard->mimeData();
+        if (!mimeData->hasText()) {
+            hasPaste = false;
+        }
+    }
+
+    ui->actionCut->setEnabled(hasCut);
+    ui->actionCopy->setEnabled(hasCopy);
+    ui->actionPaste->setEnabled(hasPaste);
+    ui->actionDelete->setEnabled(hasDelete);
+}
+
 void MainWindow::onConnectionOpened()
 {
     qDebug() << "Connection opened";
@@ -549,26 +626,104 @@ void MainWindow::onDensityReading(DensInterface::DensityType type, float dValue,
     }
 }
 
-void MainWindow::onAddReadingClicked()
+void MainWindow::onActionCut()
 {
-    if (lastReadingType_ == DensInterface::DensityUnknown
-            || qIsNaN(lastReadingDensity_)) {
-        return;
-    }
+    QWidget *focusWidget = ui->tabWidget->currentWidget()->focusWidget();
+    if (focusWidget) {
+        // Handle the common case for a line edit widget
+        QLineEdit *lineEdit = qobject_cast<QLineEdit *>(focusWidget);
+        if (lineEdit && !lineEdit->isReadOnly()) {
+            lineEdit->cut();
+            return;
+        }
 
-    QString numStr = QString("%1").arg(lastReadingDensity_, 4, 'f', 2);
+        // Handle the case for a measurement table selection
+        if (ui->tabWidget->currentWidget() == ui->tabMeasurement
+                && focusWidget == ui->measTableView
+                && !ui->measTableView->selectionModel()->selectedRows(1).isEmpty()) {
+            measTableCut();
+        }
+    }
+}
+
+void MainWindow::onActionCopy()
+{
+    const QWidget *focusWidget = ui->tabWidget->currentWidget()->focusWidget();
+    if (focusWidget) {
+        // Handle the common case for a line edit widget
+        const QLineEdit *lineEdit = qobject_cast<const QLineEdit *>(focusWidget);
+        if (lineEdit) {
+            lineEdit->copy();
+            return;
+        }
+
+        // Handle the case for a measurement table selection
+        if (ui->tabWidget->currentWidget() == ui->tabMeasurement
+                && focusWidget == ui->measTableView
+                && !ui->measTableView->selectionModel()->selectedRows(1).isEmpty()) {
+            measTableCopy();
+        }
+    }
+}
+
+void MainWindow::onActionPaste()
+{
+    QWidget *focusWidget = ui->tabWidget->currentWidget()->focusWidget();
+    if (focusWidget) {
+        // Handle the common case for a line edit widget
+        QLineEdit *lineEdit = qobject_cast<QLineEdit *>(focusWidget);
+        if (lineEdit && !lineEdit->isReadOnly()) {
+            lineEdit->paste();
+            return;
+        }
+
+        // Handle the case for a measurement table selection
+        if (ui->tabWidget->currentWidget() == ui->tabMeasurement
+                && focusWidget == ui->measTableView
+                && !ui->measTableView->selectionModel()->selectedRows(1).isEmpty()) {
+            measTablePaste();
+        }
+    }
+}
+
+void MainWindow::onActionDelete()
+{
+    QWidget *focusWidget = ui->tabWidget->currentWidget()->focusWidget();
+    if (focusWidget) {
+        // Handle the common case for a line edit widget
+        QLineEdit *lineEdit = qobject_cast<QLineEdit *>(focusWidget);
+        if (lineEdit && !lineEdit->isReadOnly()) {
+            lineEdit->del();
+            return;
+        }
+
+        // Handle the case for a measurement table selection
+        if (ui->tabWidget->currentWidget() == ui->tabMeasurement
+                && focusWidget == ui->measTableView
+                && !ui->measTableView->selectionModel()->selectedRows(1).isEmpty()) {
+            measTableDelete();
+        }
+    }
+}
+
+void MainWindow::measTableAddReading(DensInterface::DensityType type, float density, float offset)
+{
+
+    QString numStr = QString("%1").arg(density, 4, 'f', 2);
     QString typeStr;
     QIcon typeIcon;
     QString offsetStr;
-    if (lastReadingType_ == DensInterface::DensityReflection) {
+
+    if (type == DensInterface::DensityReflection) {
         typeIcon = QIcon(QString::fromUtf8(":/images/reflection-icon.png"));
         typeStr = QLatin1String("R");
-    } else {
+    } else if (type == DensInterface::DensityTransmission) {
         typeIcon = QIcon(QString::fromUtf8(":/images/transmission-icon.png"));
         typeStr = QLatin1String("T");
     }
-    if (!qIsNaN(lastReadingOffset_)) {
-        offsetStr = QString("%1").arg(lastReadingOffset_, 4, 'f', 2);
+
+    if (!qIsNaN(offset)) {
+        offsetStr = QString("%1").arg(offset, 4, 'f', 2);
     }
 
     int row = -1;
@@ -579,6 +734,7 @@ void MainWindow::onAddReadingClicked()
             row = index.row();
         }
     }
+    ui->measTableView->selectionModel()->clearSelection();
 
     if (row >= 0) {
         QStandardItem *typeItem = new QStandardItem(typeIcon, typeStr);
@@ -606,14 +762,27 @@ void MainWindow::onAddReadingClicked()
     }
 }
 
-void MainWindow::onCopyTableClicked()
+void MainWindow::measTableCut()
+{
+    measTableCopy();
+    measTableDelete();
+}
+
+void MainWindow::measTableCopy()
+{
+    QModelIndexList selected = ui->measTableView->selectionModel()->selectedRows(1);
+    std::sort(selected.begin(), selected.end());
+    measTableCopyList(selected, true);
+}
+
+void MainWindow::measTableCopyList(const QModelIndexList &indexList, bool includeEmpty)
 {
     QVector<QString> numList;
 
     // Collect the list of populated measurement items in the table
-    for (int row = 0; row < measModel_->rowCount(); row++) {
-        QStandardItem *item = measModel_->item(row, 1);
-        if (item && !item->text().isEmpty()) {
+    for (const QModelIndex &index : qAsConst(indexList)) {
+        const QStandardItem *item = measModel_->itemFromIndex(index);
+        if (item && item->column() == 1 && (includeEmpty || !item->text().isEmpty())) {
             numList.append(item->text());
         }
     }
@@ -654,6 +823,71 @@ void MainWindow::onCopyTableClicked()
 #if defined(Q_OS_UNIX)
     QThread::msleep(1);
 #endif
+}
+
+void MainWindow::measTablePaste()
+{
+    // Capture and split the text to be pasted
+    const QClipboard *clipboard = QApplication::clipboard();
+    const QMimeData *mimeData = clipboard->mimeData();
+    QList<float> numList;
+    if (mimeData->hasText()) {
+        const QString text = mimeData->text();
+        const QStringList elements = text.split(QRegExp("\n|\r\n|\r|\t|[,;]\\s*|\\s+"), Qt::SkipEmptyParts);
+        for (const QString& element : elements) {
+            bool ok;
+            float num = element.toFloat(&ok);
+            if (ok) {
+                numList.append(num);
+            }
+        }
+    }
+
+    // Add the pasted readings
+    for (float num : numList) {
+        measTableAddReading(DensInterface::DensityUnknown, num, qSNaN());
+    }
+}
+
+void MainWindow::measTableDelete()
+{
+    QModelIndexList selected = ui->measTableView->selectionModel()->selectedRows(1);
+
+    for (const QModelIndex &index : qAsConst(selected)) {
+        QStandardItem *item = measModel_->item(index.row(), 0);
+        if (item) {
+            item->setText(QString());
+            item->setIcon(QIcon());
+        }
+
+        item = measModel_->item(index.row(), 1);
+        if (item) { item->setText(QString()); }
+
+        item = measModel_->item(index.row(), 2);
+        if (item) { item->setText(QString()); }
+    }
+}
+
+void MainWindow::onAddReadingClicked()
+{
+    if (lastReadingType_ == DensInterface::DensityUnknown
+            || qIsNaN(lastReadingDensity_)) {
+        return;
+    }
+
+    measTableAddReading(lastReadingType_, lastReadingDensity_, lastReadingOffset_);
+}
+
+void MainWindow::onCopyTableClicked()
+{
+    // Build a list of all the items in the measurement column
+    QModelIndexList indexList;
+    for (int row = 0; row < measModel_->rowCount(); row++) {
+        indexList.append(measModel_->index(row, 1));
+    }
+
+    // Call the common function for copying data from the list
+    measTableCopyList(indexList, false);
 }
 
 void MainWindow::onClearTableClicked()

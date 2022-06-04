@@ -13,5 +13,8 @@
         <file>images/zero-set-indicator.png</file>
         <file>images/go-next.png</file>
         <file>images/media-record.png</file>
+        <file>images/copy.png</file>
+        <file>images/cut.png</file>
+        <file>images/paste.png</file>
     </qresource>
 </RCC>

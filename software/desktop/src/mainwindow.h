@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QAbstractItemModel>
 #include "densinterface.h"
 
 QT_BEGIN_NAMESPACE
@@ -36,11 +37,18 @@ private slots:
     void onLoggerClosed();
     void about();
 
+    void onMenuEditAboutToShow();
+
     void onConnectionOpened();
     void onConnectionClosed();
     void onConnectionError();
 
     void onDensityReading(DensInterface::DensityType type, float dValue, float dZero, float rawValue, float corrValue);
+
+    void onActionCut();
+    void onActionCopy();
+    void onActionPaste();
+    void onActionDelete();
 
     void onAddReadingClicked();
     void onCopyTableClicked();
@@ -80,6 +88,12 @@ private slots:
 private:
     void refreshButtonState();
     void updateLineEditDirtyState(QLineEdit *lineEdit, float densValue, int prec);
+    void measTableAddReading(DensInterface::DensityType type, float density, float offset);
+    void measTableCut();
+    void measTableCopy();
+    void measTableCopyList(const QModelIndexList &indexList, bool includeEmpty);
+    void measTablePaste();
+    void measTableDelete();
 
     Ui::MainWindow *ui = nullptr;
     QLabel *statusLabel_ = nullptr;
