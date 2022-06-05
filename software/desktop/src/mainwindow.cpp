@@ -433,7 +433,6 @@ void MainWindow::refreshButtonState()
 
 void MainWindow::onMenuEditAboutToShow()
 {
-    qDebug() << "-->onMenuEditAboutToShow";
     bool hasCut = false;
     bool hasCopy = false;
     bool hasPaste = false;
