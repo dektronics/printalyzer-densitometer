@@ -58,23 +58,29 @@
         )
       )
     )
-    (symbol "Device:LED_ALT" (pin_numbers hide) (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
+    (symbol "Device:LED_Filled" (pin_numbers hide) (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
       (property "Reference" "D" (id 0) (at 0 2.54 0)
         (effects (font (size 1.27 1.27)))
       )
-      (property "Value" "Device_LED_ALT" (id 1) (at 0 -2.54 0)
+      (property "Value" "LED_Filled" (id 1) (at 0 -2.54 0)
         (effects (font (size 1.27 1.27)))
       )
       (property "Footprint" "" (id 2) (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (property "Datasheet" "" (id 3) (at 0 0 0)
+      (property "Datasheet" "~" (id 3) (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (property "ki_fp_filters" "LED* LED_SMD:* LED_THT:*" (id 4) (at 0 0 0)
+      (property "ki_keywords" "LED diode" (id 4) (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (symbol "LED_ALT_0_1"
+      (property "ki_description" "Light emitting diode, filled shape" (id 5) (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "ki_fp_filters" "LED* LED_SMD:* LED_THT:*" (id 6) (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "LED_Filled_0_1"
         (polyline
           (pts
             (xy -1.27 -1.27)
@@ -124,7 +130,7 @@
           (fill (type none))
         )
       )
-      (symbol "LED_ALT_1_1"
+      (symbol "LED_Filled_1_1"
         (pin passive line (at -3.81 0 0) (length 2.54)
           (name "K" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
@@ -267,7 +273,7 @@
     (uuid 9762c9ed-64d8-4f3e-baf6-f6ba6effc919)
   )
 
-  (symbol (lib_id "Device:LED_ALT") (at 73.66 55.88 0) (unit 1)
+  (symbol (lib_id "Device:LED_Filled") (at 73.66 55.88 0) (unit 1)
     (in_bom yes) (on_board yes)
     (uuid 00000000-0000-0000-0000-0000609352d1)
     (property "Reference" "D1" (id 0) (at 73.66 52.705 0))
