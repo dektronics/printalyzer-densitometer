@@ -43,6 +43,7 @@
     },
     "post": {
         "millradius": "1mm",
+        "origin": "bl",
         "script": "tools/kikit-post.py",
         "scriptarg": "trans-led-board/trans-led-board.kicad_pcb"
     }

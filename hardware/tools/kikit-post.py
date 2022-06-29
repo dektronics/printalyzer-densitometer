@@ -4,10 +4,6 @@ from kikit.defs import EDA_TEXT_HJUSTIFY_T, EDA_TEXT_VJUSTIFY_T, Layer
 import pcbnew
 
 def kikitPostprocess(panel, arg):
-    # Copy title block from original board
-    b = pcbnew.LoadBoard(arg)
-    panel.board.SetTitleBlock(b.GetTitleBlock())
-
     # Add revision information to bottom rail
     position = resolveAnchor("mb")(panel.boardSubstrate.boundingBox())
     position.y -= int(2.5 * mm)

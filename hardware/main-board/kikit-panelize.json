@@ -1,13 +1,13 @@
 // KiKit panelization for the Printalizer Densitometer Main Board
-// This produces a 215x175mm sized panel containing 8 boards
+// This produces a 212.5x174.5mm sized panel containing 8 boards
 {
     "layout": {
         "type": "grid",
         "rows": 4,
         "cols": 2,
-        "hspace": "4mm",
-        "vspace": "3mm",
-        "rotation": "0deg",
+        "hspace": "2.5mm",
+        "vspace": "2.5mm",
+        "rotation": "180deg",
         "alternation": "cols",
         "renamenet": "Board_{n}-{orig}",
         "renameref": "{orig}"
@@ -20,12 +20,14 @@
         "type": "annotation"
     },
     "cuts": {
-        "type": "mousebites"
+        "type": "mousebites",
+        "drill": "0.5mm",
+        "spacing": "0.7mm"
     },
     "framing": {
         "type": "railstb",
         "width": "5mm",
-        "space": "3mm"
+        "space": "2.5mm"
     },
     "tooling": {
         "type": "4hole",
@@ -49,6 +51,7 @@
     },
     "post": {
         "millradius": "1mm",
+        "origin": "bl",
         "script": "tools/kikit-post.py",
         "scriptarg": "main-board/main-board.kicad_pcb"
     }
