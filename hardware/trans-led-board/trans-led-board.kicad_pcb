@@ -40,7 +40,7 @@
     (pad_to_mask_clearance 0.05)
     (pad_to_paste_clearance_ratio -0.05)
     (aux_axis_origin 114 90)
-    (grid_origin 115.75 88)
+    (grid_origin 114 90)
     (pcbplotparams
       (layerselection 0x00010fc_ffffffff)
       (disableapertmacros false)

@@ -1,9 +1,9 @@
 // KiKit panelization for the Printalizer Densitometer Main Board
-// This produces a 212.5x174.5mm sized panel containing 8 boards
+// This produces a 212.5x134mm sized panel containing 6 boards
 {
     "layout": {
         "type": "grid",
-        "rows": 4,
+        "rows": 3,
         "cols": 2,
         "hspace": "2.5mm",
         "vspace": "2.5mm",
