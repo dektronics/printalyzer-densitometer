@@ -59,6 +59,10 @@ These files are in the `models_3d` subdirectory.
   in place while trimming them with a rotary tool
 * `jig-spring-trimmer-cover` - Cover portion of a jig to help hold the torsion springs
   in place while trimming them with a rotary tool
+* `jig-upside-down` - Jig to hold the complete device in an upside-down orientation,
+  which is useful for mating the top and bottom halves and for installing the base cover
+* `jig-cal-strip-measure` - Jig for holding a calibration reference for measurement,
+  when the label markings have not yet been applied
 
 ## 2D Models
 
@@ -107,16 +111,15 @@ but are ordered from the same kinds of vendors and are necessary to assemble
 a complete device.
 
 * Button caps (x4)
-  * **E-Switch 2SBLK**
-  * Mouser PN: 612-2SBLK
-  * _Alternatively, the taller E-Switch 1SWHT or 1SBLK may be used instead._
+  * **E-Switch 1SWHT**
+  * Mouser PN: 612-1S-WHT
 * 1.3" OLED Display Screen
   * **ER-OLED013A1-1W**
   * https://www.buydisplay.com/white-1-3-inch-oled-i2c-arduino-ssd1306-display-module-connector-fpc
 * Cable to connect Transmission LED Board to Main Board
-  * **JST JUMPER 02SR-3S -02SR-3S 8"**
-  * Manufacturer PN: A02SR02SR30K203A
-  * Digi-Key PN: 455-3621-ND
+  * **JST JUMPER 02SR-3S -02SR-3S 4"**
+  * Manufacturer PN: A02SR02SR30K102A
+  * Digi-Key PN: 455-3619-ND
 
 ### Non-Electronic Components
 
@@ -137,8 +140,8 @@ are still necessary for the assembly of the device.
   * McMaster-Carr PN: 90380A324
 * M2 x 5mm thread forming screws (x6)
   * McMaster-Carr PN: 90380A325
-* M2 x 6mm thread forming screws (x4)
-  * McMaster-Carr PN: 99461A915 (Stainless Steel) or 90380A326 (Zinc-Plated Steel)
+* M2 x 8mm thread forming screws (x4)
+  * McMaster-Carr PN: 90380A327
 * M2 x 8mm flat head black screws (x4)
   * McMaster-Carr PN: 91698A204
 * M3 x 20mm low-profile socket head partially threaded screws (x2)
