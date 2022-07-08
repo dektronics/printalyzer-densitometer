@@ -22,7 +22,6 @@ struct __densitometer_t {
     float zero_d;
     const float max_d;
     const sensor_light_t read_light;
-    const uint8_t read_light_idle_value;
     const densitometer_result_t (*measure_func)(densitometer_t *densitometer, sensor_read_callback_t callback, void *user_data);
 };
 
@@ -31,7 +30,6 @@ static densitometer_t reflection_data = {
     .zero_d = NAN,
     .max_d = REFLECTION_MAX_D,
     .read_light = SENSOR_LIGHT_REFLECTION,
-    .read_light_idle_value = LIGHT_REFLECTION_IDLE,
     .measure_func = reflection_measure
 };
 
@@ -40,7 +38,6 @@ static densitometer_t transmission_data = {
     .zero_d = NAN,
     .max_d = TRANSMISSION_MAX_D,
     .read_light = SENSOR_LIGHT_TRANSMISSION,
-    .read_light_idle_value = LIGHT_TRANSMISSION_IDLE,
     .measure_func = transmission_measure
 };
 
@@ -73,7 +70,18 @@ void densitometer_set_idle_light(const densitometer_t *densitometer, bool enable
     if (!densitometer) { return; }
 
     if (enabled) {
-        sensor_set_light_mode(densitometer->read_light, false, densitometer->read_light_idle_value);
+        uint8_t idle_value = 0;
+
+        /* Copy over latest idle value from settings */
+        settings_user_idle_light_t idle_light;
+        settings_get_user_idle_light(&idle_light);
+        if (densitometer->read_light == SENSOR_LIGHT_REFLECTION) {
+            idle_value = idle_light.reflection;
+        } else if (densitometer->read_light == SENSOR_LIGHT_TRANSMISSION) {
+            idle_value = idle_light.transmission;
+        }
+
+        sensor_set_light_mode(densitometer->read_light, false, idle_value);
     } else {
         sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
     }
@@ -95,9 +103,9 @@ densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_re
 
     /* Perform sensor read */
     float ch0_basic;
-    if (sensor_read_target(SENSOR_LIGHT_REFLECTION, &ch0_basic, NULL, callback, user_data) != osOK) {
+    if (sensor_read_target(densitometer->read_light, &ch0_basic, NULL, callback, user_data) != osOK) {
         log_w("Sensor read error");
-        sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
+        densitometer_set_idle_light(densitometer, true);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -132,7 +140,7 @@ densitometer_result_t reflection_measure(densitometer_t *densitometer, sensor_re
     }
 
     /* Set light back to idle */
-    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
+    densitometer_set_idle_light(densitometer, true);
 
     if (cdc_is_connected()) {
         cdc_send_density_reading('R', densitometer->last_d, densitometer->zero_d, ch0_basic, corr_value);
@@ -159,9 +167,9 @@ densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_
 
     /* Perform sensor read */
     float ch0_basic;
-    if (sensor_read_target(SENSOR_LIGHT_TRANSMISSION, &ch0_basic, NULL, callback, user_data) != osOK) {
+    if (sensor_read_target(densitometer->read_light, &ch0_basic, NULL, callback, user_data) != osOK) {
         log_w("Sensor read error");
-        sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
+        densitometer_set_idle_light(densitometer, true);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -197,7 +205,7 @@ densitometer_result_t transmission_measure(densitometer_t *densitometer, sensor_
     }
 
     /* Set light back to idle */
-    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
+    densitometer_set_idle_light(densitometer, true);
 
     if (cdc_is_connected()) {
         cdc_send_density_reading('T', densitometer->last_d, densitometer->zero_d, ch0_basic, corr_value);
@@ -216,7 +224,7 @@ densitometer_result_t densitometer_calibrate(densitometer_t *densitometer, float
     float ch0_basic;
     if (sensor_read_target(densitometer->read_light, &ch0_basic, NULL, callback, user_data) != osOK) {
         log_w("Sensor read error");
-        sensor_set_light_mode(densitometer->read_light, false, densitometer->read_light_idle_value);
+        densitometer_set_idle_light(densitometer, true);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -233,7 +241,7 @@ densitometer_result_t densitometer_calibrate(densitometer_t *densitometer, float
     }
 
     /* Set light back to idle */
-    sensor_set_light_mode(densitometer->read_light, false, densitometer->read_light_idle_value);
+    densitometer_set_idle_light(densitometer, true);
 
     return DENSITOMETER_OK;
 }

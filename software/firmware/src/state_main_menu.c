@@ -179,7 +179,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
     settings_cal_reflection_t cal_reflection;
     uint8_t option = 1;
 
-    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, LIGHT_REFLECTION_IDLE);
+    sensor_set_light_mode(SENSOR_LIGHT_REFLECTION, false, SETTING_IDLE_LIGHT_REFL_DEFAULT);
 
     settings_get_cal_reflection(&cal_reflection);
 
@@ -352,7 +352,7 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
     settings_cal_transmission_t cal_transmission;
     uint8_t option = 1;
 
-    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, LIGHT_TRANSMISSION_IDLE);
+    sensor_set_light_mode(SENSOR_LIGHT_TRANSMISSION, false, SETTING_IDLE_LIGHT_TRAN_DEFAULT);
 
     settings_get_cal_transmission(&cal_transmission);
 
