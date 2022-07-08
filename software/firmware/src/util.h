@@ -14,6 +14,8 @@
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #endif
 
+#define TIME_AFTER(a, b)  (((int32_t)(a) - (int32_t)(b)) > 0)
+
 /**
  * Refresh the watchdog timer
  */

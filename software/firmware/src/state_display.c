@@ -11,12 +11,17 @@
 #include "light.h"
 #include "task_sensor.h"
 #include "densitometer.h"
+#include "settings.h"
+#include "util.h"
 
 typedef struct {
     state_t base;
     bool display_dirty;
     bool light_dirty;
     bool is_detect_prev;
+    bool light_idle_on;
+    uint32_t light_idle_timeout;
+    uint32_t light_idle_off_ticks;
     bool menu_pending;
     int up_repeat;
     int down_repeat;
@@ -42,6 +47,9 @@ static state_display_t state_reflection_display_data = {
     .display_dirty = true,
     .light_dirty = true,
     .is_detect_prev = false,
+    .light_idle_on = false,
+    .light_idle_timeout = 0,
+    .light_idle_off_ticks = 0,
     .menu_pending = false,
     .up_repeat = 0,
     .down_repeat = 0,
@@ -61,6 +69,9 @@ static state_display_t state_transmission_display_data = {
     .display_dirty = true,
     .light_dirty = true,
     .is_detect_prev = false,
+    .light_idle_on = false,
+    .light_idle_timeout = 0,
+    .light_idle_off_ticks = 0,
     .menu_pending = false,
     .up_repeat = 0,
     .down_repeat = 0,
@@ -87,9 +98,17 @@ void state_display_entry(state_t *state_base, state_controller_t *controller, st
 
     state->display_dirty = true;
     state->light_dirty = true;
+    state->is_detect_prev = false;
+    state->light_idle_on = false;
+    state->light_idle_off_ticks = 0;
     state->menu_pending = false;
     state->up_repeat = 0;
     state->down_repeat = 0;
+
+    settings_user_idle_light_t idle_light;
+    settings_get_user_idle_light(&idle_light);
+    state->light_idle_timeout = 1000UL * idle_light.timeout;
+
     state_controller_set_home_state(controller, state_controller_get_current_state(controller));
 }
 
@@ -99,6 +118,18 @@ void state_reflection_display_entry(state_t *state_base, state_controller_t *con
 
     state_display_t *state = (state_display_t *)state_base;
     state->densitometer = densitometer_reflection();
+
+    if (prev_state == STATE_REFLECTION_MEASURE) {
+        /* Set idle light state upon entry assuming measurement is similar to detect */
+        if (state->light_idle_timeout > 0) {
+            state->light_idle_on = true;
+            state->light_idle_off_ticks = osKernelGetTickCount() + state->light_idle_timeout;
+        } else {
+            state->light_idle_on = false;
+            state->light_idle_off_ticks = 0;
+        }
+        state->light_dirty = true;
+    }
 }
 
 void state_transmission_display_entry(state_t *state_base, state_controller_t *controller, state_identifier_t prev_state)
@@ -107,19 +138,55 @@ void state_transmission_display_entry(state_t *state_base, state_controller_t *c
 
     state_display_t *state = (state_display_t *)state_base;
     state->densitometer = densitometer_transmission();
+
+    if (prev_state == STATE_TRANSMISSION_MEASURE) {
+        /* Set idle light state upon entry assuming measurement is similar to detect */
+        if (state->light_idle_timeout > 0) {
+            state->light_idle_on = true;
+            state->light_idle_off_ticks = osKernelGetTickCount() + state->light_idle_timeout;
+        } else {
+            state->light_idle_on = false;
+            state->light_idle_off_ticks = 0;
+        }
+        state->light_dirty = true;
+    }
 }
 
 void state_display_process(state_t *state_base, state_controller_t *controller)
 {
     state_display_t *state = (state_display_t *)state_base;
     bool is_detect = keypad_is_detect();
+
+    /* Update idle light properties based on a detect switch change */
     if (is_detect != state->is_detect_prev) {
-        state->light_dirty = true;
         state->is_detect_prev = is_detect;
+
+        if (is_detect && !state->light_idle_on) {
+            state->light_idle_on = true;
+            state->light_idle_off_ticks = 0;
+            state->light_dirty = true;
+        } else if (!is_detect && state->light_idle_on) {
+            if (state->light_idle_timeout > 0) {
+                state->light_idle_off_ticks = osKernelGetTickCount() + state->light_idle_timeout;
+            } else {
+                state->light_idle_on = false;
+                state->light_idle_off_ticks = 0;
+            }
+            state->light_dirty = true;
+        }
     }
 
+    /* Check for idle light timeout */
+    if (state->light_idle_on && state->light_idle_off_ticks > 0
+        && TIME_AFTER(osKernelGetTickCount(), state->light_idle_off_ticks)) {
+        state->light_idle_on = false;
+        state->light_idle_off_ticks = 0;
+        state->light_dirty = true;
+    }
+
+    /* Apply idle light change */
     if (state->light_dirty) {
-        densitometer_set_idle_light(state->densitometer, is_detect);
+        densitometer_set_idle_light(state->densitometer, state->light_idle_on);
         state->light_dirty = false;
     }
 
