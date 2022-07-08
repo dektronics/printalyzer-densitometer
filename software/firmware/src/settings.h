@@ -7,6 +7,21 @@
 
 #include "tsl2591.h"
 
+/*
+ * Selections and defaults for the idle light user settings
+ */
+#define SETTING_IDLE_LIGHT_REFL_LOW    16
+#define SETTING_IDLE_LIGHT_REFL_MEDIUM 32
+#define SETTING_IDLE_LIGHT_REFL_HIGH   64
+
+#define SETTING_IDLE_LIGHT_TRAN_LOW     8
+#define SETTING_IDLE_LIGHT_TRAN_MEDIUM 16
+#define SETTING_IDLE_LIGHT_TRAN_HIGH   32
+
+#define SETTING_IDLE_LIGHT_REFL_DEFAULT SETTING_IDLE_LIGHT_REFL_MEDIUM
+#define SETTING_IDLE_LIGHT_TRAN_DEFAULT SETTING_IDLE_LIGHT_TRAN_LOW
+
+
 typedef struct {
     float ch0_medium;
     float ch1_medium;
@@ -55,6 +70,12 @@ typedef struct {
     setting_key_format_t format;
     setting_key_separator_t separator;
 } settings_user_usb_key_t;
+
+typedef struct {
+    uint8_t reflection;
+    uint8_t transmission;
+    uint8_t timeout;
+} settings_user_idle_light_t;
 
 HAL_StatusTypeDef settings_init();
 
@@ -185,5 +206,21 @@ bool settings_set_user_usb_key(const settings_user_usb_key_t *usb_key);
  * @return True if valid values are returned, false otherwise.
  */
 bool settings_get_user_usb_key(settings_user_usb_key_t *usb_key);
+
+/**
+ * Set the user settings for the idle light behavior
+ *
+ * @param idle_light Struct populated with the values to save
+ * @return True if saved, false on error
+ */
+bool settings_set_user_idle_light(const settings_user_idle_light_t *idle_light);
+
+/**
+ * Get the user settings for the idle light behavior
+ *
+ * @param idle_light Struct to be populated with saved values
+ * @return True if valid values are returned, false otherwise.
+ */
+bool settings_get_user_idle_light(settings_user_idle_light_t *idle_light);
 
 #endif /* SETTINGS_H */

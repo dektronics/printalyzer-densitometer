@@ -30,6 +30,7 @@ typedef enum {
     MAIN_MENU_CALIBRATION_SENSOR_GAIN,
     MAIN_MENU_CALIBRATION_SENSOR_SLOPE,
     MAIN_MENU_SETTINGS,
+    MAIN_MENU_SETTINGS_IDLE_LIGHT,
     MAIN_MENU_SETTINGS_USB_KEY,
     MAIN_MENU_SETTINGS_DIAGNOSTICS,
     MAIN_MENU_ABOUT
@@ -68,6 +69,7 @@ static void main_menu_calibration_transmission(state_main_menu_t *state, state_c
 static void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings(state_main_menu_t *state, state_controller_t *controller);
+static void main_menu_settings_idle_light(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings_usb_key(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_about(state_main_menu_t *state, state_controller_t *controller);
@@ -113,6 +115,8 @@ void state_main_menu_process(state_t *state_base, state_controller_t *controller
         main_menu_calibration_sensor_slope(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS) {
         main_menu_settings(state, controller);
+    } else if (state->menu_state == MAIN_MENU_SETTINGS_IDLE_LIGHT) {
+        main_menu_settings_idle_light(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS_USB_KEY) {
         main_menu_settings_usb_key(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS_DIAGNOSTICS) {
@@ -558,18 +562,121 @@ void main_menu_settings(state_main_menu_t *state, state_controller_t *controller
 {
     state->settings_option = display_selection_list(
         "Settings", state->settings_option,
+        "Target Light\n"
         "USB Key Output\n"
         "Diagnostics");
 
     if (state->settings_option == 1) {
-        state->menu_state = MAIN_MENU_SETTINGS_USB_KEY;
+        state->menu_state = MAIN_MENU_SETTINGS_IDLE_LIGHT;
     } else if (state->settings_option == 2) {
+        state->menu_state = MAIN_MENU_SETTINGS_USB_KEY;
+    } else if (state->settings_option == 3) {
         state->menu_state = MAIN_MENU_SETTINGS_DIAGNOSTICS;
     } else if (state->settings_option == UINT8_MAX) {
         state_controller_set_next_state(controller, STATE_HOME);
     } else {
         state->menu_state = MAIN_MENU_HOME;
         state->settings_option = 1;
+    }
+}
+
+void main_menu_settings_idle_light(state_main_menu_t *state, state_controller_t *controller)
+{
+    char buf[192];
+
+    settings_user_idle_light_t idle_light;
+    settings_get_user_idle_light(&idle_light);
+
+    strcpy(buf, "Refl. ");
+    if (idle_light.reflection == 0) {
+        strcat(buf, "  [None]");
+    } else if (idle_light.reflection == SETTING_IDLE_LIGHT_REFL_LOW) {
+        strcat(buf, "   [Low]");
+    } else if (idle_light.reflection == SETTING_IDLE_LIGHT_REFL_MEDIUM) {
+        strcat(buf, "[Medium]");
+    } else if (idle_light.reflection == SETTING_IDLE_LIGHT_REFL_HIGH) {
+        strcat(buf, "  [High]");
+    } else {
+        strcat(buf, "     [?]");
+    }
+    strcat(buf, "\n");
+
+    strcat(buf, "Tran. ");
+    if (idle_light.transmission == 0) {
+        strcat(buf, "  [None]");
+    } else if (idle_light.transmission == SETTING_IDLE_LIGHT_TRAN_LOW) {
+        strcat(buf, "   [Low]");
+    } else if (idle_light.transmission == SETTING_IDLE_LIGHT_TRAN_MEDIUM) {
+        strcat(buf, "[Medium]");
+    } else if (idle_light.transmission == SETTING_IDLE_LIGHT_TRAN_HIGH) {
+        strcat(buf, "  [High]");
+    } else {
+        strcat(buf, "     [?]");
+    }
+    strcat(buf, "\n");
+
+    strcat(buf, "Timeout ");
+    if (idle_light.timeout == 0) {
+        strcat(buf, "[None]");
+    } else if (idle_light.timeout < 10) {
+        sprintf(buf + strlen(buf), "  [%ds]", idle_light.timeout);
+    } else if (idle_light.timeout < 100) {
+        sprintf(buf + strlen(buf), " [%ds]", idle_light.timeout);
+    } else {
+        sprintf(buf + strlen(buf), "[%ds]", idle_light.timeout);
+    }
+
+    state->settings_sub_option = display_selection_list(
+        "Target Light", state->settings_sub_option,
+        buf);
+
+    if (state->settings_sub_option == 1) {
+        if (idle_light.reflection == 0) {
+            idle_light.reflection = SETTING_IDLE_LIGHT_REFL_LOW;
+        } else if (idle_light.reflection == SETTING_IDLE_LIGHT_REFL_LOW) {
+            idle_light.reflection = SETTING_IDLE_LIGHT_REFL_MEDIUM;
+        } else if (idle_light.reflection == SETTING_IDLE_LIGHT_REFL_MEDIUM) {
+            idle_light.reflection = SETTING_IDLE_LIGHT_REFL_HIGH;
+        } else if (idle_light.reflection == SETTING_IDLE_LIGHT_REFL_HIGH) {
+            idle_light.reflection = 0;
+        } else {
+            idle_light.reflection = SETTING_IDLE_LIGHT_REFL_DEFAULT;
+        }
+        settings_set_user_idle_light(&idle_light);
+
+    } else if (state->settings_sub_option == 2) {
+        if (idle_light.transmission == 0) {
+            idle_light.transmission = SETTING_IDLE_LIGHT_TRAN_LOW;
+        } else if (idle_light.transmission == SETTING_IDLE_LIGHT_TRAN_LOW) {
+            idle_light.transmission = SETTING_IDLE_LIGHT_TRAN_MEDIUM;
+        } else if (idle_light.transmission == SETTING_IDLE_LIGHT_TRAN_MEDIUM) {
+            idle_light.transmission = SETTING_IDLE_LIGHT_TRAN_HIGH;
+        } else if (idle_light.transmission == SETTING_IDLE_LIGHT_TRAN_HIGH) {
+            idle_light.transmission = 0;
+        } else {
+            idle_light.transmission = SETTING_IDLE_LIGHT_TRAN_DEFAULT;
+        }
+        settings_set_user_idle_light(&idle_light);
+
+    } else if (state->settings_sub_option == 3) {
+        if (idle_light.timeout < 10) {
+            idle_light.timeout = 10;
+        } else if (idle_light.timeout < 30) {
+            idle_light.timeout = 30;
+        } else if (idle_light.timeout < 60) {
+            idle_light.timeout = 60;
+        } else if (idle_light.timeout < 120) {
+            idle_light.timeout = 120;
+        } else {
+            idle_light.timeout = 0;
+        }
+        settings_set_user_idle_light(&idle_light);
+
+    } else if (state->settings_sub_option == UINT8_MAX) {
+        state_controller_set_next_state(controller, STATE_HOME);
+    } else {
+        state->menu_state = MAIN_MENU_SETTINGS;
+        state->settings_sub_option = 1;
     }
 }
 

@@ -31,6 +31,8 @@ static void settings_set_cal_transmission_defaults(settings_cal_transmission_t *
 static bool settings_load_cal_transmission();
 static void settings_set_user_usb_key_defaults(settings_user_usb_key_t *usb_key);
 static bool settings_load_user_usb_key();
+static void settings_set_user_idle_light_defaults(settings_user_idle_light_t *idle_light);
+static bool settings_load_user_idle_light();
 
 static HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len);
 static HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, size_t data_len);
@@ -94,17 +96,20 @@ static HAL_StatusTypeDef settings_write_uint32(uint32_t address, uint32_t val);
  */
 #define PAGE_USER_SETTINGS         (DATA_EEPROM_BASE + 0x0180UL)
 #define PAGE_USER_SETTINGS_SIZE    (128)
-#define PAGE_USER_SETTINGS_VERSION 1UL
+#define PAGE_USER_SETTINGS_VERSION 2UL
 
 #define CONFIG_USER_USB_KEY        (PAGE_USER_SETTINGS + 4U)
 #define CONFIG_USER_USB_KEY_SIZE   (12U)
 
+#define CONFIG_USER_IDLE_LIGHT      (PAGE_USER_SETTINGS + 16U)
+#define CONFIG_USER_IDLE_LIGHT_SIZE (12U)
 
 static settings_cal_gain_t setting_cal_gain = {0};
 static settings_cal_slope_t setting_cal_slope = {0};
 static settings_cal_reflection_t setting_cal_reflection = {0};
 static settings_cal_transmission_t setting_cal_transmission = {0};
 static settings_user_usb_key_t setting_user_usb_key = {0};
+static settings_user_idle_light_t setting_user_idle_light = {0};
 
 HAL_StatusTypeDef settings_init()
 {
@@ -364,12 +369,32 @@ bool settings_init_user_settings(bool force_clear)
     bool result;
     /* Initialize all fields to their default values */
     settings_set_user_usb_key_defaults(&setting_user_usb_key);
+    settings_set_user_idle_light_defaults(&setting_user_idle_light);
 
     /* Load settings if the version matches */
     uint32_t version = force_clear ? 0 : settings_read_uint32(PAGE_USER_SETTINGS);
     if (version == PAGE_USER_SETTINGS_VERSION) {
         /* Version is good, load data with per-field validation */
         settings_load_user_usb_key();
+        settings_load_user_idle_light();
+        result = true;
+    } else if (version == 1) {
+        log_i("Migrating user settings from 1->2");
+        /* Handle the migration from version 1->2 */
+        do {
+            /* Load unchanged settings */
+            settings_load_user_usb_key();
+
+            /* Set defaults for new settings */
+            settings_user_idle_light_t idle_light;
+            settings_set_user_idle_light_defaults(&idle_light);
+            if (!settings_set_user_idle_light(&idle_light)) {
+                break;
+            }
+
+            /* Update the page version */
+            settings_write_uint32(PAGE_USER_SETTINGS, PAGE_USER_SETTINGS_VERSION);
+        } while (0);
         result = true;
     } else {
         /* Version is bad, initialize a blank page */
@@ -396,6 +421,13 @@ bool settings_clear_user_settings()
     settings_user_usb_key_t usb_key;
     settings_set_user_usb_key_defaults(&usb_key);
     if (!settings_set_user_usb_key(&usb_key)) {
+        return false;
+    }
+
+    /* Write an empty idle light user settings struct */
+    settings_user_idle_light_t idle_light;
+    settings_set_user_idle_light_defaults(&idle_light);
+    if (!settings_set_user_idle_light(&idle_light)) {
         return false;
     }
 
@@ -894,6 +926,67 @@ bool settings_get_user_usb_key(settings_user_usb_key_t *usb_key)
         || usb_key->separator < 0 || usb_key->separator >= SETTING_KEY_SEPARATOR_MAX) {
         log_w("Invalid USB key user settings values");
         settings_set_user_usb_key_defaults(usb_key);
+        return false;
+    } else {
+        return true;
+    }
+}
+
+void settings_set_user_idle_light_defaults(settings_user_idle_light_t *idle_light)
+{
+    if (!idle_light) { return; }
+    memset(idle_light, 0, sizeof(settings_user_idle_light_t));
+    idle_light->reflection = SETTING_IDLE_LIGHT_REFL_DEFAULT;
+    idle_light->transmission = SETTING_IDLE_LIGHT_TRAN_DEFAULT;
+    idle_light->timeout = 0;
+}
+
+bool settings_set_user_idle_light(const settings_user_idle_light_t *idle_light)
+{
+    HAL_StatusTypeDef ret = HAL_OK;
+    if (!idle_light) { return false; }
+
+    uint8_t buf[CONFIG_USER_IDLE_LIGHT_SIZE];
+    copy_from_u32(&buf[0], (uint32_t)idle_light->reflection);
+    copy_from_u32(&buf[4], (uint32_t)idle_light->transmission);
+    copy_from_u32(&buf[8], (uint32_t)idle_light->timeout);
+
+    ret = settings_write_buffer(CONFIG_USER_IDLE_LIGHT, buf, sizeof(buf));
+
+    if (ret == HAL_OK) {
+        memcpy(&setting_user_idle_light, idle_light, sizeof(settings_user_idle_light_t));
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool settings_load_user_idle_light()
+{
+    uint8_t buf[CONFIG_USER_IDLE_LIGHT_SIZE];
+
+    if (settings_read_buffer(CONFIG_USER_IDLE_LIGHT, buf, sizeof(buf)) != HAL_OK) {
+        return false;
+    }
+
+    setting_user_idle_light.reflection = (uint8_t)copy_to_u32(&buf[0]);
+    setting_user_idle_light.transmission = (uint8_t)copy_to_u32(&buf[4]);
+    setting_user_idle_light.timeout = (uint8_t)copy_to_u32(&buf[8]);
+    return true;
+}
+
+bool settings_get_user_idle_light(settings_user_idle_light_t *idle_light)
+{
+    if (!idle_light) { return false; }
+
+    /* Copy over the settings values */
+    memcpy(idle_light, &setting_user_idle_light, sizeof(settings_user_idle_light_t));
+
+    /* Set default values if validation fails */
+    if (idle_light->reflection > SETTING_IDLE_LIGHT_REFL_HIGH
+        || idle_light->transmission > SETTING_IDLE_LIGHT_TRAN_HIGH) {
+        log_w("Invalid idle light user settings values");
+        settings_set_user_idle_light_defaults(idle_light);
         return false;
     } else {
         return true;
