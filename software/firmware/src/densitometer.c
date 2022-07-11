@@ -224,7 +224,6 @@ densitometer_result_t densitometer_calibrate(densitometer_t *densitometer, float
     float ch0_basic;
     if (sensor_read_target(densitometer->read_light, &ch0_basic, NULL, callback, user_data) != osOK) {
         log_w("Sensor read error");
-        densitometer_set_idle_light(densitometer, true);
         return DENSITOMETER_SENSOR_ERROR;
     }
 
@@ -239,9 +238,6 @@ densitometer_result_t densitometer_calibrate(densitometer_t *densitometer, float
     if (cal_value) {
         *cal_value = corr_value;
     }
-
-    /* Set light back to idle */
-    densitometer_set_idle_light(densitometer, true);
 
     return DENSITOMETER_OK;
 }
