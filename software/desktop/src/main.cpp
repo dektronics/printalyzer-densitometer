@@ -4,6 +4,10 @@
 #include <QLocale>
 #include <QTranslator>
 
+#ifdef Q_OS_MACX
+#include "MacUtil.h"
+#endif
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -22,6 +26,14 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+#ifdef Q_OS_MACX
+    /* Force light theme for UI consistency */
+    if (macIsInDarkTheme()) {
+        macSetToLightTheme();
+    }
+#endif
+
     MainWindow w;
     w.show();
     return a.exec();

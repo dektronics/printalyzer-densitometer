@@ -33,6 +33,8 @@ macx* {
     RC_FILE = deploy/macOS/icon.icns
     QMAKE_INFO_PLIST = deploy/macOS/info.plist
     CONFIG += sdk_no_version_check # To avoid warnings with Big Sur
+    HEADERS += src/MacUtil.h
+    OBJECTIVE_SOURCES += src/MacUtil.mm
 }
 
 linux:!android {
