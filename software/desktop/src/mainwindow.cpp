@@ -54,6 +54,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->zeroIndicatorLabel->setPixmap(QPixmap());
 
+    // Hide this menu item until we figure out what to use it for
+    ui->actionConfigure->setVisible(false);
+
     // Setup menu shortcuts
     ui->actionCut->setShortcut(QKeySequence::Cut);
     ui->actionCopy->setShortcut(QKeySequence::Copy);
@@ -348,7 +351,7 @@ void MainWindow::about()
     QMessageBox::about(this, tr("About"),
                        tr("<b>%1 v%2</b><br>"
                           "<br>"
-                          "Copyright 2021 Dektronics, Inc. All rights reserved.")
+                          "Copyright 2022 Dektronics, Inc. All rights reserved.")
                        .arg(QApplication::applicationName(),
                             QApplication::applicationVersion()));
 }
