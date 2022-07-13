@@ -4268,7 +4268,7 @@
     (uuid 00000000-0000-0000-0000-00006056d7c9)
     (property "Reference" "C1" (id 0) (at 27.94 24.6634 90))
     (property "Value" "1uF" (id 1) (at 27.94 26.9748 90))
-    (property "Footprint" "Resistor_SMD:R_0402_1005Metric" (id 2) (at 27.94 30.48 0)
+    (property "Footprint" "Capacitor_SMD:C_0402_1005Metric" (id 2) (at 27.94 30.48 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "https://media.digikey.com/pdf/Data%20Sheets/Samsung%20PDFs/CL05A105KQ5NNNC_Spec.pdf" (id 3) (at 27.94 30.48 0)
@@ -8269,7 +8269,7 @@
       (reference "#PWR0140") (unit 1) (value "VBUS") (footprint "")
     )
     (path "/00000000-0000-0000-0000-00006056d7c9"
-      (reference "C1") (unit 1) (value "1uF") (footprint "Resistor_SMD:R_0402_1005Metric")
+      (reference "C1") (unit 1) (value "1uF") (footprint "Capacitor_SMD:C_0402_1005Metric")
     )
     (path "/00000000-0000-0000-0000-0000605786b2"
       (reference "C2") (unit 1) (value "10uF") (footprint "Capacitor_SMD:C_0805_2012Metric")
