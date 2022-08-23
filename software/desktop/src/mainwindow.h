@@ -26,6 +26,8 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void connectToPort(const QString &portName);
+
 private slots:
     void openConnection();
     void onOpenConnectionDialogFinished(int result);
@@ -86,6 +88,7 @@ private slots:
     void onSlopeCalibrationToolFinished(int result);
 
 private:
+    void openConnectionToPort(const QString &portName);
     void refreshButtonState();
     void updateLineEditDirtyState(QLineEdit *lineEdit, float densValue, int prec);
     void measTableAddReading(DensInterface::DensityType type, float density, float offset);

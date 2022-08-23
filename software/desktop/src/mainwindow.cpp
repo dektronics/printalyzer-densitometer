@@ -216,6 +216,13 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::connectToPort(const QString &portName)
+{
+    if (!portName.isEmpty()) {
+        openConnectionToPort(portName);
+    }
+}
+
 void MainWindow::openConnection()
 {
     qDebug() << "Open connection";
@@ -232,28 +239,33 @@ void MainWindow::onOpenConnectionDialogFinished(int result)
 
     if (result == QDialog::Accepted) {
         const QString portName = dialog->portName();
-        qDebug() << "Connecting to:" << portName;
-        serialPort_->setPortName(portName);
-        serialPort_->setBaudRate(QSerialPort::Baud115200);
-        serialPort_->setDataBits(QSerialPort::Data8);
-        serialPort_->setParity(QSerialPort::NoParity);
-        serialPort_->setStopBits(QSerialPort::OneStop);
-        serialPort_->setFlowControl(QSerialPort::NoFlowControl);
-        if (serialPort_->open(QIODevice::ReadWrite)) {
-            serialPort_->setDataTerminalReady(true);
-            if (densInterface_->connectToDevice(serialPort_)) {
-                ui->actionConnect->setEnabled(false);
-                ui->actionDisconnect->setEnabled(true);
-                statusLabel_->setText(tr("Connected to %1").arg(portName));
-            } else {
-                serialPort_->close();
-                statusLabel_->setText(tr("Unrecognized device"));
-                QMessageBox::critical(this, tr("Error"), tr("Unrecognized device"));
-            }
+        openConnectionToPort(portName);
+    }
+}
+
+void MainWindow::openConnectionToPort(const QString &portName)
+{
+    qDebug() << "Connecting to:" << portName;
+    serialPort_->setPortName(portName);
+    serialPort_->setBaudRate(QSerialPort::Baud115200);
+    serialPort_->setDataBits(QSerialPort::Data8);
+    serialPort_->setParity(QSerialPort::NoParity);
+    serialPort_->setStopBits(QSerialPort::OneStop);
+    serialPort_->setFlowControl(QSerialPort::NoFlowControl);
+    if (serialPort_->open(QIODevice::ReadWrite)) {
+        serialPort_->setDataTerminalReady(true);
+        if (densInterface_->connectToDevice(serialPort_)) {
+            ui->actionConnect->setEnabled(false);
+            ui->actionDisconnect->setEnabled(true);
+            statusLabel_->setText(tr("Connected to %1").arg(portName));
         } else {
-            statusLabel_->setText(tr("Open error"));
-            QMessageBox::critical(this, tr("Error"), serialPort_->errorString());
+            serialPort_->close();
+            statusLabel_->setText(tr("Unrecognized device"));
+            QMessageBox::critical(this, tr("Error"), tr("Unrecognized device"));
         }
+    } else {
+        statusLabel_->setText(tr("Open error"));
+        QMessageBox::critical(this, tr("Error"), serialPort_->errorString());
     }
 }
 
