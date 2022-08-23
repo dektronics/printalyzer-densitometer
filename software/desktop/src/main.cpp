@@ -36,6 +36,7 @@ bool handleCommandLine(const QCoreApplication &app)
     parser.process(app);
 
     if (parser.isSet(listOption)) {
+        bool hasDevices = false;
         const auto infos = QSerialPortInfo::availablePorts();
         for (const QSerialPortInfo &info : infos) {
             // Filter the list to only contain devices that match the VID/PID
@@ -47,8 +48,9 @@ bool handleCommandLine(const QCoreApplication &app)
                       << " " << info.description().toStdString()
                       << " [" << info.serialNumber().toStdString() << "]"
                       << std::endl;
+            hasDevices = true;
         }
-        if (infos.isEmpty()) {
+        if (!hasDevices) {
             std::cout << "No attached devices." << std::endl;
         }
 
