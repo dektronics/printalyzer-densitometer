@@ -60,6 +60,7 @@ SOURCES += \
     src/densinterface.cpp \
     src/floatitemdelegate.cpp \
     src/gaincalibrationdialog.cpp \
+    src/headlesstask.cpp \
     src/logger.cpp \
     src/logwindow.cpp \
     src/main.cpp \
@@ -68,7 +69,8 @@ SOURCES += \
     src/settingsexporter.cpp \
     src/settingsimportdialog.cpp \
     src/slopecalibrationdialog.cpp \
-    src/util.cpp
+    src/util.cpp \
+    src/qsimplesignalaggregator.cpp
 
 HEADERS += \
     src/connectdialog.h \
@@ -77,6 +79,7 @@ HEADERS += \
     src/densinterface.h \
     src/floatitemdelegate.h \
     src/gaincalibrationdialog.h \
+    src/headlesstask.h \
     src/logger.h \
     src/logwindow.h \
     src/mainwindow.h \
@@ -84,7 +87,9 @@ HEADERS += \
     src/settingsexporter.h \
     src/settingsimportdialog.h \
     src/slopecalibrationdialog.h \
-    src/util.h
+    src/util.h \
+    src/qsignalaggregator.h \
+    src/qsimplesignalaggregator.h
 
 FORMS += \
     src/connectdialog.ui \

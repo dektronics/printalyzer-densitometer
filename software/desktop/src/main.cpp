@@ -1,5 +1,3 @@
-#include "mainwindow.h"
-
 #include <iostream>
 
 #include <QApplication>
@@ -7,13 +5,22 @@
 #include <QTranslator>
 #include <QCommandLineParser>
 #include <QSerialPortInfo>
+#include <QTimer>
 #include <QDebug>
 
 #ifdef Q_OS_MACX
 #include "MacUtil.h"
 #endif
 
-static QString connectPort;
+#include "mainwindow.h"
+#include "headlesstask.h"
+
+namespace
+{
+HeadlessTask::Command headlessCommand = HeadlessTask::CommandUnknown;
+QString headlessArg;
+QString connectPort;
+}
 
 bool handleCommandLine(const QCoreApplication &app)
 {
@@ -31,6 +38,15 @@ bool handleCommandLine(const QCoreApplication &app)
                                   QCoreApplication::translate("main", "Connect to device at the selected port."),
                                   QCoreApplication::translate("main", "port"));
     parser.addOption(portOption);
+
+    QCommandLineOption infoOption(QStringList() << "i" << "info",
+                                  QCoreApplication::translate("main", "Query device system info."));
+    parser.addOption(infoOption);
+
+    QCommandLineOption exportOption(QStringList() << "export",
+                                    QCoreApplication::translate("main", "Export device settings to file."),
+                                    QCoreApplication::translate("main", "file"));
+    parser.addOption(exportOption);
 
     // Parse the command line
     parser.process(app);
@@ -61,6 +77,15 @@ bool handleCommandLine(const QCoreApplication &app)
     if (!portValue.isEmpty()) {
         std::cout << "Connecting to " << portValue.toStdString() << std::endl;
         connectPort = portValue;
+    }
+
+    if (parser.isSet(infoOption) && headlessCommand == HeadlessTask::CommandUnknown) {
+        headlessCommand = HeadlessTask::CommandSystemInfo;
+    }
+
+    if (parser.isSet(exportOption) && headlessCommand == HeadlessTask::CommandUnknown) {
+        headlessCommand = HeadlessTask::CommandExportSettings;
+        headlessArg = parser.value(exportOption);
     }
 
     return false;
@@ -96,12 +121,20 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    MainWindow w;
-    w.show();
+    if (headlessCommand != HeadlessTask::CommandUnknown) {
+        HeadlessTask *task = new HeadlessTask(&a);
+        task->setPort(connectPort);
+        task->setCommand(headlessCommand, headlessArg);
+        QTimer::singleShot(0, task, &HeadlessTask::run);
+        QObject::connect(task, &HeadlessTask::finished, &a, &QCoreApplication::quit);
+        return a.exec();
+    } else {
+        MainWindow w;
+        w.show();
 
-    if (!connectPort.isEmpty()) {
-        w.connectToPort(connectPort);
+        if (!connectPort.isEmpty()) {
+            w.connectToPort(connectPort);
+        }
+        return a.exec();
     }
-
-    return a.exec();
 }
