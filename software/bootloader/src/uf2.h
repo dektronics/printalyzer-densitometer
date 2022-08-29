@@ -40,7 +40,7 @@ SOFTWARE.
 //--------------------------------------------------------------------+
 
 // Version is passed by makefile
-#define UF2_VERSION         "0.8.0-34"
+#define UF2_VERSION         "0.10.2-43"
 
 // The largest flash size that is supported by the board, in bytes, default is 4MB
 // Flash size is constrained by RAM, a 4MB size requires 2kB RAM, see MAX_BLOCKS

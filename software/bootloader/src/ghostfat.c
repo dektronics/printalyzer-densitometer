@@ -141,7 +141,7 @@ STATIC_ASSERT(FAT_ENTRIES_PER_SECTOR                       ==       256); // FAT
 
 
 const char infoUf2File[] =
-    "UF2 Bootloader v0.1 (TinyUF2 " UF2_VERSION ")\r\n"
+    "UF2 Bootloader v1.0 (TinyUF2 " UF2_VERSION ")\r\n"
     "Model: " UF2_PRODUCT_NAME "\r\n"
     "Board-ID: " UF2_BOARD_ID "\r\n"
     "Date: " COMPILE_DATE "\r\n";

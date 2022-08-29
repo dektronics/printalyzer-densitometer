@@ -44,7 +44,7 @@
 #endif
 
 // Use favicon.ico + autorun.inf (only works with windows)
-// define TINYUF2_FAVICON_HEADER to enable this feature
+// #define TINYUF2_FAVICON_HEADER "favicon.h"
 
 //--------------------------------------------------------------------+
 // Basic API
@@ -126,6 +126,20 @@ void board_display_init(void);
 //--------------------------------------------------------------------+
 // LOG
 //--------------------------------------------------------------------+
+
+#define TUF2_VERIFY(_cond)    do \
+{                                \
+  if (!(_cond)) return false;    \
+} while(0)
+
+#define TUF2_ASSERT(_cond)    do                               \
+{                                                              \
+  if (!(_cond)) {                                              \
+    TUF2_LOG1("%s %d: ASSERT FAILED\r\n", __func__, __LINE__); \
+    return false;                                              \
+  }                                                            \
+} while(0)
+
 #if TUF2_LOG
 
 #include <stdio.h>
@@ -138,8 +152,8 @@ void board_display_init(void);
 #define TUF2_LOG1               tuf2_printf
 #define TUF2_LOG1_MEM           // tu_print_mem
 #define TUF2_LOG1_VAR(_x)       // tu_print_var((uint8_t const*)(_x), sizeof(*(_x)))
-#define TUF2_LOG1_INT(_x)       tuf2_printf(#_x " = %ld\n", (uint32_t) (_x) )
-#define TUF2_LOG1_HEX(_x)       tuf2_printf(#_x " = %lX\n", (uint32_t) (_x) )
+#define TUF2_LOG1_INT(_x)       tuf2_printf(#_x " = %ld\r\n", (uint32_t) (_x) )
+#define TUF2_LOG1_HEX(_x)       tuf2_printf(#_x " = %lX\r\n", (uint32_t) (_x) )
 #define TUF2_LOG1_LOCATION()    tuf2_printf("%s: %d:\r\n", __PRETTY_FUNCTION__, __LINE__)
 #define TUF2_LOG1_FAILED()      tuf2_printf("%s: %d: Failed\r\n", __PRETTY_FUNCTION__, __LINE__)
 
