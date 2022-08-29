@@ -18,7 +18,7 @@
 
 #define BOARD_UF2_FAMILY_ID 0x202E3A91 /*!< ST STM32L0xx */
 #define USB_VID           0x16D0
-#define USB_PID           0x10EB
+#define USB_PID           0x1198
 #define USB_MANUFACTURER  "Dektronics"
 #define USB_PRODUCT       "Printalyzer Densitometer"
 #define UF2_PRODUCT_NAME  USB_MANUFACTURER " " USB_PRODUCT
