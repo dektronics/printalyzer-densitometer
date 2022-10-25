@@ -1,5 +1,6 @@
 #include "util.h"
 
+#include <QIntValidator>
 #include <QDoubleValidator>
 #include <string.h>
 
@@ -75,6 +76,12 @@ void free2DArray(double **array, const size_t rows)
         delete[] array[i];
     }
     delete[] array;
+}
+
+QValidator *createIntValidator(int min, int max, QObject *parent)
+{
+    QIntValidator *validator = new QIntValidator(min, max, parent);
+    return validator;
 }
 
 QValidator *createFloatValidator(double min, double max, int decimals, QObject *parent)

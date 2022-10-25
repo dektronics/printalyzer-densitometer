@@ -60,6 +60,8 @@ public slots:
     void sendSetDiagLoggingModeDebug();
 
     void sendInvokeCalGain();
+    void sendGetCalLight();
+    void sendSetCalLight(const DensCalLight &calLight);
     void sendGetCalGain();
     void sendSetCalGain(const DensCalGain &calGain);
     void sendGetCalSlope();
@@ -96,6 +98,7 @@ public:
     QString mcuVdda() const;
     QString mcuTemp() const;
 
+    DensCalLight calLight() const;
     DensCalGain calGain() const;
     DensCalSlope calSlope() const;
 
@@ -128,7 +131,9 @@ signals:
     void diagSensorInvokeReading(int ch0, int ch1);
     void diagLogLine(const QByteArray &data);
 
-    void calGainCalStatus(int status);
+    void calLightResponse();
+    void calLightSetComplete();
+    void calGainCalStatus(int status, int param);
     void calGainCalFinished();
     void calGainCalError();
     void calGainResponse();
@@ -181,6 +186,7 @@ private:
     QString uniqueId_;
     QString mcuVdda_;
     QString mcuTemp_;
+    DensCalLight calLight_;
     DensCalGain calGain_;
     DensCalSlope calSlope_;
     DensCalTarget calReflection_;

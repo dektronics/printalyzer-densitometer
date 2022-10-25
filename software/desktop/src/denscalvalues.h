@@ -3,9 +3,30 @@
 
 #include <QSharedDataPointer>
 
+class DensCalLightData;
 class DensCalGainData;
 class DensCalSlopeData;
 class DensCalTargetData;
+
+class DensCalLight
+{
+public:
+    DensCalLight();
+    DensCalLight(const DensCalLight &);
+    DensCalLight &operator=(const DensCalLight &);
+    ~DensCalLight();
+
+    void setReflectionValue(int reflectionValue);
+    int reflectionValue() const;
+
+    void setTransmissionValue(int transmissionValue);
+    int transmissionValue() const;
+
+    bool isValid() const;
+
+private:
+    QSharedDataPointer<DensCalLightData> data;
+};
 
 class DensCalGain
 {

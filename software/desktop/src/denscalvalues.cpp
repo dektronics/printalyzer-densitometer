@@ -1,5 +1,12 @@
 #include "denscalvalues.h"
 
+class DensCalLightData : public QSharedData
+{
+public:
+    int reflectionValue = 0;
+    int transmissionValue = 0;
+};
+
 class DensCalGainData : public QSharedData
 {
 public:
@@ -29,6 +36,45 @@ public:
     float hiDensity = qSNaN();
     float hiReading = qSNaN();
 };
+
+DensCalLight::DensCalLight() : data(new DensCalLightData)
+{
+}
+
+DensCalLight::DensCalLight(const DensCalLight &rhs)
+    : data{rhs.data}
+{
+}
+
+DensCalLight &DensCalLight::operator=(const DensCalLight &rhs)
+{
+    if (this != &rhs)
+        data.operator=(rhs.data);
+    return *this;
+}
+
+DensCalLight::~DensCalLight()
+{
+}
+
+void DensCalLight::setReflectionValue(int reflectionValue) { data->reflectionValue = reflectionValue; }
+int DensCalLight::reflectionValue() const { return data->reflectionValue; }
+
+void DensCalLight::setTransmissionValue(int transmissionValue) { data->transmissionValue = transmissionValue; }
+int DensCalLight::transmissionValue() const { return data->transmissionValue; }
+
+bool DensCalLight::isValid() const
+{
+    if (data->reflectionValue <= 0 || data->transmissionValue <= 0) {
+        return false;
+    }
+
+    if (data->reflectionValue > 128 || data->transmissionValue > 128) {
+        return false;
+    }
+
+    return true;
+}
 
 DensCalGain::DensCalGain() : data(new DensCalGainData)
 {

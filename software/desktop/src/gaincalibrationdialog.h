@@ -27,11 +27,13 @@ protected:
 
 private slots:
     void onSystemRemoteControl(bool enabled);
-    void onCalGainCalStatus(int status);
+    void onCalGainCalStatus(int status, int param);
     void onCalGainCalFinished();
     void onCalGainCalError();
 
 private:
+    QString gainParamText(int param);
+    QString lightParamText(int param);
     void addText(const QString &text);
     Ui::GainCalibrationDialog *ui;
     DensInterface *densInterface_;
@@ -39,6 +41,7 @@ private:
     bool running_;
     bool success_;
     int lastStatus_;
+    int lastParam_;
 };
 
 #endif // GAINCALIBRATIONDIALOG_H

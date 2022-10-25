@@ -22,6 +22,7 @@ float decode_f32(const QString &val);
 double **make2DArray(const size_t rows, const size_t cols);
 void free2DArray(double **array, const size_t rows);
 
+QValidator *createIntValidator(int min, int max, QObject *parent = nullptr);
 QValidator *createFloatValidator(double min, double max, int decimals, QObject *parent = nullptr);
 
 }

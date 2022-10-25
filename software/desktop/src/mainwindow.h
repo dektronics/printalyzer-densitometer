@@ -10,6 +10,7 @@ QT_BEGIN_NAMESPACE
 class QLabel;
 class QSerialPort;
 class QLineEdit;
+class QSpinBox;
 class QStandardItemModel;
 
 namespace Ui { class MainWindow; }
@@ -57,12 +58,14 @@ private slots:
     void onClearTableClicked();
 
     void onCalGetAllValues();
+    void onCalLightSetClicked();
     void onCalGainCalClicked();
     void onCalGainSetClicked();
     void onCalSlopeSetClicked();
     void onCalReflectionSetClicked();
     void onCalTransmissionSetClicked();
 
+    void onCalLightTextChanged();
     void onCalGainTextChanged();
     void onCalSlopeTextChanged();
     void onCalReflectionTextChanged();
@@ -76,6 +79,7 @@ private slots:
 
     void onDiagDisplayScreenshot(const QByteArray &data);
 
+    void onCalLightResponse();
     void onCalGainResponse();
     void onCalSlopeResponse();
     void onCalReflectionResponse();
@@ -90,7 +94,8 @@ private slots:
 private:
     void openConnectionToPort(const QString &portName);
     void refreshButtonState();
-    void updateLineEditDirtyState(QLineEdit *lineEdit, float densValue, int prec);
+    void updateLineEditDirtyState(QLineEdit *lineEdit, int value);
+    void updateLineEditDirtyState(QLineEdit *lineEdit, float value, int prec);
     void measTableAddReading(DensInterface::DensityType type, float density, float offset);
     void measTableCut();
     void measTableCopy();

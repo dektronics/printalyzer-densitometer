@@ -248,6 +248,22 @@ void DensInterface::sendInvokeCalGain()
     sendCommand(command);
 }
 
+void DensInterface::sendGetCalLight()
+{
+    DensCommand command(DensCommand::TypeGet, DensCommand::CategoryCalibration, "LIGHT");
+    sendCommand(command);
+}
+
+void DensInterface::sendSetCalLight(const DensCalLight &calLight)
+{
+    QStringList args;
+    args.append(QString::number(calLight.reflectionValue()));
+    args.append(QString::number(calLight.transmissionValue()));
+
+    DensCommand command(DensCommand::TypeSet, DensCommand::CategoryCalibration, "LIGHT", args);
+    sendCommand(command);
+}
+
 void DensInterface::sendGetCalGain()
 {
     DensCommand command(DensCommand::TypeGet, DensCommand::CategoryCalibration, "GAIN");
@@ -346,6 +362,7 @@ QString DensInterface::uniqueId() const { return uniqueId_; }
 QString DensInterface::mcuVdda() const { return mcuVdda_; }
 QString DensInterface::mcuTemp() const { return mcuTemp_; }
 
+DensCalLight DensInterface::calLight() const { return calLight_; }
 DensCalGain DensInterface::calGain() const { return calGain_; }
 DensCalSlope DensInterface::calSlope() const { return calSlope_; }
 
@@ -632,11 +649,21 @@ void DensInterface::readCalibrationResponse(const DensCommand &response)
             bool ok;
             int status = response.args().at(1).toInt(&ok);
             if (!ok) { status = -1; }
-            emit calGainCalStatus(status);
+            int param = response.args().size() > 2 ? response.args().at(2).toInt(&ok) : -1;
+            if (!ok) { param = -1; }
+            emit calGainCalStatus(status, param);
         }
     } else if (response.type() == DensCommand::TypeGet
-            && response.action() == QLatin1String("GAIN")
-            && response.args().length() == 8) {
+               && response.action() == QLatin1String("LIGHT")
+               && response.args().length() == 2) {
+        calLight_.setReflectionValue(response.args().at(0).toInt());
+        calLight_.setTransmissionValue(response.args().at(1).toInt());
+        emit calLightResponse();
+    } else if (isResponseSetOk(response, QLatin1String("LIGHT"))) {
+        emit calLightSetComplete();
+    } else if (response.type() == DensCommand::TypeGet
+               && response.action() == QLatin1String("GAIN")
+               && response.args().length() == 8) {
         calGain_.setLow0(util::decode_f32(response.args().at(0)));
         calGain_.setLow1(util::decode_f32(response.args().at(1)));
         calGain_.setMed0(util::decode_f32(response.args().at(2)));
@@ -658,8 +685,8 @@ void DensInterface::readCalibrationResponse(const DensCommand &response)
     } else if (isResponseSetOk(response, QLatin1String("SLOPE"))) {
         emit calSlopeSetComplete();
     } else if (response.type() == DensCommand::TypeGet
-            && response.action() == QLatin1String("REFL")
-            && response.args().length() == 4) {
+               && response.action() == QLatin1String("REFL")
+               && response.args().length() == 4) {
         calReflection_.setLoDensity(util::decode_f32(response.args().at(0)));
         calReflection_.setLoReading(util::decode_f32(response.args().at(1)));
         calReflection_.setHiDensity(util::decode_f32(response.args().at(2)));
@@ -668,8 +695,8 @@ void DensInterface::readCalibrationResponse(const DensCommand &response)
     } else if (isResponseSetOk(response, QLatin1String("REFL"))) {
         emit calReflectionSetComplete();
     } else if (response.type() == DensCommand::TypeGet
-            && response.action() == QLatin1String("TRAN")
-            && response.args().length() == 4) {
+               && response.action() == QLatin1String("TRAN")
+               && response.args().length() == 4) {
         calTransmission_.setLoDensity(util::decode_f32(response.args().at(0)));
         calTransmission_.setLoReading(util::decode_f32(response.args().at(1)));
         calTransmission_.setHiDensity(util::decode_f32(response.args().at(2)));

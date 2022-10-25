@@ -64,6 +64,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->actionDelete->setShortcut(QKeySequence::Delete);
     ui->actionExit->setShortcut(QKeySequence::Quit);
 
+    // Calibration (measurement light) field validation
+    ui->reflLightLineEdit->setValidator(util::createIntValidator(1, 128, this));
+    ui->tranLightLineEdit->setValidator(util::createIntValidator(1, 128, this));
+    connect(ui->reflLightLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalLightTextChanged);
+    connect(ui->tranLightLineEdit, &QLineEdit::textChanged, this, &MainWindow::onCalLightTextChanged);
+
     // Calibration (gain) field validation
     ui->med0LineEdit->setValidator(util::createFloatValidator(22.0, 27.0, 6, this));
     ui->med1LineEdit->setValidator(util::createFloatValidator(22.0, 27.0, 6, this));
@@ -135,6 +141,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Calibration UI signals
     connect(ui->calGetAllPushButton, &QPushButton::clicked, this, &MainWindow::onCalGetAllValues);
+    connect(ui->lightGetPushButton, &QPushButton::clicked, densInterface_, &DensInterface::sendGetCalLight);
+    connect(ui->lightSetPushButton, &QPushButton::clicked, this, &MainWindow::onCalLightSetClicked);
     connect(ui->gainCalPushButton, &QPushButton::clicked, this, &MainWindow::onCalGainCalClicked);
     connect(ui->gainGetPushButton, &QPushButton::clicked, densInterface_, &DensInterface::sendGetCalGain);
     connect(ui->gainSetPushButton, &QPushButton::clicked, this, &MainWindow::onCalGainSetClicked);
@@ -158,12 +166,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(densInterface_, &DensInterface::systemInternalSensors, this, &MainWindow::onSystemInternalSensors);
     connect(densInterface_, &DensInterface::diagDisplayScreenshot, this, &MainWindow::onDiagDisplayScreenshot);
     connect(densInterface_, &DensInterface::diagLogLine, logWindow_, &LogWindow::appendLogLine);
+    connect(densInterface_, &DensInterface::calLightResponse, this, &MainWindow::onCalLightResponse);
     connect(densInterface_, &DensInterface::calGainResponse, this, &MainWindow::onCalGainResponse);
     connect(densInterface_, &DensInterface::calSlopeResponse, this, &MainWindow::onCalSlopeResponse);
     connect(densInterface_, &DensInterface::calReflectionResponse, this, &MainWindow::onCalReflectionResponse);
     connect(densInterface_, &DensInterface::calTransmissionResponse, this, &MainWindow::onCalTransmissionResponse);
 
     // Loop back the set-complete signals to refresh their associated values
+    connect(densInterface_, &DensInterface::calLightSetComplete, densInterface_, &DensInterface::sendGetCalLight);
     connect(densInterface_, &DensInterface::calGainSetComplete, densInterface_, &DensInterface::sendGetCalGain);
     connect(densInterface_, &DensInterface::calSlopeSetComplete, densInterface_, &DensInterface::sendGetCalSlope);
     connect(densInterface_, &DensInterface::calReflectionSetComplete, densInterface_, &DensInterface::sendGetCalReflection);
@@ -378,6 +388,7 @@ void MainWindow::refreshButtonState()
         ui->screenshotButton->setEnabled(true);
         ui->remotePushButton->setEnabled(true);
         ui->calGetAllPushButton->setEnabled(true);
+        ui->lightGetPushButton->setEnabled(true);
         ui->gainCalPushButton->setEnabled(true);
         ui->gainGetPushButton->setEnabled(true);
         ui->slopeGetPushButton->setEnabled(true);
@@ -412,6 +423,7 @@ void MainWindow::refreshButtonState()
         ui->screenshotButton->setEnabled(false);
         ui->remotePushButton->setEnabled(false);
         ui->calGetAllPushButton->setEnabled(false);
+        ui->lightGetPushButton->setEnabled(false);
         ui->gainCalPushButton->setEnabled(false);
         ui->gainGetPushButton->setEnabled(false);
         ui->slopeGetPushButton->setEnabled(false);
@@ -420,6 +432,9 @@ void MainWindow::refreshButtonState()
     }
 
     // Make calibration values editable only if connected
+    ui->reflLightLineEdit->setReadOnly(!connected);
+    ui->tranLightLineEdit->setReadOnly(!connected);
+
     ui->med0LineEdit->setReadOnly(!connected);
     ui->med1LineEdit->setReadOnly(!connected);
     ui->high0LineEdit->setReadOnly(!connected);
@@ -440,6 +455,7 @@ void MainWindow::refreshButtonState()
     ui->tranHiDensityLineEdit->setReadOnly(!connected);
     ui->tranHiReadingLineEdit->setReadOnly(!connected);
 
+    onCalLightTextChanged();
     onCalGainTextChanged();
     onCalSlopeTextChanged();
     onCalReflectionTextChanged();
@@ -513,6 +529,9 @@ void MainWindow::onConnectionOpened()
     qDebug() << "Connection opened";
 
     // Clear the calibration page since values could have changed
+    ui->reflLightLineEdit->clear();
+    ui->tranLightLineEdit->clear();
+
     ui->low0LineEdit->clear();
     ui->low1LineEdit->clear();
     ui->med0LineEdit->clear();
@@ -932,10 +951,27 @@ void MainWindow::onClearTableClicked()
 
 void MainWindow::onCalGetAllValues()
 {
+    densInterface_->sendGetCalLight();
     densInterface_->sendGetCalGain();
     densInterface_->sendGetCalSlope();
     densInterface_->sendGetCalReflection();
     densInterface_->sendGetCalTransmission();
+}
+
+void MainWindow::onCalLightSetClicked()
+{
+    DensCalLight calLight;
+    bool ok;
+
+    calLight.setReflectionValue(ui->reflLightLineEdit->text().toInt(&ok));
+    if (!ok) { return; }
+
+    calLight.setTransmissionValue(ui->tranLightLineEdit->text().toInt(&ok));
+    if (!ok) { return; }
+
+    if (!calLight.isValid()) { return; }
+
+    densInterface_->sendSetCalLight(calLight);
 }
 
 void MainWindow::onCalGainCalClicked()
@@ -956,6 +992,7 @@ void MainWindow::onCalGainCalClicked()
         GainCalibrationDialog dialog(densInterface_, this);
         dialog.exec();
         if (dialog.success()) {
+            densInterface_->sendGetCalLight();
             densInterface_->sendGetCalGain();
         }
     }
@@ -1048,6 +1085,21 @@ void MainWindow::onCalTransmissionSetClicked()
     densInterface_->sendSetCalTransmission(calTarget);
 }
 
+void MainWindow::onCalLightTextChanged()
+{
+    if (densInterface_->connected()
+            && ui->reflLightLineEdit->hasAcceptableInput()
+            && ui->tranLightLineEdit->hasAcceptableInput()) {
+        ui->lightSetPushButton->setEnabled(true);
+    } else {
+        ui->lightSetPushButton->setEnabled(false);
+    }
+
+    const DensCalLight calLight = densInterface_->calLight();
+    updateLineEditDirtyState(ui->reflLightLineEdit, calLight.reflectionValue());
+    updateLineEditDirtyState(ui->tranLightLineEdit, calLight.transmissionValue());
+}
+
 void MainWindow::onCalGainTextChanged()
 {
     if (densInterface_->connected()
@@ -1127,12 +1179,24 @@ void MainWindow::onCalTransmissionTextChanged()
     updateLineEditDirtyState(ui->tranHiReadingLineEdit, calTarget.hiReading(), 6);
 }
 
-void MainWindow::updateLineEditDirtyState(QLineEdit *lineEdit, float densValue, int prec)
+void MainWindow::updateLineEditDirtyState(QLineEdit *lineEdit, int value)
 {
     if (!lineEdit) { return; }
 
     if (lineEdit->text().isNull() || lineEdit->text().isEmpty()
-            || lineEdit->text() == QString::number(densValue, 'f', prec)) {
+            || lineEdit->text() == QString::number(value)) {
+        lineEdit->setStyleSheet(styleSheet());
+    } else {
+        lineEdit->setStyleSheet("QLineEdit { background-color: lightgoldenrodyellow; }");
+    }
+}
+
+void MainWindow::updateLineEditDirtyState(QLineEdit *lineEdit, float value, int prec)
+{
+    if (!lineEdit) { return; }
+
+    if (lineEdit->text().isNull() || lineEdit->text().isEmpty()
+            || lineEdit->text() == QString::number(value, 'f', prec)) {
         lineEdit->setStyleSheet(styleSheet());
     } else {
         lineEdit->setStyleSheet("QLineEdit { background-color: lightgoldenrodyellow; }");
@@ -1198,6 +1262,16 @@ void MainWindow::onDiagDisplayScreenshot(const QByteArray &data)
             }
         }
     }
+}
+
+void MainWindow::onCalLightResponse()
+{
+    const DensCalLight calLight = densInterface_->calLight();
+
+    ui->reflLightLineEdit->setText(QString::number(calLight.reflectionValue()));
+    ui->tranLightLineEdit->setText(QString::number(calLight.transmissionValue()));
+
+    onCalLightTextChanged();
 }
 
 void MainWindow::onCalGainResponse()
