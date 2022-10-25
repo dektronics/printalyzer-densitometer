@@ -199,7 +199,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
             if (is_valid_number(cal_reflection.lo_d) && cal_reflection.lo_d >= 0.0F) {
                 working_value = lroundf(cal_reflection.lo_d * 100);
             } else {
-                working_value = 0;
+                working_value = 8;
             }
 
             uint8_t input_option = display_input_value_f1_2(
@@ -217,7 +217,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
             if (is_valid_number(cal_reflection.hi_d) && cal_reflection.hi_d >= 0.0F) {
                 working_value = lroundf(cal_reflection.hi_d * 100);
             } else {
-                working_value = 250;
+                working_value = 150;
             }
 
             uint8_t input_option = display_input_value_f1_2(
