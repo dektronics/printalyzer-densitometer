@@ -44,18 +44,17 @@ typedef struct {
     uint32_t reading_count; /*!< Number of integration cycles since the sensor was enabled */
 } sensor_reading_t;
 
-typedef bool (*sensor_gain_calibration_callback_t)(sensor_gain_calibration_status_t status, void *user_data);
+typedef bool (*sensor_gain_calibration_callback_t)(sensor_gain_calibration_status_t status, int param, void *user_data);
 typedef bool (*sensor_time_calibration_callback_t)(tsl2591_time_t time, void *user_data);
-typedef bool (*sensor_light_calibration_callback_t)(uint8_t progress, void *user_data);
 typedef void (*sensor_read_callback_t)(void *user_data);
 
 /**
  * Run the sensor gain calibration process.
  *
  * This function will run the sensor and transmission LED through a series of
- * measurements to determine the actual gain values that correspond to each
- * gain setting on the sensor. The results will be saved for use in future
- * sensor data calculations.
+ * measurements to determine optimal measurement brightness and the actual
+ * gain values that correspond to each gain setting on the sensor.
+ * The results will be saved for use in future sensor data calculations.
  *
  * @param callback Callback to monitor progress of the calibration
  * @return osOK on success

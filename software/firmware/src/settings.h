@@ -21,6 +21,10 @@
 #define SETTING_IDLE_LIGHT_REFL_DEFAULT SETTING_IDLE_LIGHT_REFL_MEDIUM
 #define SETTING_IDLE_LIGHT_TRAN_DEFAULT SETTING_IDLE_LIGHT_TRAN_LOW
 
+typedef struct {
+    uint8_t reflection;
+    uint8_t transmission;
+} settings_cal_light_t;
 
 typedef struct {
     float ch0_medium;
@@ -80,6 +84,32 @@ typedef struct {
 HAL_StatusTypeDef settings_init();
 
 HAL_StatusTypeDef settings_wipe();
+
+/**
+ * Set the measurement light calibration values.
+ *
+ * @param cal_light Struct populated with values to save
+ * @return True if saved, false on error
+ */
+bool settings_set_cal_light(const settings_cal_light_t *cal_light);
+
+/**
+ * Get the measurement light calibration values.
+ * If a valid set of values are not available, but the provided struct is
+ * usable, default values will be returned.
+ *
+ * @param cal_light Struct to be populated with saved values
+ * @return True if valid values are returned, false otherwise.
+ */
+bool settings_get_cal_light(settings_cal_light_t *cal_light);
+
+/**
+ * Check if the measurement light calibration values are valid
+ *
+ * @param cal_light Struct to validate
+ * @return True if valid, false if invalid
+ */
+bool settings_validate_cal_light(const settings_cal_light_t *cal_light);
 
 /**
  * Set the gain calibration values.

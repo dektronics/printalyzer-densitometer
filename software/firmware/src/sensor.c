@@ -21,16 +21,12 @@
 #define SENSOR_GAIN_CAL_READ_ITERATIONS 5
 #define SENSOR_GAIN_LED_CHECK_READ_ITERATIONS 2
 
-/* These constants are for the opal stage plate */
-//#define GAIN_CAL_BRIGHTNESS_LOW_MED   128
-//#define GAIN_CAL_BRIGHTNESS_MED_HIGH  35
-//#define GAIN_CAL_BRIGHTNESS_HIGH_MAX  5
-
 /* These constants are for the matte white stage plate */
 #define GAIN_CAL_BRIGHTNESS_LOW_MED   128
-#define GAIN_CAL_BRIGHTNESS_MED_HIGH  128
+#define GAIN_CAL_BRIGHTNESS_MED_HIGH  128  /* actual value determined dynamically */
 #define GAIN_CAL_BRIGHTNESS_HIGH_MAX  8    /* actual value determined dynamically */
 
+#define LIGHT_CAL_CH0_TARGET_FACTOR   (0.98F)
 #define GAIN_CAL_CH0_TARGET_FACTOR    (0.75F)
 
 /* Number of iterations to use for light source calibration */
@@ -46,8 +42,14 @@ static bool sensor_gain_calibration_cooldown(sensor_gain_calibration_callback_t 
 static osStatus_t sensor_find_gain_brightness(uint8_t *led_brightness,
     tsl2591_gain_t gain, tsl2591_time_t time,
     uint8_t start_brightness, uint8_t end_brightness,
+    float target_factor,
     sensor_gain_calibration_callback_t callback, void *user_data);
+static bool gain_status_callback(
+    sensor_gain_calibration_callback_t callback,
+    sensor_gain_calibration_status_t status, int param,
+    void *user_data);
 static osStatus_t sensor_raw_read_loop(uint8_t count, float *ch0_avg, float *ch1_avg);
+static uint8_t sensor_get_read_brightness(sensor_light_t light_source);
 
 osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, void *user_data)
 {
@@ -60,7 +62,9 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
      */
 
     osStatus_t ret = osOK;
+    uint8_t measurement_led_brightness = 0;
     uint8_t max_gain_led_brightness = 0;
+    settings_cal_light_t cal_light = {0};
     float gain_med_ch0 = NAN;
     float gain_med_ch1 = NAN;
     float gain_high_ch0 = NAN;
@@ -68,11 +72,11 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
     float gain_max_ch0 = NAN;
     float gain_max_ch1 = NAN;
 
+    settings_get_cal_light(&cal_light);
+
     log_i("Starting gain calibration");
 
-    if (callback) {
-        if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_INIT, user_data)) { return osError; }
-    }
+    if (!gain_status_callback(callback, SENSOR_GAIN_CALIBRATION_STATUS_INIT, 0, user_data)) { return osError; }
 
     /* Set lights to initial state */
     sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
@@ -86,6 +90,19 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
 
         /* Wait for things to stabilize */
         osDelay(1000);
+
+        /* Find the ideal measurement brightness, which should not saturate at high gain */
+        ret = sensor_find_gain_brightness(&measurement_led_brightness,
+            TSL2591_GAIN_HIGH, TSL2591_TIME_200MS,
+            128, 64, LIGHT_CAL_CH0_TARGET_FACTOR,
+            callback, user_data);
+        if (ret != osOK || measurement_led_brightness == 0) { break; }
+
+        /* Wait for LED cool down */
+        if (!sensor_gain_calibration_cooldown(callback, user_data)) {
+            ret = osError;
+            break;
+        }
 
         /* Calibrate the value for medium gain */
         log_i("Medium gain calibration");
@@ -112,11 +129,11 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
             break;
         }
 
-        /* Calibrate the value for high gain */
+        /* Calibrate the value for high gain, using the calibrated measurement brightness */
         log_i("High gain calibration");
         ret = sensor_gain_calibration_loop(
             TSL2591_GAIN_MEDIUM, TSL2591_GAIN_HIGH, TSL2591_TIME_200MS,
-            GAIN_CAL_BRIGHTNESS_MED_HIGH, &gain_high_ch0, &gain_high_ch1,
+            measurement_led_brightness, &gain_high_ch0, &gain_high_ch1,
             SENSOR_GAIN_CALIBRATION_STATUS_HIGH, callback, user_data);
         if (ret != osOK) { break; }
 
@@ -143,7 +160,8 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
         /* Find the ideal brightness for testing maximum gain */
         ret = sensor_find_gain_brightness(&max_gain_led_brightness,
             TSL2591_GAIN_MAXIMUM, TSL2591_TIME_200MS,
-            5, 10, callback, user_data);
+            4, 16, GAIN_CAL_CH0_TARGET_FACTOR,
+            callback, user_data);
         if (ret != osOK || max_gain_led_brightness == 0) { break; }
 
         /* Wait for LED cool down */
@@ -175,12 +193,10 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
         }
     } while (0);
 
-    if (callback) {
-        if (ret == osOK) {
-            if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_DONE, user_data)) { ret = osError; }
-        } else {
-            if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_FAILED, user_data)) { ret = osError; }
-        }
+    if (ret == osOK) {
+        if (!gain_status_callback(callback, SENSOR_GAIN_CALIBRATION_STATUS_DONE, 0, user_data)) { ret = osError; }
+    } else {
+        if (!gain_status_callback(callback, SENSOR_GAIN_CALIBRATION_STATUS_FAILED, 0, user_data)) { ret = osError; }
     }
 
     /* Turn off the sensor */
@@ -192,10 +208,18 @@ osStatus_t sensor_gain_calibration(sensor_gain_calibration_callback_t callback, 
     if (ret == osOK) {
         log_i("Gain calibration complete");
 
+        log_d("Measurement light -> %d / 128", measurement_led_brightness);
         log_d("Low -> 1.000000 1.000000");
         log_d("Med -> %f %f", gain_med_ch0, gain_med_ch1);
         log_d("High -> %f %f", gain_high_ch0, gain_high_ch1);
         log_d("Max -> %f %f", gain_max_ch0, gain_max_ch1);
+
+        settings_cal_light_t cal_light = {0};
+        cal_light.reflection = 128;
+        cal_light.transmission = measurement_led_brightness;
+        if (settings_set_cal_light(&cal_light)) {
+            log_i("Measurement light calibration saved");
+        }
 
         settings_cal_gain_t cal_gain = {0};
         cal_gain.ch0_medium = gain_med_ch0;
@@ -352,6 +376,7 @@ osStatus_t sensor_read_target(sensor_light_t light_source,
     sensor_read_callback_t callback, void *user_data)
 {
     osStatus_t ret = osOK;
+    uint8_t light_value = 0;
     sensor_reading_t reading;
     tsl2591_gain_t target_read_gain;
     float ch0_sum = 0;
@@ -363,7 +388,9 @@ osStatus_t sensor_read_target(sensor_light_t light_source,
         return osErrorParameter;
     }
 
-    log_i("Starting sensor target read");
+    light_value = sensor_get_read_brightness(light_source);
+
+    log_i("Starting sensor target read (light=%d)", light_value);
 
     do {
         /* Put the sensor and light into a known initial state, with maximum gain */
@@ -371,7 +398,7 @@ osStatus_t sensor_read_target(sensor_light_t light_source,
         if (ret != osOK) { break; }
 
         /* Activate light source synchronized with sensor cycle */
-        ret = sensor_set_light_mode(light_source, /*next_cycle*/true, 128);
+        ret = sensor_set_light_mode(light_source, /*next_cycle*/true, light_value);
         if (ret != osOK) { break; }
 
         /* Start the sensor */
@@ -463,6 +490,7 @@ osStatus_t sensor_read_target_raw(sensor_light_t light_source,
     uint16_t *ch0_result, uint16_t *ch1_result)
 {
     osStatus_t ret = osOK;
+    uint8_t light_value = 0;
     sensor_reading_t reading;
     float ch0_sum = 0;
     float ch1_sum = 0;
@@ -482,7 +510,9 @@ osStatus_t sensor_read_target_raw(sensor_light_t light_source,
         return osErrorParameter;
     }
 
-    log_i("Starting sensor raw target read");
+    light_value = sensor_get_read_brightness(light_source);
+
+    log_i("Starting sensor raw target read (light=%d)", light_value);
 
     do {
         /* Put the sensor into the configured state */
@@ -490,7 +520,7 @@ osStatus_t sensor_read_target_raw(sensor_light_t light_source,
         if (ret != osOK) { break; }
 
         /* Activate light source synchronized with sensor cycle */
-        ret = sensor_set_light_mode(light_source, /*next_cycle*/true, 128);
+        ret = sensor_set_light_mode(light_source, /*next_cycle*/true, light_value);
         if (ret != osOK) { break; }
 
         /* Start the sensor */
@@ -636,9 +666,7 @@ osStatus_t sensor_gain_calibration_loop(
     }
 
     do {
-        if (callback) {
-            if (!callback(callback_status, user_data)) { ret = osError; break; }
-        }
+        if (!gain_status_callback(callback, callback_status, 0, user_data)) { ret = osError; break; }
 
         /* Setup for high gain measurement */
         ret = sensor_set_config(gain_high, time);
@@ -669,9 +697,7 @@ osStatus_t sensor_gain_calibration_loop(
             break;
         }
 
-        if (callback) {
-            if (!callback(callback_status, user_data)) { ret = osError; break; }
-        }
+        if (!gain_status_callback(callback, callback_status, 1, user_data)) { ret = osError; break; }
 
         /* Setup for low gain measurement */
         ret = sensor_set_config(gain_low, time);
@@ -723,51 +749,75 @@ bool sensor_gain_calibration_cooldown(sensor_gain_calibration_callback_t callbac
 {
     log_i("Waiting for cool down");
     for (int i = 0; i < 5; i++) {
-        if (callback) {
-            if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_COOLDOWN, user_data)) { return false; }
-        }
+        if (!gain_status_callback(callback, SENSOR_GAIN_CALIBRATION_STATUS_COOLDOWN, i, user_data)) { return false; }
+
         osDelay(1000);
     }
     return true;
 }
+
+bool gain_status_callback(
+    sensor_gain_calibration_callback_t callback,
+    sensor_gain_calibration_status_t status, int param,
+    void *user_data)
+{
+    if (callback) {
+        return callback(status, param, user_data);
+    } else {
+        return true;
+    }
+}
+
 /**
- * Find the ideal LED brightness for measuring at a particular gain setting.
+ * Find the ideal LED brightness for measuring gain at a particular gain setting.
+ *
+ * This routine counts upward and is intended to select a brightness near
+ * the bottom of the brightness range without coming too close to saturation.
  *
  * @param led_brightness Brightness to use for further measurements
  * @param gain Gain setting for measurements
  * @param time Integration time for measurements
  * @param start_brightness Starting brightness value, inclusive
  * @param end_brightness Ending brightness value, inclusive
+ * @param target_factor Multiplier to determine how close to saturation is allowed
  */
 static osStatus_t sensor_find_gain_brightness(uint8_t *led_brightness,
     tsl2591_gain_t gain, tsl2591_time_t time,
     uint8_t start_brightness, uint8_t end_brightness,
+    float target_factor,
     sensor_gain_calibration_callback_t callback, void *user_data)
 {
     osStatus_t ret = osOK;
+    bool count_upward;
     sensor_reading_t discard_reading;
     float target_ch0;
     float ch0_avg;
     float closest_ch0 = NAN;
     uint8_t closest_led = 0;
 
-
     /* Basic parameter validation */
-    if (start_brightness == 0 || start_brightness >= end_brightness) {
+    if (start_brightness == 0 || start_brightness == end_brightness
+        || isnanf(target_factor) || target_factor < 0.1F || target_factor > 1.0F) {
         return osErrorParameter;
     }
 
     /* Determine the target reading */
     if (time == TSL2591_TIME_100MS) {
-        target_ch0 = (float)TSL2591_ANALOG_SATURATION * GAIN_CAL_CH0_TARGET_FACTOR;
+        target_ch0 = (float)TSL2591_ANALOG_SATURATION * target_factor;
     } else {
-        target_ch0 = (float)TSL2591_DIGITAL_SATURATION * GAIN_CAL_CH0_TARGET_FACTOR;
+        target_ch0 = (float)TSL2591_DIGITAL_SATURATION * target_factor;
     }
     log_d("Target reading: %f", target_ch0);
 
-    if (callback) {
-        if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_LED, user_data)) { return osError; }
+    count_upward = start_brightness < end_brightness;
+
+    if (count_upward) {
+        log_d("Counting upward from %d to %d", start_brightness, end_brightness);
+    } else {
+        log_d("Counting downward from %d to %d", start_brightness, end_brightness);
     }
+
+    if (!gain_status_callback(callback, SENSOR_GAIN_CALIBRATION_STATUS_LED, 0, user_data)) { return osError; }
 
     do {
         /* Setup for sensor configuration */
@@ -778,11 +828,10 @@ static osStatus_t sensor_find_gain_brightness(uint8_t *led_brightness,
         ret = sensor_get_next_reading(&discard_reading, 2000);
         if (ret != osOK) { break; }
 
-        if (callback) {
-            if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_LED, user_data)) { return osError; }
-        }
+        if (!gain_status_callback(callback, SENSOR_GAIN_CALIBRATION_STATUS_LED, start_brightness, user_data)) { return osError; }
 
-        for (uint8_t i = start_brightness; i <= end_brightness; i++) {
+        uint8_t i = start_brightness;
+        while (i != end_brightness) {
             log_d("Testing brightness: %d", i);
 
             /* Set the LED to target brightness on the next cycle */
@@ -800,33 +849,45 @@ static osStatus_t sensor_find_gain_brightness(uint8_t *led_brightness,
             if (ret != osOK) { break; }
             log_d("Value: %f", ch0_avg);
 
-            /* Break if we've saturated */
-            if (isnanf(ch0_avg)) { break; }
+            if (count_upward) {
+                /* Break if we've saturated */
+                if (isnanf(ch0_avg)) { break; }
 
-            if (closest_led == 0) {
-                closest_ch0 = ch0_avg;
-                closest_led = i;
-            } else {
-                float cur_diff = fabsf(target_ch0 - ch0_avg);
-                float last_diff = fabsf(target_ch0 - closest_ch0);
-                if (cur_diff < last_diff) {
+                if (closest_led == 0) {
                     closest_ch0 = ch0_avg;
                     closest_led = i;
                 } else {
+                    float cur_diff = fabsf(target_ch0 - ch0_avg);
+                    float last_diff = fabsf(target_ch0 - closest_ch0);
+                    if (cur_diff < last_diff) {
+                        closest_ch0 = ch0_avg;
+                        closest_led = i;
+                    } else {
+                        break;
+                    }
+                }
+                i++;
+            } else {
+                /* Check if we got a usable reading */
+                if (!isnanf(ch0_avg) && ch0_avg <= target_ch0) {
+                    closest_ch0 = ch0_avg;
+                    closest_led = i;
                     break;
                 }
+                i--;
             }
 
             /* Turn off the LED and wait for a minimal cooldown period */
             sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
 
-            if (callback) {
-                if (!callback(SENSOR_GAIN_CALIBRATION_STATUS_LED, user_data)) { return osError; }
-            }
+            if (!gain_status_callback(callback, SENSOR_GAIN_CALIBRATION_STATUS_LED, i, user_data)) { return osError; }
 
-            osDelay(1000);
+            osDelay((i < 64) ? 1000 : 2000);
         }
     } while (0);
+
+    /* Turn off the LED */
+    sensor_set_light_mode(SENSOR_LIGHT_OFF, false, 0);
 
     if (ret == osOK) {
         if (led_brightness) {
@@ -912,4 +973,24 @@ float sensor_apply_slope_calibration(float basic_reading)
     float corr_reading = powf(10.0F, l_expected);
 
     return corr_reading;
+}
+
+uint8_t sensor_get_read_brightness(sensor_light_t light_source)
+{
+    settings_cal_light_t cal_light = {0};
+
+    if (!settings_get_cal_light(&cal_light)) {
+        log_w("Using default light values due to invalid calibration");
+    }
+
+    switch (light_source) {
+    case SENSOR_LIGHT_REFLECTION:
+        return cal_light.reflection;
+    case SENSOR_LIGHT_TRANSMISSION:
+        return cal_light.transmission;
+    case SENSOR_LIGHT_OFF:
+        return 0;
+    default:
+        return 128;
+    }
 }

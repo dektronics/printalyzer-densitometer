@@ -21,6 +21,9 @@ static bool settings_clear_cal_target();
 static bool settings_init_user_settings(bool force_clear);
 static bool settings_clear_user_settings();
 
+
+static void settings_set_cal_light_defaults(settings_cal_light_t *cal_light);
+static bool settings_load_cal_light();
 static void settings_set_cal_gain_defaults(settings_cal_gain_t *cal_gain);
 static bool settings_load_cal_gain();
 static void settings_set_cal_slope_defaults(settings_cal_slope_t *cal_slope);
@@ -73,6 +76,9 @@ static HAL_StatusTypeDef settings_write_uint32(uint32_t address, uint32_t val);
 #define CONFIG_CAL_SLOPE            (PAGE_CAL_SENSOR + 32U)
 #define CONFIG_CAL_SLOPE_SIZE       (16U)
 
+#define CONFIG_CAL_LIGHT            (PAGE_CAL_SENSOR + 48U)
+#define CONFIG_CAL_LIGHT_SIZE       (12U)
+
 /*
  * Target Calibration Data (128b)
  * This page contains data specific to calibration against reference targets
@@ -104,6 +110,7 @@ static HAL_StatusTypeDef settings_write_uint32(uint32_t address, uint32_t val);
 #define CONFIG_USER_IDLE_LIGHT      (PAGE_USER_SETTINGS + 16U)
 #define CONFIG_USER_IDLE_LIGHT_SIZE (12U)
 
+static settings_cal_light_t setting_cal_light = {0};
 static settings_cal_gain_t setting_cal_gain = {0};
 static settings_cal_slope_t setting_cal_slope = {0};
 static settings_cal_reflection_t setting_cal_reflection = {0};
@@ -257,6 +264,7 @@ bool settings_init_cal_sensor(bool force_clear)
 {
     bool result;
     /* Initialize all fields to their default values */
+    settings_set_cal_light_defaults(&setting_cal_light);
     settings_set_cal_gain_defaults(&setting_cal_gain);
     settings_set_cal_slope_defaults(&setting_cal_slope);
 
@@ -264,6 +272,7 @@ bool settings_init_cal_sensor(bool force_clear)
     uint32_t version = force_clear ? 0 : settings_read_uint32(PAGE_CAL_SENSOR);
     if (version == PAGE_CAL_SENSOR_VERSION) {
         /* Version is good, load data with per-field validation */
+        settings_load_cal_light();
         settings_load_cal_gain();
         settings_load_cal_slope();
         result = true;
@@ -433,6 +442,88 @@ bool settings_clear_user_settings()
 
     /* Write the page version */
     if (settings_write_uint32(PAGE_USER_SETTINGS, PAGE_USER_SETTINGS_VERSION) != HAL_OK) {
+        return false;
+    }
+
+    return true;
+}
+
+void settings_set_cal_light_defaults(settings_cal_light_t *cal_light)
+{
+    if (!cal_light) { return; }
+    memset(cal_light, 0, sizeof(settings_cal_light_t));
+    cal_light->reflection = 128;
+    cal_light->transmission = 128;
+}
+
+bool settings_set_cal_light(const settings_cal_light_t *cal_light)
+{
+    HAL_StatusTypeDef ret = HAL_OK;
+    if (!cal_light) { return false; }
+
+    uint8_t buf[CONFIG_CAL_LIGHT_SIZE];
+    copy_from_u32(&buf[0], cal_light->reflection);
+    copy_from_u32(&buf[4], cal_light->transmission);
+
+    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 6);
+    copy_from_u32(&buf[8], crc);
+
+    ret = settings_write_buffer(CONFIG_CAL_LIGHT, buf, sizeof(buf));
+
+    if (ret == HAL_OK) {
+        memcpy(&setting_cal_light, cal_light, sizeof(settings_cal_light_t));
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool settings_load_cal_light()
+{
+    uint8_t buf[CONFIG_CAL_LIGHT_SIZE];
+
+    if (settings_read_buffer(CONFIG_CAL_LIGHT, buf, sizeof(buf)) != HAL_OK) {
+        return false;
+    }
+
+    uint32_t crc = copy_to_u32(&buf[8]);
+    uint32_t calculated_crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 6);
+
+    if (crc != calculated_crc) {
+        log_w("Invalid cal light CRC: %08X != %08X", crc, calculated_crc);
+        return false;
+    } else {
+        setting_cal_light.reflection = copy_to_u32(&buf[0]);
+        setting_cal_light.transmission = copy_to_u32(&buf[4]);
+        return true;
+    }
+}
+
+bool settings_get_cal_light(settings_cal_light_t *cal_light)
+{
+    if (!cal_light) { return false; }
+
+    /* Copy over the settings values */
+    memcpy(cal_light, &setting_cal_light, sizeof(settings_cal_light_t));
+
+    /* Set default values if validation fails */
+    if (!settings_validate_cal_light(cal_light)) {
+        settings_set_cal_light_defaults(cal_light);
+        return false;
+    } else {
+        return true;
+    }
+}
+
+bool settings_validate_cal_light(const settings_cal_light_t *cal_light)
+{
+    if (!cal_light) { return false; }
+
+    /* Validate field numeric properties */
+    if (cal_light->reflection == 0 || cal_light->reflection > 128) {
+        return false;
+    }
+    if (cal_light->transmission == 0 || cal_light->transmission > 128) {
         return false;
     }
 

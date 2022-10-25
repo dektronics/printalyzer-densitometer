@@ -119,20 +119,27 @@ Commands that lack a documented response format will return either `OK` or `ERR`
   * This is a long process in which the device must be held closed.
     It will automatically abort if the hinge detect switch is released
     during the process.
+  * The result of this process will be updated measurement light and
+    sensor gain calibration values.
   * While running, there will be a series of `STATUS` responses followed by
     a single `OK` or `ERR` response.
   * Status is reported via the following responses:
-    * `IC GAIN,STATUS,n` where n is an enumerated value as follows:
+    * `IC GAIN,STATUS,n,m` where n is an enumerated value as follows:
       * 0 = initializing
-      * 1 = measuring medium gain
-      * 2 = measuring high gain
-      * 3 = measuring maximum gain
+      * 1 = measuring medium gain (m = 0 or 1)
+      * 2 = measuring high gain (m = 0 or 1)
+      * 3 = measuring maximum gain (m = 0 or 1)
       * 4 = calibration process failed
-      * 5 = finding gain measurement brightness
-      * 6 = waiting between measurements
+      * 5 = finding gain measurement brightness (m = progress)
+      * 6 = waiting between measurements (m = index)
       * 7 = calibration process complete
     * `IC GAIN,OK` - Gain calibration process is complete
     * `IC GAIN,ERR` - Gain calibration process has failed
+* `GC LIGHT` - Get measurement light calibration values
+  * Response: `GC LIGHT,<REFL>,<TRAN>`
+* `SC LIGHT,<REFL>,<TRAN>` - Set measurement light calibration values
+  * The values set the duty cycle for the measurement lights, and are
+    in the range of 1-128, with 128 indicating full brightness.
 * `GC GAIN` - Get sensor gain calibration values
   * Response: `GC GAIN,<L0>,<L1>,<M0>,<M1>,<H0>,<H1>,<X0>,<X1>`
   * Note: `<L0>` and `<L1>` will always be equivalent to 1.0, as they represent

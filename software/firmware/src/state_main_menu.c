@@ -500,11 +500,14 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
 void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controller_t *controller)
 {
     char buf[192];
+    settings_cal_light_t cal_light;
     settings_cal_gain_t cal_gain;
 
+    settings_get_cal_light(&cal_light);
     settings_get_cal_gain(&cal_gain);
 
     sprintf_(buf,
+        "LR=%d, LT=%d\n"
         "L0 = %.1fx\n"
         "L1 = %.1fx\n"
         "M0 = %.4fx\n"
@@ -513,6 +516,7 @@ void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controlle
         "H1 = %.3fx\n"
         "X0 = %.2fx\n"
         "X1 = %.2fx",
+        cal_light.reflection, cal_light.transmission,
         1.0F, 1.0F,
         cal_gain.ch0_medium, cal_gain.ch1_medium,
         cal_gain.ch0_high, cal_gain.ch1_high,
