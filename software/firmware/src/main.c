@@ -313,12 +313,18 @@ void i2c1_init(void)
 
 void tim2_init(void)
 {
+    /*
+     * PWM frequency for LED drivers: 41.667kHz
+     * This frequency was chosen to keep the timing of the output waveform
+     * within the specifications of the LED driver, when the timer is set
+     * to the maximum PWM duty cycle.
+     */
     TIM_ClockConfigTypeDef sClockSourceConfig = {0};
     TIM_MasterConfigTypeDef sMasterConfig = {0};
     TIM_OC_InitTypeDef sConfigOC = {0};
 
     htim2.Instance = TIM2;
-    htim2.Init.Prescaler = 1;
+    htim2.Init.Prescaler = 5;
     htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
     htim2.Init.Period = 127;
     htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
