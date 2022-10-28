@@ -465,7 +465,7 @@ bool settings_set_cal_light(const settings_cal_light_t *cal_light)
     copy_from_u32(&buf[0], cal_light->reflection);
     copy_from_u32(&buf[4], cal_light->transmission);
 
-    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 6);
+    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 2);
     copy_from_u32(&buf[8], crc);
 
     ret = settings_write_buffer(CONFIG_CAL_LIGHT, buf, sizeof(buf));
@@ -487,7 +487,7 @@ bool settings_load_cal_light()
     }
 
     uint32_t crc = copy_to_u32(&buf[8]);
-    uint32_t calculated_crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 6);
+    uint32_t calculated_crc = HAL_CRC_Calculate(&hcrc, (uint32_t *)buf, 2);
 
     if (crc != calculated_crc) {
         log_w("Invalid cal light CRC: %08X != %08X", crc, calculated_crc);
