@@ -5,6 +5,7 @@
 #include <QMimeData>
 #include <QStyledItemDelegate>
 #include <QThread>
+#include <QSettings>
 #include <QDebug>
 #include <cmath>
 #include "floatitemdelegate.h"
@@ -57,6 +58,24 @@ SlopeCalibrationDialog::SlopeCalibrationDialog(DensInterface *densInterface, QWi
         connect(densInterface_, &DensInterface::densityReading, this, &SlopeCalibrationDialog::onDensityReading);
     }
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+
+    // Preload calibrated numbers for the step wedge, with basic validation,
+    // if they have been stored in app settings. As this is primarily intended
+    // to help with device manufacturing use cases, no UI is currently provided
+    // for populating this data.
+    QSettings settings;
+    QVariantList scaleList = settings.value("slope_calibration/scale").toList();
+    if (!scaleList.isEmpty()) {
+        int i = 0;
+        for (const QVariant &entry : qAsConst(scaleList)) {
+            bool ok;
+            const QString entryStr = entry.toString();
+            const float entryNum = entryStr.toFloat(&ok);
+            if (ok && entryNum >= 0.0F && entryNum <= 5.0F) {
+                model_->setItem(i++, 0, new QStandardItem(entryStr));
+            }
+        }
+    }
 }
 
 SlopeCalibrationDialog::~SlopeCalibrationDialog()
