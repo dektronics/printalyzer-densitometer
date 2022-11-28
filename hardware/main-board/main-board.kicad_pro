@@ -360,8 +360,12 @@
     }
   },
   "libraries": {
-    "pinned_footprint_libs": [],
-    "pinned_symbol_libs": []
+    "pinned_footprint_libs": [
+      "lib_fp"
+    ],
+    "pinned_symbol_libs": [
+      "Project"
+    ]
   },
   "meta": {
     "filename": "main-board.kicad_pro",
