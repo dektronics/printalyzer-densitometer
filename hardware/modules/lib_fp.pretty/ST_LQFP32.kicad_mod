@@ -3,6 +3,7 @@
   (tedit 61D345C4)
   (descr "LQFP, 32 Pin (https://www.st.com/resource/en/datasheet/stm32l072kz.pdf)")
   (tags "LQFP QFP")
+  (solder_paste_ratio -0.05)
   (attr smd)
   (fp_text reference "REF**" (at 0 -5.88) (layer "F.SilkS")
     (effects (font (size 1 1) (thickness 0.15)))

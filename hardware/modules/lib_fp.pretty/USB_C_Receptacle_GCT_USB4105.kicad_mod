@@ -3,6 +3,7 @@
   (tedit 61D36629)
   (descr "https://gct.co/files/drawings/usb4105.pdf")
   (tags "USB C Type-C Receptacle USB2.0")
+  (solder_paste_ratio -0.05)
   (attr smd)
   (fp_text reference "REF**" (at 0 -4.58) (layer "F.SilkS")
     (effects (font (size 1 1) (thickness 0.15)))
