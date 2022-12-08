@@ -19,8 +19,8 @@ own right.
 A good overview of the project can be found in these blog posts:
 * [The Printalyzer Densitometer Project](https://hecgeek.blogspot.com/2021/07/the-printalyzer-densitometer-project.html)
 
-_**Note: This project is currently a work-in-progress, and may still go through
-major changes before it can be considered to be stable.**_
+This project, using hardware tagged as "Revision C" and labeled as DPD-100, is currently shipping as an official Dektronics [product](https://www.dektronics.com/printalyzer-densitometer). Links to the user manual and regulatory compliance documents can be found on the product website.
+
 
 ## Project Layout
 
