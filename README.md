@@ -29,9 +29,6 @@ The "hardware" directory contains [KiCad](https://www.kicad.org/) projects
 with the complete circuit schematics, bill-of-materials, and
 PCB layouts.
 
-_**The hardware design is currently marked as Revision C, and has a variety
-of changes intended to go into the final pre-production device.**_
-
 ### Software
 The "software" directory contains all the source code for the firmware
 that runs on the hardware.
