@@ -232,6 +232,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
 
         } else if (option == 3) {
             densitometer_result_t meas_result = DENSITOMETER_OK;
+            bool cal_saved = false;
             uint8_t meas_option = 1;
             display_main_elements_t elements = {
                 .title = "Calibrating...",
@@ -303,9 +304,18 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                 }
                 if (meas_result != DENSITOMETER_OK) { break; }
 
-                if (!settings_set_cal_reflection(&cal_reflection)) {
-                    meas_result = -1;
+                if (!settings_validate_cal_reflection(&cal_reflection)) {
+                    log_w("Unable to validate cal data");
+                    cal_saved = false;
+                    break;
                 }
+
+                if (!settings_set_cal_reflection(&cal_reflection)) {
+                    log_w("Unable to save cal data");
+                    cal_saved = false;
+                    break;
+                }
+                cal_saved = true;
             } while (0);
 
             if (meas_option == UINT8_MAX) {
@@ -317,6 +327,11 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                     "calibration\n"
                     "canceled", " OK ");
                 break;
+            } else if (!cal_saved) {
+                display_message(
+                    "Reflection", NULL,
+                    "Unable\n"
+                    "to save", " OK ");
             } else if (meas_result == DENSITOMETER_OK) {
                 display_message(
                     "Reflection", NULL,
@@ -333,11 +348,6 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                     "Reflection", NULL,
                     "calibration\n"
                     "failed", " OK ");
-            } else if (meas_result == -1) {
-                display_message(
-                    "Reflection", NULL,
-                    "Unable\n"
-                    "to save", " OK ");
             }
         }
     } while (option > 0 && option != UINT8_MAX);
@@ -389,6 +399,7 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
 
         } else if (option == 2) {
             densitometer_result_t meas_result = DENSITOMETER_OK;
+            bool cal_saved = false;
             uint8_t meas_option = 1;
             display_main_elements_t elements = {
                 .title = "Calibrating...",
@@ -450,10 +461,18 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
                 }
                 if (meas_result != DENSITOMETER_OK) { break; }
 
-                if (!settings_set_cal_transmission(&cal_transmission)) {
-                    meas_result = -1;
+                if (!settings_validate_cal_transmission(&cal_transmission)) {
+                    log_w("Unable to validate cal data");
+                    cal_saved = false;
+                    break;
                 }
 
+                if (!settings_set_cal_transmission(&cal_transmission)) {
+                    log_w("Unable to save cal data");
+                    cal_saved = false;
+                    break;
+                }
+                cal_saved = true;
             } while (0);
 
             if (meas_option == UINT8_MAX) {
@@ -465,6 +484,11 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
                     "calibration\n"
                     "canceled", " OK ");
                 break;
+            } else if (!cal_saved) {
+                display_message(
+                    "Transmission", NULL,
+                    "Unable\n"
+                    "to save", " OK ");
             } else if (meas_result == DENSITOMETER_OK) {
                 display_message(
                     "Transmission", NULL,
@@ -481,11 +505,6 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
                     "Transmission", NULL,
                     "calibration\n"
                     "failed", " OK ");
-            } else if (meas_result == -1) {
-                display_message(
-                    "Transmission", NULL,
-                    "Unable\n"
-                    "to save", " OK ");
             }
         }
     } while (option > 0 && option != UINT8_MAX);
