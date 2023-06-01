@@ -1,11 +1,25 @@
 name: Build AArch64
 
 on:
-  pull_request:
   push:
-  release:
-    types:
-      - created
+    paths:
+      - 'src/**'
+      - 'examples/**'
+      - 'lib/**'
+      - 'hw/**'
+      - '.github/workflows/build_aarch64.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'src/**'
+      - 'examples/**'
+      - 'lib/**'
+      - 'hw/**'
+      - '.github/workflows/build_aarch64.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   # ---------------------------------------
@@ -21,7 +35,9 @@ jobs:
         - 'broadcom_64bit'
     steps:
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
     - name: Checkout TinyUSB
       uses: actions/checkout@v3
@@ -39,7 +55,7 @@ jobs:
       run: echo >> $GITHUB_ENV TOOLCHAIN_URL=https://developer.arm.com/-/media/Files/downloads/gnu-a/10.3-2021.07/binrel/gcc-arm-10.3-2021.07-x86_64-aarch64-none-elf.tar.xz
 
     - name: Cache Toolchain
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       id: cache-toolchain
       with:
         path: ~/cache/

@@ -170,7 +170,7 @@ static void xact_out_dma(uint8_t epnum)
   uint32_t xact_len;
 
   // DMA can't be active during read of SIZE.EPOUT or SIZE.ISOOUT, so try to lock,
-  // If already running deffer call regardless if it was called from ISR or task,
+  // If already running defer call regardless if it was called from ISR or task,
   if ( atomic_flag_test_and_set(&_dcd.dma_running) )
   {
     usbd_defer_func((osal_task_func_t)xact_out_dma_wrapper, (void *)(uint32_t)epnum, is_in_isr());
@@ -438,6 +438,7 @@ void dcd_edpt_close (uint8_t rhport, uint8_t ep_addr)
     // When both ISO endpoint are close there is no need for SOF any more.
     if (_dcd.xfer[EP_ISO_NUM][TUSB_DIR_IN].mps + _dcd.xfer[EP_ISO_NUM][TUSB_DIR_OUT].mps == 0) NRF_USBD->INTENCLR = USBD_INTENCLR_SOF_Msk;
   }
+  _dcd.xfer[epnum][dir].started = false;
   __ISB(); __DSB();
 }
 
@@ -764,7 +765,7 @@ void dcd_int_handler(uint8_t rhport)
     if ( tu_bit_test(int_status, USBD_INTEN_ENDEPOUT0_Pos+epnum))
     {
       xfer_td_t* xfer = get_td(epnum, TUSB_DIR_OUT);
-      uint8_t const xact_len = NRF_USBD->EPOUT[epnum].AMOUNT;
+      uint16_t const xact_len = NRF_USBD->EPOUT[epnum].AMOUNT;
 
       xfer->buffer     += xact_len;
       xfer->actual_len += xact_len;
