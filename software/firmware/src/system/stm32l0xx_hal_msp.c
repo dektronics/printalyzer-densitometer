@@ -1,21 +1,20 @@
 /**
- ******************************************************************************
- * @file         stm32l0xx_hal_msp.c
- * @brief        This file provides code for the MSP Initialization
- *               and de-Initialization codes.
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2021 STMicroelectronics.
- * All rights reserved.
- *
- * This software component is licensed by ST under BSD 3-Clause license,
- * the "License"; You may not use this file except in compliance with the
- * License. You may obtain a copy of the License at:
- *                        opensource.org/licenses/BSD-3-Clause
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file         stm32l0xx_hal_msp.c
+  * @brief        This file provides code for the MSP Initialization
+  *               and de-Initialization codes.
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 
 #include "stm32l0xx_hal.h"
 #include "board_config.h"
@@ -82,6 +81,26 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
         /* ADC1 DMA DeInit */
         HAL_DMA_DeInit(hadc->DMA_Handle);
     }
+}
+
+/**
+ * CRC MSP Initialization
+ *
+ * @param hcrc: CRC handle pointer
+ */
+void HAL_CRC_MspInit(CRC_HandleTypeDef* hcrc)
+{
+    /* Intentionally omitted per #46 */
+}
+
+/**
+ * CRC MSP De-Initialization
+ *
+ * @param hcrc: CRC handle pointer
+ */
+void HAL_CRC_MspDeInit(CRC_HandleTypeDef* hcrc)
+{
+    /* Intentionally omitted per #46 */
 }
 
 /**
