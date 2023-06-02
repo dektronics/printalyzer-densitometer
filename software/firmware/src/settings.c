@@ -36,6 +36,8 @@ static void settings_set_user_usb_key_defaults(settings_user_usb_key_t *usb_key)
 static bool settings_load_user_usb_key();
 static void settings_set_user_idle_light_defaults(settings_user_idle_light_t *idle_light);
 static bool settings_load_user_idle_light();
+static void settings_set_user_display_format_defaults(settings_user_display_format_t *display_format);
+static bool settings_load_user_display_format();
 
 static HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len);
 static HAL_StatusTypeDef settings_write_buffer(uint32_t address, const uint8_t *data, size_t data_len);
@@ -102,13 +104,16 @@ static HAL_StatusTypeDef settings_write_uint32(uint32_t address, uint32_t val);
  */
 #define PAGE_USER_SETTINGS         (DATA_EEPROM_BASE + 0x0180UL)
 #define PAGE_USER_SETTINGS_SIZE    (128)
-#define PAGE_USER_SETTINGS_VERSION 2UL
+#define PAGE_USER_SETTINGS_VERSION 3UL
 
 #define CONFIG_USER_USB_KEY        (PAGE_USER_SETTINGS + 4U)
 #define CONFIG_USER_USB_KEY_SIZE   (12U)
 
 #define CONFIG_USER_IDLE_LIGHT      (PAGE_USER_SETTINGS + 16U)
 #define CONFIG_USER_IDLE_LIGHT_SIZE (12U)
+
+#define CONFIG_USER_DISPLAY_FORMAT      (PAGE_USER_SETTINGS + 28U)
+#define CONFIG_USER_DISPLAY_FORMAT_SIZE (8U)
 
 static settings_cal_light_t setting_cal_light = {0};
 static settings_cal_gain_t setting_cal_gain = {0};
@@ -117,6 +122,7 @@ static settings_cal_reflection_t setting_cal_reflection = {0};
 static settings_cal_transmission_t setting_cal_transmission = {0};
 static settings_user_usb_key_t setting_user_usb_key = {0};
 static settings_user_idle_light_t setting_user_idle_light = {0};
+static settings_user_display_format_t setting_user_display_format = {0};
 
 HAL_StatusTypeDef settings_init()
 {
@@ -386,21 +392,40 @@ bool settings_init_user_settings(bool force_clear)
         /* Version is good, load data with per-field validation */
         settings_load_user_usb_key();
         settings_load_user_idle_light();
+        settings_load_user_display_format();
         result = true;
-    } else if (version == 1) {
-        log_i("Migrating user settings from 1->2");
+    } else if (version == 1 || version == 2) {
+        log_i("Migrating user settings from %d->%d", version, PAGE_USER_SETTINGS_VERSION);
         /* Handle the migration from version 1->2 */
         do {
-            /* Load unchanged settings */
-            settings_load_user_usb_key();
+            if (version == 1) {
+                /* Load unchanged settings */
+                settings_load_user_usb_key();
 
-            /* Set defaults for new settings */
-            settings_user_idle_light_t idle_light;
-            settings_set_user_idle_light_defaults(&idle_light);
-            if (!settings_set_user_idle_light(&idle_light)) {
-                break;
+                /* Set defaults for new settings */
+                settings_user_idle_light_t idle_light;
+                settings_set_user_idle_light_defaults(&idle_light);
+                if (!settings_set_user_idle_light(&idle_light)) {
+                    break;
+                }
+
+                settings_user_display_format_t display_format;
+                settings_set_user_display_format_defaults(&display_format);
+                if (!settings_set_user_display_format(&display_format)) {
+                    break;
+                }
+            } else if (version == 2) {
+                /* Load unchanged settings */
+                settings_load_user_usb_key();
+                settings_load_user_idle_light();
+
+                /* Set defaults for new settings */
+                settings_user_display_format_t display_format;
+                settings_set_user_display_format_defaults(&display_format);
+                if (!settings_set_user_display_format(&display_format)) {
+                    break;
+                }
             }
-
             /* Update the page version */
             settings_write_uint32(PAGE_USER_SETTINGS, PAGE_USER_SETTINGS_VERSION);
         } while (0);
@@ -437,6 +462,13 @@ bool settings_clear_user_settings()
     settings_user_idle_light_t idle_light;
     settings_set_user_idle_light_defaults(&idle_light);
     if (!settings_set_user_idle_light(&idle_light)) {
+        return false;
+    }
+
+    /* Write an empty display format settings struct */
+    settings_user_display_format_t display_format;
+    settings_set_user_display_format_defaults(&display_format);
+    if (!settings_set_user_display_format(&display_format)) {
         return false;
     }
 
@@ -1078,6 +1110,64 @@ bool settings_get_user_idle_light(settings_user_idle_light_t *idle_light)
         || idle_light->transmission > SETTING_IDLE_LIGHT_TRAN_HIGH) {
         log_w("Invalid idle light user settings values");
         settings_set_user_idle_light_defaults(idle_light);
+        return false;
+    } else {
+        return true;
+    }
+}
+
+void settings_set_user_display_format_defaults(settings_user_display_format_t *display_format)
+{
+    if (!display_format) { return; }
+    memset(display_format, 0, sizeof(settings_user_display_format_t));
+    display_format->separator = SETTING_DECIMAL_SEPARATOR_PERIOD;
+    display_format->unit = SETTING_DISPLAY_UNIT_DENSITY;
+}
+
+bool settings_set_user_display_format(const settings_user_display_format_t *display_format)
+{
+    HAL_StatusTypeDef ret = HAL_OK;
+    if (!display_format) { return false; }
+
+    uint8_t buf[CONFIG_USER_DISPLAY_FORMAT_SIZE];
+    copy_from_u32(&buf[0], (uint32_t)display_format->separator);
+    copy_from_u32(&buf[4], (uint32_t)display_format->unit);
+
+    ret = settings_write_buffer(CONFIG_USER_DISPLAY_FORMAT, buf, sizeof(buf));
+
+    if (ret == HAL_OK) {
+        memcpy(&setting_user_display_format, display_format, sizeof(settings_user_display_format_t));
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool settings_load_user_display_format()
+{
+    uint8_t buf[CONFIG_USER_DISPLAY_FORMAT_SIZE];
+
+    if (settings_read_buffer(CONFIG_USER_DISPLAY_FORMAT, buf, sizeof(buf)) != HAL_OK) {
+        return false;
+    }
+
+    setting_user_display_format.separator = (uint8_t)copy_to_u32(&buf[0]);
+    setting_user_display_format.unit = (uint8_t)copy_to_u32(&buf[4]);
+    return true;
+}
+
+bool settings_get_user_display_format(settings_user_display_format_t *display_format)
+{
+    if (!display_format) { return false; }
+
+    /* Copy over the settings values */
+    memcpy(display_format, &setting_user_display_format, sizeof(settings_user_display_format_t));
+
+    /* Set default values if validation fails */
+    if (display_format->separator >= SETTING_DECIMAL_SEPARATOR_MAX
+        || display_format->unit >= SETTING_DISPLAY_UNIT_MAX) {
+        log_w("Invalid display format user settings values");
+        settings_set_user_display_format_defaults(display_format);
         return false;
     } else {
         return true;

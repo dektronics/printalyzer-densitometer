@@ -81,6 +81,23 @@ typedef struct {
     uint8_t timeout;
 } settings_user_idle_light_t;
 
+typedef enum {
+    SETTING_DECIMAL_SEPARATOR_PERIOD = 0,
+    SETTING_DECIMAL_SEPARATOR_COMMA,
+    SETTING_DECIMAL_SEPARATOR_MAX
+} settings_decimal_separator_t;
+
+typedef enum {
+    SETTING_DISPLAY_UNIT_DENSITY = 0,
+    SETTING_DISPLAY_UNIT_FSTOP,
+    SETTING_DISPLAY_UNIT_MAX
+} settings_display_unit_t;
+
+typedef struct {
+    settings_decimal_separator_t separator;
+    settings_display_unit_t unit;
+} settings_user_display_format_t;
+
 HAL_StatusTypeDef settings_init();
 
 HAL_StatusTypeDef settings_wipe();
@@ -252,5 +269,22 @@ bool settings_set_user_idle_light(const settings_user_idle_light_t *idle_light);
  * @return True if valid values are returned, false otherwise.
  */
 bool settings_get_user_idle_light(settings_user_idle_light_t *idle_light);
+
+/**
+ * Set the user settings for the display format
+ *
+ * @param display_format Struct populated with the values to save
+ * @return True if saved, false on error
+ */
+bool settings_set_user_display_format(const settings_user_display_format_t *display_format);
+
+/**
+ * Get the user settings for the display format
+ *
+ * @param display_format Struct to be populated with saved values
+ * @return True if valid values are returned, false otherwise.
+ */
+bool settings_get_user_display_format(settings_user_display_format_t *display_format);
+
 
 #endif /* SETTINGS_H */

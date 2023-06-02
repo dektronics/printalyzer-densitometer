@@ -31,6 +31,7 @@ typedef enum {
     MAIN_MENU_CALIBRATION_SENSOR_SLOPE,
     MAIN_MENU_SETTINGS,
     MAIN_MENU_SETTINGS_IDLE_LIGHT,
+    MAIN_MENU_SETTINGS_DISPLAY_FORMAT,
     MAIN_MENU_SETTINGS_USB_KEY,
     MAIN_MENU_SETTINGS_DIAGNOSTICS,
     MAIN_MENU_ABOUT
@@ -70,6 +71,7 @@ static void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_co
 static void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings_idle_light(state_main_menu_t *state, state_controller_t *controller);
+static void main_menu_settings_display_format(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings_usb_key(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_settings_diagnostics(state_main_menu_t *state, state_controller_t *controller);
 static void main_menu_about(state_main_menu_t *state, state_controller_t *controller);
@@ -117,6 +119,8 @@ void state_main_menu_process(state_t *state_base, state_controller_t *controller
         main_menu_settings(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS_IDLE_LIGHT) {
         main_menu_settings_idle_light(state, controller);
+    } else if (state->menu_state == MAIN_MENU_SETTINGS_DISPLAY_FORMAT) {
+        main_menu_settings_display_format(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS_USB_KEY) {
         main_menu_settings_usb_key(state, controller);
     } else if (state->menu_state == MAIN_MENU_SETTINGS_DIAGNOSTICS) {
@@ -592,14 +596,17 @@ void main_menu_settings(state_main_menu_t *state, state_controller_t *controller
     state->settings_option = display_selection_list(
         "Settings", state->settings_option,
         "Target Light\n"
+        "Display Format\n"
         "USB Key Output\n"
         "Diagnostics");
 
     if (state->settings_option == 1) {
         state->menu_state = MAIN_MENU_SETTINGS_IDLE_LIGHT;
     } else if (state->settings_option == 2) {
-        state->menu_state = MAIN_MENU_SETTINGS_USB_KEY;
+        state->menu_state = MAIN_MENU_SETTINGS_DISPLAY_FORMAT;
     } else if (state->settings_option == 3) {
+        state->menu_state = MAIN_MENU_SETTINGS_USB_KEY;
+    } else if (state->settings_option == 4) {
         state->menu_state = MAIN_MENU_SETTINGS_DIAGNOSTICS;
     } else if (state->settings_option == UINT8_MAX) {
         state_controller_set_next_state(controller, STATE_HOME);
@@ -701,6 +708,52 @@ void main_menu_settings_idle_light(state_main_menu_t *state, state_controller_t 
         }
         settings_set_user_idle_light(&idle_light);
 
+    } else if (state->settings_sub_option == UINT8_MAX) {
+        state_controller_set_next_state(controller, STATE_HOME);
+    } else {
+        state->menu_state = MAIN_MENU_SETTINGS;
+        state->settings_sub_option = 1;
+    }
+}
+
+void main_menu_settings_display_format(state_main_menu_t *state, state_controller_t *controller)
+{
+    char buf[192];
+
+    settings_user_display_format_t display_format;
+    settings_get_user_display_format(&display_format);
+
+    strcpy(buf, "Number  ");
+    if (display_format.separator == SETTING_DECIMAL_SEPARATOR_PERIOD) {
+        strcat(buf, "[#.##]");
+    } else {
+        strcat(buf, "[#,##]");
+    }
+    strcat(buf, "\n");
+
+    strcat(buf, "Units      ");
+    if (display_format.unit == SETTING_DISPLAY_UNIT_DENSITY) {
+        strcat(buf, "[D]");
+    } else {
+        strcat(buf, "[F]");
+    }
+
+    state->settings_sub_option = display_selection_list(
+        "Display Format", state->settings_sub_option,
+        buf);
+
+    if (state->settings_sub_option == 1) {
+        display_format.separator++;
+        if (display_format.separator >= SETTING_DECIMAL_SEPARATOR_MAX) {
+            display_format.separator = 0;
+        }
+        settings_set_user_display_format(&display_format);
+    } else if (state->settings_sub_option == 2) {
+        display_format.unit++;
+        if (display_format.unit >= SETTING_DISPLAY_UNIT_MAX) {
+            display_format.unit = 0;
+        }
+        settings_set_user_display_format(&display_format);
     } else if (state->settings_sub_option == UINT8_MAX) {
         state_controller_set_next_state(controller, STATE_HOME);
     } else {
