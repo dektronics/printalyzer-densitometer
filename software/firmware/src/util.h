@@ -43,4 +43,7 @@ float copy_to_f32(const uint8_t *buf);
 
 bool is_valid_number(float num);
 
+void replace_first_char(char *str, char orig, char repl);
+void replace_all_char(char *str, char orig, char repl);
+
 #endif /* UTIL_H */

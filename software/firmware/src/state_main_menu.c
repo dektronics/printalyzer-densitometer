@@ -183,6 +183,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
     settings_cal_reflection_t cal_reflection;
     uint8_t option = 1;
 
+    char sep = settings_get_decimal_separator();
     settings_get_cal_reflection(&cal_reflection);
 
     do {
@@ -209,7 +210,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
             uint8_t input_option = display_input_value_f1_2(
                 "CAL-LO (White)\n",
                 "D=", &working_value,
-                0, 250, NULL);
+                0, 250, sep, NULL);
             if (input_option == 1) {
                 cal_reflection.lo_d = working_value / 100.0F;
             } else if (input_option == UINT8_MAX) {
@@ -227,7 +228,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
             uint8_t input_option = display_input_value_f1_2(
                 "CAL-HI (Black)\n",
                 "D=", &working_value,
-                0, 250, NULL);
+                0, 250, sep, NULL);
             if (input_option == 1) {
                 cal_reflection.hi_d = working_value / 100.0F;
             } else if (input_option == UINT8_MAX) {
@@ -242,6 +243,7 @@ void main_menu_calibration_reflection(state_main_menu_t *state, state_controller
                 .title = "Calibrating...",
                 .mode = DISPLAY_MODE_REFLECTION,
                 .density100 = 0,
+                .decimal_sep = sep,
                 .frame = 0
             };
 
@@ -370,6 +372,7 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
     settings_cal_transmission_t cal_transmission;
     uint8_t option = 1;
 
+    char sep = settings_get_decimal_separator();
     settings_get_cal_transmission(&cal_transmission);
 
     do {
@@ -394,7 +397,7 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
             uint8_t input_option = display_input_value_f1_2(
                 "CAL-HI\n",
                 "D=", &working_value,
-                0, 400, NULL);
+                0, 400, sep, NULL);
             if (input_option == 1) {
                 cal_transmission.hi_d = working_value / 100.0F;
             } else if (input_option == UINT8_MAX) {
@@ -409,6 +412,7 @@ void main_menu_calibration_transmission(state_main_menu_t *state, state_controll
                 .title = "Calibrating...",
                 .mode = DISPLAY_MODE_TRANSMISSION,
                 .density100 = 0,
+                .decimal_sep = sep,
                 .frame = 0
             };
 
@@ -530,7 +534,7 @@ void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controlle
     settings_get_cal_gain(&cal_gain);
 
     sprintf_(buf,
-        "LR=%d, LT=%d\n"
+        "LR=%d  LT=%d\n"
         "L0 = %.1fx\n"
         "L1 = %.1fx\n"
         "M0 = %.4fx\n"
@@ -544,6 +548,11 @@ void main_menu_calibration_sensor_gain(state_main_menu_t *state, state_controlle
         cal_gain.ch0_medium, cal_gain.ch1_medium,
         cal_gain.ch0_high, cal_gain.ch1_high,
         cal_gain.ch0_maximum, cal_gain.ch1_maximum);
+
+    char sep = settings_get_decimal_separator();
+    if (sep != '.') {
+        replace_all_char(buf, '.', sep);
+    }
 
     state->cal_sub_option = display_selection_list(
         "Sensor Gain", state->cal_sub_option,
@@ -568,6 +577,11 @@ void main_menu_calibration_sensor_slope(state_main_menu_t *state, state_controll
             "B1 = %.6f\n"
             "B2 = %.6f",
             cal_slope.b0, cal_slope.b1, cal_slope.b2);
+
+        char sep = settings_get_decimal_separator();
+        if (sep != '.') {
+            replace_all_char(buf, '.', sep);
+        }
 
         state->cal_sub_option = display_selection_list(
             "Sensor Slope", state->cal_sub_option,
@@ -741,6 +755,7 @@ void main_menu_settings_display_format(state_main_menu_t *state, state_controlle
     state->settings_sub_option = display_selection_list(
         "Display Format", state->settings_sub_option,
         buf);
+
 
     if (state->settings_sub_option == 1) {
         display_format.separator++;
@@ -1018,5 +1033,10 @@ void format_density_value(char *buf, float value)
         snprintf_(buf, DENSITY_BUF_SIZE, "%.2f", value);
     } else {
         strncpy(buf, "-.--", DENSITY_BUF_SIZE);
+    }
+
+    char sep = settings_get_decimal_separator();
+    if (sep != '.') {
+        replace_first_char(buf, '.', sep);
     }
 }

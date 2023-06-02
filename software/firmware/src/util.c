@@ -101,3 +101,19 @@ bool is_valid_number(float num)
 {
     return isnormal(num) || fpclassify(num) == FP_ZERO;
 }
+
+void replace_first_char(char *str, char orig, char repl)
+{
+    char *p = strchr(str, orig);
+    if (p) {
+        *p = repl;
+    }
+}
+
+void replace_all_char(char *str, char orig, char repl)
+{
+    char *p = str;
+    while((p = strchr(p, orig)) != NULL) {
+        *p++ = repl;
+    }
+}

@@ -9,6 +9,7 @@
 #include "display.h"
 #include "light.h"
 #include "densitometer.h"
+#include "settings.h"
 
 typedef struct {
     state_t base;
@@ -94,10 +95,12 @@ void state_measure_process(state_t *state_base, state_controller_t *controller)
 {
     state_measure_t *state = (state_measure_t *)state_base;
 
+    char sep = settings_get_decimal_separator();
     display_main_elements_t elements = {
         .title = "Measuring...",
         .mode = state->display_mode,
         .density100 = 0,
+        .decimal_sep = sep,
         .frame = 0
     };
 

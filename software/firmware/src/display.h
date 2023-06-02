@@ -14,6 +14,7 @@ typedef struct {
     display_mode_t mode;
     uint8_t frame;
     int16_t density100;
+    char decimal_sep;
     bool zero_indicator;
 } display_main_elements_t;
 
@@ -31,7 +32,7 @@ void display_static_list(const char *title, const char *list);
 void display_static_message(const char *msg);
 uint8_t display_selection_list(const char *title, uint8_t start_pos, const char *list);
 uint8_t display_message(const char *title1, const char *title2, const char *title3, const char *buttons);
-uint8_t display_input_value_f1_2(const char *title, const char *pre, uint16_t *value, uint16_t lo, uint16_t hi, const char *post);
+uint8_t display_input_value_f1_2(const char *title, const char *pre, uint16_t *value, uint16_t lo, uint16_t hi, char sep, const char *post);
 
 void display_draw_main_elements(const display_main_elements_t *elements);
 

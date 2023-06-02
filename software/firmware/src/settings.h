@@ -286,5 +286,11 @@ bool settings_set_user_display_format(const settings_user_display_format_t *disp
  */
 bool settings_get_user_display_format(settings_user_display_format_t *display_format);
 
+/**
+ * Convenience function to get the decimal separator from the display format
+ *
+ * @return Character that corresponds to the current setting
+ */
+char settings_get_decimal_separator();
 
 #endif /* SETTINGS_H */

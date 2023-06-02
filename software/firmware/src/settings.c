@@ -1174,6 +1174,19 @@ bool settings_get_user_display_format(settings_user_display_format_t *display_fo
     }
 }
 
+char settings_get_decimal_separator()
+{
+    char ch;
+    if (setting_user_display_format.separator == SETTING_DECIMAL_SEPARATOR_PERIOD) {
+        ch = '.';
+    } else if (setting_user_display_format.separator == SETTING_DECIMAL_SEPARATOR_COMMA) {
+        ch = ',';
+    } else {
+        ch = '.';
+    }
+    return ch;
+}
+
 HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len)
 {
     if (!IS_FLASH_DATA_ADDRESS(address)) {

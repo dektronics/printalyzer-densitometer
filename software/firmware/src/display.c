@@ -265,12 +265,12 @@ uint8_t display_message(const char *title1, const char *title2, const char *titl
     return menu_event_timeout ? UINT8_MAX : option;
 }
 
-static const char *display_f1_2toa(uint16_t v)
+static const char *display_f1_2toa(uint16_t v, char sep)
 {
     static char buf[5];
 
     buf[0] = '0' + (v % 1000 / 100);
-    buf[1] = '.';
+    buf[1] = sep;
     buf[2] = '0' + (v % 100 / 10);
     buf[3] = '0' + (v % 10);
     buf[4] = '\0';
@@ -278,7 +278,7 @@ static const char *display_f1_2toa(uint16_t v)
     return buf;
 }
 
-uint8_t display_input_value_f1_2(const char *title, const char *pre, uint16_t *value, uint16_t lo, uint16_t hi, const char *post)
+uint8_t display_input_value_f1_2(const char *title, const char *pre, uint16_t *value, uint16_t lo, uint16_t hi, char sep, const char *post)
 {
     /*
      * Based off u8g2_UserInterfaceInputValue() with changes to use
@@ -351,7 +351,7 @@ uint8_t display_input_value_f1_2(const char *title, const char *pre, uint16_t *v
         yy += u8g2_DrawUTF8Lines(&u8g2, 0, yy, u8g2_GetDisplayWidth(&u8g2), line_height, title);
         xx = x;
         xx += u8g2_DrawUTF8(&u8g2, xx, yy, pre);
-        xx += u8g2_DrawUTF8(&u8g2, xx, yy, display_f1_2toa(local_value));
+        xx += u8g2_DrawUTF8(&u8g2, xx, yy, display_f1_2toa(local_value, sep));
         u8g2_DrawUTF8(&u8g2, xx, yy, post);
         u8g2_SendBuffer(&u8g2);
 
@@ -445,7 +445,13 @@ void display_draw_main_elements(const display_main_elements_t *elements)
         display_draw_mdigit(&u8g2, x, y, d100 % 100 / 10);
         x -= 8;
 
-        u8g2_DrawBox(&u8g2, x, y + 33, 4, 4);
+        if (elements->decimal_sep == '.') {
+            u8g2_DrawBox(&u8g2, x, y + 33, 4, 4);
+        } else if (elements->decimal_sep == ',') {
+            u8g2_DrawBox(&u8g2, x, y + 36, 2, 3);
+            u8g2_DrawBox(&u8g2, x + 1, y + 34, 2, 3);
+            u8g2_DrawBox(&u8g2, x + 2, y + 32, 2, 3);
+        }
         x -= 22;
 
         display_draw_mdigit(&u8g2, x, y, d100 % 1000 / 100);
