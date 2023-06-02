@@ -95,13 +95,17 @@ void state_measure_process(state_t *state_base, state_controller_t *controller)
 {
     state_measure_t *state = (state_measure_t *)state_base;
 
+    settings_user_display_format_t display_format;
+    settings_get_user_display_format(&display_format);
+
     char sep = settings_get_decimal_separator();
     display_main_elements_t elements = {
         .title = "Measuring...",
         .mode = state->display_mode,
         .density100 = 0,
         .decimal_sep = sep,
-        .frame = 0
+        .frame = 0,
+        .f_indicator = (display_format.unit == SETTING_DISPLAY_UNIT_FSTOP)
     };
 
     if (state->take_measurement) {
@@ -134,7 +138,13 @@ void state_measure_process(state_t *state_base, state_controller_t *controller)
         }
 
         if (state->display_dirty) {
-            float reading = densitometer_get_display_d(state->densitometer);
+            float reading;
+            if (display_format.unit == SETTING_DISPLAY_UNIT_FSTOP) {
+                reading = densitometer_get_display_f(state->densitometer);
+            } else {
+                reading = densitometer_get_display_d(state->densitometer);
+            }
+
             bool has_zero = !isnanf(densitometer_get_zero_d(state->densitometer));
             elements.density100 = (!isnanf(reading)) ? lroundf(reading * 100) : 0;
             elements.zero_indicator = has_zero;

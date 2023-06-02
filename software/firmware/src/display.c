@@ -462,6 +462,13 @@ void display_draw_main_elements(const display_main_elements_t *elements)
             u8g2_DrawLine(&u8g2, x, y + 18, x + 9, y + 18);
             u8g2_DrawLine(&u8g2, x + 1, y + 19, x + 8, y + 19);
         }
+
+        if (elements->f_indicator) {
+            u8g2_DrawUTF8(&u8g2,
+                (x - u8g2_GetMaxCharWidth(&u8g2)) + 1,
+                (y + u8g2_GetAscent(&u8g2)) - 3,
+                "f/");
+        }
     }
 
     asset_info_t asset;

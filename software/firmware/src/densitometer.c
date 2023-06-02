@@ -291,3 +291,13 @@ float densitometer_get_display_d(const densitometer_t *densitometer)
 
     return display_value;
 }
+
+float densitometer_get_display_f(const densitometer_t *densitometer)
+{
+    float d_value = densitometer_get_display_d(densitometer);
+    if (isnanf(d_value)) { return d_value; }
+
+    float f_value = log2f(powf(10.0F, d_value));
+
+    return f_value;
+}

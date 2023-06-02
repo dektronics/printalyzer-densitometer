@@ -16,6 +16,7 @@ typedef struct {
     int16_t density100;
     char decimal_sep;
     bool zero_indicator;
+    bool f_indicator;
 } display_main_elements_t;
 
 HAL_StatusTypeDef display_init(SPI_HandleTypeDef *hspi);

@@ -113,4 +113,11 @@ float densitometer_get_reading_d(const densitometer_t *densitometer);
  */
 float densitometer_get_display_d(const densitometer_t *densitometer);
 
+/**
+ * Get the last displayable density reading in f-stop units
+ *
+ * @return The last displayable density reading, or NAN if none is available
+ */
+float densitometer_get_display_f(const densitometer_t *densitometer);
+
 #endif /* DENSITOMETER_H */
