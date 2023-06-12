@@ -1187,6 +1187,17 @@ char settings_get_decimal_separator()
     return ch;
 }
 
+char settings_get_unit_suffix()
+{
+    char ch;
+    if (setting_user_display_format.unit == SETTING_DISPLAY_UNIT_FSTOP) {
+        ch = 'F';
+    } else {
+        ch = 'D';
+    }
+    return ch;
+}
+
 HAL_StatusTypeDef settings_read_buffer(uint32_t address, uint8_t *data, size_t data_len)
 {
     if (!IS_FLASH_DATA_ADDRESS(address)) {

@@ -293,4 +293,11 @@ bool settings_get_user_display_format(settings_user_display_format_t *display_fo
  */
 char settings_get_decimal_separator();
 
+/**
+ * Convenience function to get the unit suffix from the display format
+ *
+ * @return Character that corresponds to the current setting
+ */
+char settings_get_unit_suffix();
+
 #endif /* SETTINGS_H */

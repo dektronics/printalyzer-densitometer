@@ -779,10 +779,18 @@ void main_menu_settings_display_format(state_main_menu_t *state, state_controlle
 
 void main_menu_settings_usb_key(state_main_menu_t *state, state_controller_t *controller)
 {
+    char separator;
+    char suffix;
     char buf[192];
 
     settings_user_usb_key_t usb_key;
     settings_get_user_usb_key(&usb_key);
+
+    settings_user_display_format_t display_format;
+    settings_get_user_display_format(&display_format);
+
+    separator = settings_get_decimal_separator();
+    suffix = settings_get_unit_suffix();
 
     strcpy(buf, "Enabled");
     if (usb_key.enabled) {
@@ -794,9 +802,13 @@ void main_menu_settings_usb_key(state_main_menu_t *state, state_controller_t *co
 
     strcat(buf, "Fmt.");
     if (usb_key.format == SETTING_KEY_FORMAT_FULL) {
-        strcat(buf, " [M+#.##D]");
+        char fmt[16];
+        sprintf(fmt, " [M+#%c##%c]", separator, suffix);
+        strcat(buf, fmt);
     } else {
-        strcat(buf, "    [#.##]");
+        char fmt[16];
+        sprintf(fmt, "    [#%c##]", separator);
+        strcat(buf, fmt);
     }
     strcat(buf, "\n");
 
@@ -809,7 +821,11 @@ void main_menu_settings_usb_key(state_main_menu_t *state, state_controller_t *co
         strcat(buf, "     [Tab]");
         break;
     case SETTING_KEY_SEPARATOR_COMMA:
-        strcat(buf, "   [Comma]");
+        if (separator == ',') {
+            strcat(buf, "       [;]");
+        } else {
+            strcat(buf, "       [,]");
+        }
         break;
     case SETTING_KEY_SEPARATOR_SPACE:
         strcat(buf, "   [Space]");
