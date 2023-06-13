@@ -433,7 +433,7 @@ bool settings_init_user_settings(bool force_clear)
     } else {
         /* Version is bad, initialize a blank page */
         if (!force_clear) {
-            log_w("Unexpected user settings version: %d != %d", version, PAGE_CAL_SENSOR_VERSION);
+            log_w("Unexpected user settings version: %d != %d", version, PAGE_USER_SETTINGS_VERSION);
         }
         result = settings_clear_user_settings();
     }
