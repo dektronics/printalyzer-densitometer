@@ -166,7 +166,7 @@ detailed descriptions and part numbers for any components listed here.
 * Main Cover (`main-cover`)
 * Graphic Overlay
 * Main Housing Assembly
-* M2 x 6mm thread forming screws (x4)
+* M2 x 8mm thread forming screws (x4)
 
 ### Tools
 
